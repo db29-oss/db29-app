@@ -88,10 +88,17 @@ function test_util_migrate_fresh(): bool { #cr_46869
 }
 
 function setup_container(string $container_name): int {
-    exec(
-        'podman build -t '.$container_name.' -f '.
-        base_path('tests/Dockerfile/'.$container_name.'.Dockerfile').' '.base_path('tests/Dockerfile/')
-    );
+    $local_image = true; // to attach some process to it, e.g: tail -F /dev/null
+
+    if (file_exists(base_path('tests/Dockerfile/'.$container_name.'.Dockerfile'))) {
+        exec(
+            'podman build -t '.$container_name.' -f '.
+            base_path('tests/Dockerfile/'.$container_name.'.Dockerfile').' '.base_path('tests/Dockerfile/')
+        );
+    } else {
+        $local_image = false;
+        exec('podman pull '.$container_name);
+    }
 
     $ssh_privatekey_path = sys_get_temp_dir().'/'.$container_name;
 
@@ -101,7 +108,16 @@ function setup_container(string $container_name): int {
 
     exec('podman container exists '.$container_name.' && podman kill '.$container_name);
 
-    exec('podman run --privileged --rm -d --name '.$container_name.' -p 22 '.$container_name);
+    $podman_run_cmd = 'podman run --privileged --rm -d --name '.$container_name.' -p 22 '.$container_name;
+
+    if (! $local_image) {
+        $podman_run_cmd .= ' tail -F /dev/null';
+    }
+
+    exec($podman_run_cmd);
+
+    // create .ssh dir
+    exec('podman exec '.$container_name.' sh -c \'mkdir -p /root/.ssh/\'');
 
     // copy 
     exec('podman exec '.$container_name.' '.

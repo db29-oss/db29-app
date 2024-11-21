@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('machine_id');
             $table->foreign('machine_id')->references('id')->on('machines');
+            $table->boolean('prepared')->default(false);
             $table->timestamps();
         });
     }

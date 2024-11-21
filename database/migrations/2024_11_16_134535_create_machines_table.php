@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('ip_address');
             $table->integer('ssh_port');
-            $table->string('storage_path');
+            $table->string('storage_path')->default('/opt/');
             $table->integer('max_core')->default(4);
             $table->integer('used_core')->default(0);
             $table->integer('max_memory')->default(100 * 1000 * 1000); // 100 MB
