@@ -38,7 +38,11 @@ class MachinePrepareTest extends TestCase
 
         $this->assertEquals(0, count($ssh->getOutput()));
 
+        $this->assertEquals(false, Machine::whereId($m->id)->first()->prepared);
+
         Artisan::call('app:machine-prepare');
+
+        $this->assertEquals(true, Machine::whereId($m->id)->first()->prepared);
 
         $ssh = new SSHEngine;
 

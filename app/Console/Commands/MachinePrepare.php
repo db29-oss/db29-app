@@ -38,6 +38,8 @@ class MachinePrepare extends Command
                 ])
                 ->exec('apt install podman -y')
                 ->exec('mkdir '.$machine->storage_path.' -p');
+
+            Machine::whereId($machine->id)->update(['prepared' => true]);
         }
     }
 }
