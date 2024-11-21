@@ -36,7 +36,7 @@ class MachinePrepare extends Command
                     'ssh_address' => $machine->ip_address,
                     'ssh_port' => $machine->ssh_port,
                 ])
-                ->exec('apt install podman -y')
+                ->exec('DEBIAN_FRONTEND=noninteractive apt install podman -y')
                 ->exec('mkdir '.$machine->storage_path.' -p');
 
             Machine::whereId($machine->id)->update(['prepared' => true]);

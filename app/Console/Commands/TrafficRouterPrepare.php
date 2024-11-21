@@ -26,7 +26,7 @@ class TrafficRouterPrepare extends Command
                     'ssh_address' => $traffic_router->machine->ip_address,
                     'ssh_port' => $traffic_router->machine->ssh_port,
                 ])
-                ->exec('apt install caddy -y');
+                ->exec('DEBIAN_FRONTEND=noninteractive apt install caddy -y');
 
             if (app('env') !== 'testing') {
                 $ssh->exec('systemctl enable --now caddy');
