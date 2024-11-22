@@ -31,10 +31,10 @@ class MachinePrepareTest extends TestCase
             ->from([
                 'ssh_privatekey_path' => $ssh_privatekey_path
             ])
-           ->to([
-               'ssh_port' => $ssh_port,
-           ])
-           ->exec('ls -1 /opt/');
+            ->to([
+                'ssh_port' => $ssh_port,
+            ])
+            ->exec('ls -1 /opt/');
 
         $this->assertEquals(0, count($ssh->getOutput()));
 

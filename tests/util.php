@@ -93,7 +93,8 @@ function setup_container(string $container_name): int {
     if (file_exists(base_path('tests/Dockerfile/'.$container_name.'.Dockerfile'))) {
         exec(
             'podman build -t '.$container_name.' -f '.
-            base_path('tests/Dockerfile/'.$container_name.'.Dockerfile').' '.base_path('tests/Dockerfile/')
+            base_path('tests/Dockerfile/'.$container_name.'.Dockerfile').' '.
+            base_path('tests/Dockerfile/')
         );
     } else {
         $local_image = false;
@@ -106,9 +107,22 @@ function setup_container(string $container_name): int {
 
     exec('ssh-keygen -N "" -t ed25519 -C "'.$container_name.'" -f '.$ssh_privatekey_path);
 
-    exec('podman container exists '.$container_name.' && podman kill '.$container_name);
+    exec('podman container exists '.$container_name, $output, $exit_code);
 
-    $podman_run_cmd = 'podman run --privileged --rm -d --name '.$container_name.' -p 22 '.$container_name;
+    if ($exit_code === 0) {
+        exec('podman kill '.$container_name, $output, $exit_code);
+
+        while (true) {
+            exec('podman container exists '.$container_name, $output, $exit_code);
+
+            if ($exit_code === 1) {
+                break;
+            }
+        }
+    }
+
+    $podman_run_cmd =
+        'podman run --privileged --rm -d --name '.$container_name.' -p 22 '.$container_name;
 
     if (! $local_image) {
         $podman_run_cmd .= ' tail -F /dev/null';
@@ -120,8 +134,14 @@ function setup_container(string $container_name): int {
     exec('podman exec '.$container_name.' sh -c \'mkdir -p /root/.ssh/\'');
 
     // copy 
-    exec('podman exec '.$container_name.' '.
-        'sh -c \'echo "'.file_get_contents($ssh_privatekey_path.'.pub').'" >> /root/.ssh/authorized_keys\'');
+    exec(
+        'podman exec '.$container_name.' '.
+        'sh -c \'echo "'.
+        file_get_contents($ssh_privatekey_path.'.pub').
+        '" >> /root/.ssh/authorized_keys\''
+    );
+
+    $output = [];
 
     exec('podman port '.$container_name.' 22', $output);
 
