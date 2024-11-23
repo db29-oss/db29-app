@@ -37,19 +37,41 @@ class MachinePrepare extends Command
                     'ssh_port' => $machine->ssh_port,
                 ])
                 ->exec('DEBIAN_FRONTEND=noninteractive apt install podman -y')
-                ->exec('mkdir '.$machine->storage_path.' -p')
+                ->exec('mkdir -p '.$machine->storage_path)
                 ->exec('touch /etc/containers/registries.conf.d/docker.conf');
-
-            $docker_conf_content = 'unqualified-search-registries = ["docker.io"]';
 
             $ssh->exec(
                 'echo '.
                 $ssh->lbsl."'".
-                BashCharEscape::escape($docker_conf_content, $ssh->lbsl, $ssh->hbsl).
+                BashCharEscape::escape('unqualified-search-registries = ["docker.io"]', $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl."'".' '.
                 $ssh->lbsl."> ".
                 '/etc/containers/registries.conf.d/docker.conf'
             );
+
+            $ssh->exec('touch /etc/containers/storage.conf')
+                ->exec('mkdir -p '.$machine->storage.'podman/graphroot')
+                ->exec('mkdir -p '.$machine->storage.'podman/runroot')
+                ->exec('rm -f /etc/containers/storage.conf')
+                ->exec('touch /etc/containers/storage.conf');
+
+            $storage_conf_lines = [
+                '[storage]',
+                'driver = "overlay"',
+                'graphroot = "'.$machine->storage_path.'podman/graphroot"',
+                'runroot= "'.$machine->storage_path.'podman/runroot"',
+            ];
+
+            foreach ($storage_conf_lines as $storage_conf_line) {
+                $ssh->exec(
+                    'echo '.
+                    $ssh->lbsl."'".
+                    BashCharEscape::escape($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
+                    $ssh->lbsl."'".' '.
+                    $ssh->lbsl.">".$ssh->lbsl."> ".
+                    '/etc/containers/storage.conf'
+                );
+            }
 
             Machine::whereId($machine->id)->update(['prepared' => true]);
         }
