@@ -37,7 +37,19 @@ class MachinePrepare extends Command
                     'ssh_port' => $machine->ssh_port,
                 ])
                 ->exec('DEBIAN_FRONTEND=noninteractive apt install podman -y')
-                ->exec('mkdir '.$machine->storage_path.' -p');
+                ->exec('mkdir '.$machine->storage_path.' -p')
+                ->exec('touch /etc/containers/registries.conf.d/docker.conf');
+
+            $docker_conf_content = 'unqualified-search-registries = ["docker.io"]';
+
+            $ssh->exec(
+                'echo '.
+                $ssh->lbsl."'".
+                BashCharEscape::escape($docker_conf_content, $ssh->lbsl, $ssh->hbsl).
+                $ssh->lbsl."'".' '.
+                $ssh->lbsl."> ".
+                '/etc/containers/registries.conf.d/docker.conf'
+            );
 
             Machine::whereId($machine->id)->update(['prepared' => true]);
         }
