@@ -1,3 +1,9 @@
+<style>
+  body {
+    font-family: monospace;
+  }
+</style>
+
 <div>
   <form method="POST">
     @csrf

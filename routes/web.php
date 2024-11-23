@@ -13,9 +13,15 @@ Route::get('faq', [PageController::class, 'faq'])->name('faq');
 
 Route::group(['middleware' => 'auth'], function () {
     Route::get('dashboard', [PageController::class, 'dashboard'])->name('dashboard');
-    Route::get('registered-service', [PageController::class, 'registeredService'])->name('registered-service');
-    Route::get('supported-source', [PageController::class, 'supportedSource'])->name('supported-source');
+    Route::prefix('instance')->group(function () {
+        Route::get('/', [PageController::class, 'instance'])->name('instance');
+        Route::get('register', [PageController::class, 'registerInstance'])->name('register-instance');
+        Route::post('register', [PageController::class, 'postRegisterInstance'])
+            ->name('post-register-instance');
+    });
+    Route::get('source', [PageController::class, 'source'])->name('source');
     Route::get('account-update', [PageController::class, 'accountUpdate'])->name('account-update');
-    Route::post('account-update', [PageController::class, 'postAccountUpdate'])->name('account-update');
+    Route::post('account-update', [PageController::class, 'postAccountUpdate'])->name('post-account-update');
     Route::get('advanced-feature', [PageController::class, 'advancedFeature'])->name('advanced-feature');
+    Route::post('fill-instance', [PageController::class, 'fillInstance'])->name('fill-instance');
 });

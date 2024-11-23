@@ -42,7 +42,7 @@ class UserRegistrationFlowTest extends TestCase
 
         $response->assertRedirect('login');
 
-        $response = $this->post('login', ['username' => $u->username]);
+        $response = $this->post('login', ['login_id' => $u->login_id]);
 
         $response->assertRedirect('dashboard');
 

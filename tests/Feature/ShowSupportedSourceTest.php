@@ -18,7 +18,7 @@ class ShowSupportedSourceTest extends TestCase
 
         auth()->login($u);
 
-        $response = $this->get('supported-source');
+        $response = $this->get('source');
 
         $response->assertStatus(200);
 
@@ -28,10 +28,29 @@ class ShowSupportedSourceTest extends TestCase
 
         Source::factory()->count(10)->create();
 
-        $source = Source::first();
+        $s_s = Source::get();
 
-        $response = $this->get('supported-source');
+        $response = $this->get('source');
 
-        $response->assertSee($source->name);
+        foreach ($s_s as $s) {
+            $response->assertDontSee($s->name);
+        }
+
+        $s = Source::first();
+        $s->enabled = true;
+        $s->save();
+
+        $s_id = $s->id;
+
+        $response = $this->get('source');
+
+        foreach ($s_s as $s) {
+            if ($s->id === $s_id) {
+                $response->assertSee($s->name);
+                continue;
+            }
+
+            $response->assertDontSee($s->name);
+        }
     }
 }

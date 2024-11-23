@@ -10,8 +10,8 @@
     <h2>{{ mb_ucfirst(__('trans.login')) }}</h2>
     <form method="POST" action="{{ route('login') }}">
       <div>
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+        <label for="login_id">login_id</label>
+        <input type="text" id="login_id" name="login_id" required>
       </div>
 
       @csrf
@@ -31,7 +31,7 @@
       @csrf
 
       <div>
-        <button type="submit">{{ __('register') }}</button>
+        <button type="submit">{{ __('trans.register') }}</button>
       </div>
     </form>
   </div>

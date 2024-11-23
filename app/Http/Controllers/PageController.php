@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\InitInstance;
+use App\Models\Instance;
 use App\Models\Source;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -24,7 +26,7 @@ class PageController extends Controller
 
     public function postLogin()
     {
-        $user = User::whereUsername(request('username'))->first();
+        $user = User::whereLoginId(request('login_id'))->first();
 
         if ($user === null) {
             return redirect()->route('login');
@@ -52,7 +54,12 @@ class PageController extends Controller
         }
 
         $user = new User;
-        $user->username = str()->random(31);
+        $user->login_id = str()->random(31);
+
+        $substr = substr($user->login_id, 0, 11);
+
+        $user->email = $substr.'__@db29.ovh';
+        $user->username = $substr;
         $user->save();
 
         return view('register')->with('user', $user);
@@ -63,16 +70,16 @@ class PageController extends Controller
         return view('dashboard');
     }
 
-    public function registeredService()
+    public function instance()
     {
-        return view('registered_service');
+        return view('instance.instance');
     }
 
-    public function supportedSource()
+    public function source()
     {
-        $sources = Source::orderBy('name')->get();
+        $sources = Source::where('enabled', true)->orderBy('name')->get();
 
-        return view('supported_source')->with('sources', $sources);
+        return view('source')->with('sources', $sources);
     }
 
     public function accountUpdate()
@@ -82,13 +89,13 @@ class PageController extends Controller
 
     public function postAccountUpdate()
     {
-        $user = auth()->user();
-
         $validator = validator(request()->all(), [ 
             'email' => 'email:rfc'
         ]);
 
         $data = $validator->validated();
+
+        $user = auth()->user();
 
         if ($data['email']) {
             $user->email = $data['email'];
@@ -109,5 +116,56 @@ class PageController extends Controller
     public function advancedFeature()
     {
         return view('advanced_feature');
+    }
+
+    public function registerInstance()
+    {
+        $source_name = request('source');
+
+        $source = Source::whereName($source_name)->where('enabled', true)->first();
+
+        if (! $source) {
+            return redirect()->route('source');
+        }
+
+        if (! view()->exists('instance.'.$source_name.'.register')) {
+            return redirect()->route('source');
+        }
+
+        return view('instance.'.$source_name.'.register');
+    }
+
+    public function postRegisterInstance()
+    {
+        $source_name = request('source');
+
+        $source = Source::whereName($source_name)->where('enabled', true)->first();
+
+        if (! $source) {
+            return redirect()->route('source');
+        }
+
+        $instance = new Instance;
+        $instance->source_id = $source->id;
+        $instance->user_id = auth()->user()->id;
+        $instance->save();
+
+        $reg_info = $this->{'filter_input_'.$source_name}();
+
+        InitInstance::dispatch($source, $reg_info);
+
+        return redirect()->route('instance');
+    }
+
+    protected function filter_input_planka()
+    {
+        $reg_info = [];
+
+        $reg_info['email'] = request('email');
+        $reg_info['password'] = request('password');
+        $reg_info['name'] = request('name');
+        $reg_info['username'] = request('username');
+
+        return $reg_info;
     }
 }

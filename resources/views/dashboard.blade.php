@@ -5,7 +5,7 @@
   <title>DB29 Dashboard</title>
 </head>
 <div>
-  <pre>username: {{ auth()->user()->username }}</pre>
+  <pre>login_id: {{ auth()->user()->login_id }}</pre>
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf
     <button class="button">{{ __('logout') }}</button>
@@ -13,8 +13,8 @@
 
   <div style="margin-top: 1.5rem;"></div>
 
-  <pre><a href="{{ route('registered-service') }}">{{ mb_ucfirst(__('trans.registered_service')) }}</a></pre>
-  <pre><a href="{{ route('supported-source') }}">{{ mb_ucfirst(__('trans.supported_source')) }}</a></pre>
+  <pre><a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a></pre>
+  <pre><a href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a></pre>
 
   <div style="margin-top: 1.5rem;"></div>
 

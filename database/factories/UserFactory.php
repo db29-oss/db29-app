@@ -11,8 +11,11 @@ class UserFactory extends Factory
 {
     public function definition(): array
     {
+        $str = str()->random(31);
+
         return [
-            'username' => str()->random(31),
+            'login_id' => $str,
+            'username' => $str
         ];
     }
 }
