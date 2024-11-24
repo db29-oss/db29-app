@@ -53,8 +53,8 @@ class MachinePrepare extends Command
             );
 
             $ssh->exec('touch /etc/containers/storage.conf')
-                ->exec('mkdir -p '.$machine->storage.'podman/graphroot')
-                ->exec('mkdir -p '.$machine->storage.'podman/runroot')
+                ->exec('mkdir -p '.$machine->storage_path.'podman/graphroot')
+                ->exec('mkdir -p '.$machine->storage_path.'podman/runroot')
                 ->exec('rm -f /etc/containers/storage.conf')
                 ->exec('touch /etc/containers/storage.conf');
 
@@ -78,7 +78,7 @@ class MachinePrepare extends Command
 
             // instance
 
-            $ssh->exec('mkdir -p '.$machine->storage.'instance');
+            $ssh->exec('mkdir -p '.$machine->storage_path.'instance');
 
             Machine::whereId($machine->id)->update(['prepared' => true]);
         }
