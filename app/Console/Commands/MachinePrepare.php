@@ -8,7 +8,7 @@ use K92\Phputils\BashCharEscape;
 
 class MachinePrepare extends Command
 {
-    protected $signature = 'app:machine-prepare {--machine_id=}';
+    protected $signature = 'app:machine-prepare {--machine_id=} {--force}';
 
     protected $description = 'Basic installation/config';
 
@@ -20,6 +20,10 @@ class MachinePrepare extends Command
 
         if ($this->option('machine_id') !== null) {
             $machines->where('id', $this->option('machine_id'));
+        }
+
+        if (! $this->option('force')) {
+            $machines->where('prepared', false);
         }
 
         $this->machines = $machines->get();
