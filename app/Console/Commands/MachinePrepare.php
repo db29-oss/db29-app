@@ -31,6 +31,9 @@ class MachinePrepare extends Command
     {
         foreach ($this->machines as $machine) {
             $ssh = app('ssh');
+
+            // podman
+
             $ssh
                 ->to([
                     'ssh_address' => $machine->ip_address,
@@ -72,6 +75,10 @@ class MachinePrepare extends Command
                     '/etc/containers/storage.conf'
                 );
             }
+
+            // instance
+
+            $ssh->exec('mkdir -p '.$machine->storage.'instance');
 
             Machine::whereId($machine->id)->update(['prepared' => true]);
         }
