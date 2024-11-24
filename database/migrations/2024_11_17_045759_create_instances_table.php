@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreign('source_id')->references('id')->on('sources');
             $table->unsignedBigInteger('machine_id');
             $table->foreign('machine_id')->references('id')->on('machines');
-            $table->string('version')->nullable();
+            $table->jsonb('version')->default('{}');
             $table->timestamps();
         });
     }
