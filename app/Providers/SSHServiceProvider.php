@@ -10,7 +10,7 @@ class SSHServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     public function register()
     {
-        $this->app->bind('ssh', function ($app, $params) {
+        $this->app->bind('ssh', function () {
             return (new SSHEngine)
                 ->from([
                     'ssh_privatekey_path' => config('services.ssh.ssh_privatekey_path')
