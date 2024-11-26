@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sources', function (Blueprint $table) {
-            $table->jsonb('versions')->nullable();
+            // $versions = [
+            //     'tag' => 'version',
+            //     'init_tmpl' => 'init template',
+            //     'bkup_tmpl' => 'backup template',
+            //     'rsto_tmpl' => 'restore template,
+            // ]
+            $table->jsonb('version_templates')->nullable();
         });
     }
 
@@ -22,7 +28,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('sources', function (Blueprint $table) {
-            $table->dropColumn('versions');
+            $table->dropColumn('version_templates');
         });
     }
 };

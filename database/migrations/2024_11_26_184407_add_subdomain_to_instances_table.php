@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            $table->string('status')->default('queue');
+            $table->string('subdomain')->nullable()->unique();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            $table->dropColumn('uninit');
+            $table->dropColumn('subdomain');
         });
     }
 };

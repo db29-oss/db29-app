@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedBigInteger('source_id');
             $table->foreign('source_id')->references('id')->on('sources');
-            $table->unsignedBigInteger('machine_id');
+            $table->unsignedBigInteger('machine_id')->nullable();
             $table->foreign('machine_id')->references('id')->on('machines');
             $table->jsonb('version')->default('{}');
             $table->timestamps();
