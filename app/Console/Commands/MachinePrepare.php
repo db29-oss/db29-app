@@ -37,7 +37,6 @@ class MachinePrepare extends Command
             $ssh = app('ssh');
 
             // podman
-
             $ssh
                 ->to([
                     'ssh_address' => $machine->ip_address,
@@ -81,8 +80,10 @@ class MachinePrepare extends Command
             }
 
             // instance
-
             $ssh->exec('mkdir -p '.$machine->storage_path.'instance');
+
+            // www
+            $ssh->exec('mkdir -p '.$machine->storage_path.'www');
 
             Machine::whereId($machine->id)->update(['prepared' => true]);
         }

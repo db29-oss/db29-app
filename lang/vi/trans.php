@@ -16,6 +16,6 @@ return [
     "source_link" => "mã nguồn",
     "source" => "mã nguồn",
     "update" => "cập nhật",
-    "login_id_display_once_warning" => "LƯU Ý: login_id chỉ hiển thị một lần duy nhất",
+    "save_login_id" => "LƯU Ý: lưu login_id ở một nơi an toàn",
     "change_default_config_at" => "Bạn có thể thay đổi thiết lập mặc định tại",
 ];

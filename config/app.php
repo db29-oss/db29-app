@@ -126,5 +126,6 @@ return [
     'aliases' => [
         'Artisan' => Illuminate\Support\Facades\Artisan::class,
         'Source' => App\Models\Source::class,
+        'TR' => App\Models\TrafficRouter::class,
     ]
 ];

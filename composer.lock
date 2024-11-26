@@ -1220,16 +1220,16 @@
         },
         {
             "name": "k92/ssh-exec",
-            "version": "v1.1.1",
+            "version": "v1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kocoten1992/ssh-exec.git",
-                "reference": "308e851c4177a868e96a59ad7861728d467b4172"
+                "reference": "b28efaf64ce8840e517550a2f5a254b00bb52ed1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kocoten1992/ssh-exec/zipball/308e851c4177a868e96a59ad7861728d467b4172",
-                "reference": "308e851c4177a868e96a59ad7861728d467b4172",
+                "url": "https://api.github.com/repos/kocoten1992/ssh-exec/zipball/b28efaf64ce8840e517550a2f5a254b00bb52ed1",
+                "reference": "b28efaf64ce8840e517550a2f5a254b00bb52ed1",
                 "shasum": ""
             },
             "require-dev": {
@@ -1250,9 +1250,9 @@
             ],
             "support": {
                 "issues": "https://github.com/kocoten1992/ssh-exec/issues",
-                "source": "https://github.com/kocoten1992/ssh-exec/tree/v1.1.1"
+                "source": "https://github.com/kocoten1992/ssh-exec/tree/v1.2.0"
             },
-            "time": "2024-11-20T16:10:16+00:00"
+            "time": "2024-11-25T09:26:56+00:00"
         },
         {
             "name": "laminas/laminas-diactoros",
@@ -4150,16 +4150,16 @@
         },
         {
             "name": "spiral/roadrunner-worker",
-            "version": "v3.6.0",
+            "version": "v3.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/roadrunner-php/worker.git",
-                "reference": "44c6f37c6abc25175c2723bd6daaa17651b18036"
+                "reference": "dd0571a84b432077447ece947e5f2b19edde574f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/roadrunner-php/worker/zipball/44c6f37c6abc25175c2723bd6daaa17651b18036",
-                "reference": "44c6f37c6abc25175c2723bd6daaa17651b18036",
+                "url": "https://api.github.com/repos/roadrunner-php/worker/zipball/dd0571a84b432077447ece947e5f2b19edde574f",
+                "reference": "dd0571a84b432077447ece947e5f2b19edde574f",
                 "shasum": ""
             },
             "require": {
@@ -4223,7 +4223,7 @@
                 "docs": "https://docs.roadrunner.dev",
                 "forum": "https://forum.roadrunner.dev/",
                 "issues": "https://github.com/roadrunner-server/roadrunner/issues",
-                "source": "https://github.com/roadrunner-php/worker/tree/v3.6.0"
+                "source": "https://github.com/roadrunner-php/worker/tree/v3.6.1"
             },
             "funding": [
                 {
@@ -4231,7 +4231,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-06-03T15:30:19+00:00"
+            "time": "2024-11-23T08:32:13+00:00"
         },
         {
             "name": "spiral/security",

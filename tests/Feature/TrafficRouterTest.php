@@ -11,6 +11,8 @@ class TrafficRouterTest extends TestCase
 {
     public function test_traffic_router_store_ephemeral(): void
     {
+        test_util_migrate_fresh();
+
         $ssh_port = setup_container('db29_traffic_router');
 
         $ssh_privatekey_path = sys_get_temp_dir().'/db29_traffic_router';
