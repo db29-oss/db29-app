@@ -46,6 +46,23 @@ class TrafficRouterPrepareTest extends TestCase
 
         Artisan::call('app:traffic-router-prepare');
 
+
+        while (true) {
+            $output = [];
+
+            exec(
+                'podman exec db29_traffic_router_prepare '.
+                'curl -s localhost:2019/config/',
+                $output,
+                $exit_code
+            );
+
+            // it take some time to populate config
+            if (str_contains($output[0], 'acme-challenge')) {
+                break;
+            }
+        }
+
         $ssh = new SSHEngine;
         $ssh
             ->from([
@@ -62,31 +79,20 @@ class TrafficRouterPrepareTest extends TestCase
         // populate some special route
         // for machine traffic router
         // add some random route to caddy first
-        $random_route = 
+        $random_routes =
             [
-                'apps' => [
-                    'http' => [
-                        'servers' => [
-                            'random_server' => [
-                                'listen' => [':80'],
-                                'routes' => [
-                                    [
-                                        'match' => [
-                                            [
-                                                'host' => ['random.org']
-                                            ]
-                                        ],
-                                        'handle' => [
-                                            [
-                                                'handler' => 'reverse_proxy',
-                                                'upstreams' => [
-                                                    [
-                                                        'dial' => '127.0.0.1:8000'
-                                                    ]
-                                                ]
-                                            ]
-                                        ]
-                                    ]
+                [
+                    'match' => [
+                        [
+                            'host' => ['random.org']
+                        ]
+                    ],
+                    'handle' => [
+                        [
+                            'handler' => 'reverse_proxy',
+                            'upstreams' => [
+                                [
+                                    'dial' => '127.0.0.1:8000'
                                 ]
                             ]
                         ]
@@ -105,30 +111,36 @@ class TrafficRouterPrepareTest extends TestCase
         );
 
         $this->assertFalse(str_contains($output[0], 'random.org'));
-        $this->assertFalse(str_contains($output[0], 'random_server'));
 
         // apply random config
         $ssh->clearOutput();
-        $ssh->exec(
-            'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
-            $ssh->lbsl.'\''.
-            BashCharEscape::escape(json_encode($random_route), $ssh->lbsl, $ssh->hbsl).
-            $ssh->lbsl.'\' '.
-            'localhost:2019/config/',
-        );
+
+        foreach ($random_routes as $random_route) {
+            $ssh->exec(
+                'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
+                $ssh->lbsl.'\''.
+                BashCharEscape::escape(json_encode($random_route), $ssh->lbsl, $ssh->hbsl).
+                $ssh->lbsl.'\' '.
+                'localhost:2019/config/apps/http/servers/https/routes/',
+            );
+        }
 
         // ensure config do exists
-        $output = [];
+        while (true) {
+            $output = [];
 
-        exec(
-            'podman exec db29_traffic_router_prepare '.
-            'curl -s localhost:2019/config/',
-            $output,
-            $exit_code
-        );
+            exec(
+                'podman exec db29_traffic_router_prepare '.
+                'curl -s localhost:2019/config/',
+                $output,
+                $exit_code
+            );
 
-        $this->assertTrue(str_contains($output[0], 'random.org'));
-        $this->assertTrue(str_contains($output[0], 'random_server'));
+            // take sometime to populate config
+            if (str_contains($output[0], 'random.org')) {
+                break;
+            }
+        }
         
         // after call prepare route
         // that random route above should still exists
@@ -170,11 +182,10 @@ class TrafficRouterPrepareTest extends TestCase
 
         // ensure random route still exists
         $this->assertTrue(str_contains($output[0], 'random.org'));
-        $this->assertTrue(str_contains($output[0], 'random_server'));
 
         // ensure new route exists
         $this->assertTrue(str_contains($output[0], 'db29.ovh'));
-        $this->assertTrue(str_contains($output[0], 'extra_routes'));
+        $this->assertTrue(str_contains($output[0], 'acme-challenge'));
 
         // clean up
         cleanup_container('db29_traffic_router_prepare');
