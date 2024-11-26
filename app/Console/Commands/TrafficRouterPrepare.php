@@ -32,86 +32,77 @@ class TrafficRouterPrepare extends Command
         $traffic_routers = $traffic_routers->with('machine')->get();
 
         foreach ($traffic_routers as $traffic_router) {
-            $lock = cache()->store('lock')->lock('tr_'.$traffic_router->id);
-
-            if (! $lock->get()) {
-                $this->info(
-                    'unable got lock for traffic router '.
-                    $traffic_router->id.
-                    ' on machine '.
-                    $traffic_router->machine->ip_address
-                );
-
-                continue;
-            }
-
-            $ssh = app('ssh');
-            $ssh
-                ->to([
-                    'ssh_address' => $traffic_router->machine->ip_address,
-                    'ssh_port' => $traffic_router->machine->ssh_port,
-                ])
-                ->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
+            cache()->store('lock')->lock('tr_'.$traffic_router->id)->get(function() use ($traffic_router) {
+                $ssh = app('ssh');
+                $ssh
+                    ->to([
+                        'ssh_address' => $traffic_router->machine->ip_address,
+                        'ssh_port' => $traffic_router->machine->ssh_port,
+                    ])
+                    ->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
 
 
-            // on testing container env some systemd config cannot be run
-            // all config applied below was test using a real machine
-            // we should improve testing in the future
+                // on testing container env some systemd config cannot be run
+                // all config applied below was test using a real machine
+                // we should improve testing in the future
 
-            if (app('env') === 'testing') {
-                $ssh->clearOutput();
+                if (app('env') === 'testing') {
+                    $ssh->clearOutput();
 
-                $ssh->exec('ps aux \| grep caddy');
+                    $ssh->exec('ps aux \| grep caddy');
 
-                if (count($ssh->getOutput()) < 3) { // grep process and bash process
-                    logger()->debug('caddy start');
-                    $ssh->exec('caddy start');
-                }
-            }
-
-            if (app('env') === 'production') {
-                // get replace ExecStart and replace it with add --resume
-                $ssh->exec('cat /lib/systemd/system/caddy.service');
-
-                foreach ($ssh->getOutput() as $line) {
-                    if (str_starts_with($line, 'ExecStart=')) {
-                        break;
+                    if (count($ssh->getOutput()) < 3) { // grep process and bash process
+                        logger()->debug('caddy start');
+                        $ssh->exec('caddy start');
                     }
                 }
 
-                $ssh->exec('mkdir -p /etc/systemd/system/caddy.service.d/')
-                    ->exec('rm -rf /etc/systemd/system/caddy.service.d/override.conf')
-                    ->exec('touch /etc/systemd/system/caddy.service.d/override.conf');
+                if (app('env') === 'production') {
+                    // get replace ExecStart and replace it with add --resume
+                    $ssh->exec('cat /lib/systemd/system/caddy.service');
 
-                $override_content_lines =
-                    [
-                        "[Service]",
-                        "ExecStart=", // reset mechanism of systemd
-                        $line." --resume" // add --resume
-                    ];
+                    foreach ($ssh->getOutput() as $line) {
+                        if (str_starts_with($line, 'ExecStart=')) {
+                            break;
+                        }
+                    }
 
-                foreach ($override_content_lines as $override_content_line) {
-                    $ssh->exec(
-                        'echo '.
-                        $ssh->lbsl."'".
-                        BashCharEscape::escape($override_content_line, $ssh->lbsl, $ssh->hbsl).
-                        $ssh->lbsl."'".' '.
-                        $ssh->lbsl.">".$ssh->lbsl."> ".
-                        '/etc/systemd/system/caddy.service.d/override.conf'
-                    );
+                    $ssh->exec('mkdir -p /etc/systemd/system/caddy.service.d/')
+                        ->exec('rm -rf /etc/systemd/system/caddy.service.d/override.conf')
+                        ->exec('touch /etc/systemd/system/caddy.service.d/override.conf');
+
+                    $override_content_lines =
+                        [
+                            "[Service]",
+                            "ExecStart=", // reset mechanism of systemd
+                            $line." --resume" // add --resume
+                        ];
+
+                    foreach ($override_content_lines as $override_content_line) {
+                        $ssh->exec(
+                            'echo '.
+                            $ssh->lbsl."'".
+                            BashCharEscape::escape($override_content_line, $ssh->lbsl, $ssh->hbsl).
+                            $ssh->lbsl."'".' '.
+                            $ssh->lbsl.">".$ssh->lbsl."> ".
+                            '/etc/systemd/system/caddy.service.d/override.conf'
+                        );
+                    }
+
+                    $ssh->exec('systemctl enable caddy')
+                        ->exec('systemctl daemon-reload')
+                        ->exec('systemctl start caddy');
                 }
 
-                $ssh->exec('systemctl enable caddy')
-                    ->exec('systemctl daemon-reload')
-                    ->exec('systemctl start caddy');
-            }
+                // extra_routes
+                $this->prepareExtraRoute(
+                    $traffic_router,
+                    $ssh,
+                    json_decode($traffic_router->extra_routes, true)
+                );
 
-            // extra_routes
-            $this->prepareExtraRoute($traffic_router, $ssh, json_decode($traffic_router->extra_routes, true));
-
-            TrafficRouter::whereId($traffic_router->id)->update(['prepared' => true]);
-
-            $lock->release();
+                TrafficRouter::whereId($traffic_router->id)->update(['prepared' => true]);
+            });
         }
     }
 
