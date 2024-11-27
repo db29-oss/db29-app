@@ -67,9 +67,7 @@ class TrafficRouterPrepare extends Command
                         }
                     }
 
-                    $ssh->exec('mkdir -p /etc/systemd/system/caddy.service.d/')
-                        ->exec('rm -rf /etc/systemd/system/caddy.service.d/override.conf')
-                        ->exec('touch /etc/systemd/system/caddy.service.d/override.conf');
+                    $commands = [];
 
                     $override_content_lines =
                         [
@@ -79,19 +77,28 @@ class TrafficRouterPrepare extends Command
                         ];
 
                     foreach ($override_content_lines as $override_content_line) {
-                        $ssh->exec(
+                        $commands[] =
                             'echo '.
                             $ssh->lbsl."'".
                             BashCharEscape::escape($override_content_line, $ssh->lbsl, $ssh->hbsl).
                             $ssh->lbsl."'".' '.
                             $ssh->lbsl.">".$ssh->lbsl."> ".
-                            '/etc/systemd/system/caddy.service.d/override.conf'
-                        );
+                            '/etc/systemd/system/caddy.service.d/override.conf';
                     }
 
-                    $ssh->exec('systemctl enable caddy')
-                        ->exec('systemctl daemon-reload')
-                        ->exec('systemctl start caddy');
+                    $ssh->exec(array_merge(
+                        [
+                            'mkdir -p /etc/systemd/system/caddy.service.d/',
+                            'rm -rf /etc/systemd/system/caddy.service.d/override.conf',
+                            'touch /etc/systemd/system/caddy.service.d/override.conf',
+                        ],
+                        $commands,
+                        [
+                            'systemctl enable caddy',
+                            'systemctl daemon-reload',
+                            'systemctl start caddy',
+                        ]
+                    ));
                 }
 
                 // extra_routes
