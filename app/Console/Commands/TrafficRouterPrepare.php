@@ -94,6 +94,8 @@ class TrafficRouterPrepare extends Command
                         [
                             'systemctl enable caddy',
                             'systemctl daemon-reload',
+                            'systemctl stop caddy',
+                            'rm -rf /var/lib/caddy/.config/caddy/autosave.json',
                             'systemctl start caddy',
                         ]
                     ));
