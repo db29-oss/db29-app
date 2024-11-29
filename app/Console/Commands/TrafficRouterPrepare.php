@@ -71,7 +71,7 @@ class TrafficRouterPrepare extends Command
                         [
                             "[Service]",
                             "ExecStart=", // reset mechanism of systemd
-                            $line." --resume" // add --resume
+                            "ExecStart=/usr/bin/caddy run --resume"
                         ];
 
                     foreach ($override_content_lines as $override_content_line) {
