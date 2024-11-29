@@ -2,19 +2,21 @@
 
 namespace App\Providers;
 
-use Illuminate\Contracts\Support\DeferrableProvider;
+use App\Services\SSHEngine;
 use Illuminate\Support\ServiceProvider;
-use K92\SshExec\SSHEngine;
 
-class SSHServiceProvider extends ServiceProvider implements DeferrableProvider
+class SSHServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->bind('ssh', function () {
+        $this->app->bind('ssh', function ($app, array $endpoint = []) {
             return (new SSHEngine)
-                ->from([
-                    'ssh_privatekey_path' => config('services.ssh.ssh_privatekey_path')
-                ]);
+                ->from(array_merge(
+                    [
+                        'ssh_privatekey_path' => config('services.ssh.ssh_privatekey_path')
+                    ],
+                    $endpoint
+                ));
         });
     }
 
@@ -23,4 +25,3 @@ class SSHServiceProvider extends ServiceProvider implements DeferrableProvider
         return ['ssh'];
     }
 }
-

@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            // queue -> init -> dns_up -> ct_up -> rt_up ->
-            // ct_dw -> rt_dw -> dns_dw
-            $table->string('status')->default('queue');
+            $table->string('dns_id')->nullable();
         });
     }
 
@@ -24,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            $table->dropColumn('uninit');
+            $table->dropColumn('dns_id');
         });
     }
 };

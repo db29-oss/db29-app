@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Machine;
 use Illuminate\Console\Command;
-use K92\Phputils\BashCharEscape;
 
 class MachinePrepare extends Command
 {
@@ -56,7 +55,7 @@ class MachinePrepare extends Command
                     $commands[] =
                         'echo '.
                         $ssh->lbsl."'".
-                        BashCharEscape::escape($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
+                        bce($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
                         $ssh->lbsl."'".' '.
                         $ssh->lbsl.">".$ssh->lbsl."> ".
                         '/etc/containers/storage.conf';
@@ -66,13 +65,13 @@ class MachinePrepare extends Command
                 $ssh->exec(
                     array_merge(
                         [
-                            'DEBIAN_FRONTEND=noninteractive apt install podman -y',
+                            'DEBIAN_FRONTEND=noninteractive apt install podman podman-compose -y',
                             'mkdir -p '.$machine->storage_path,
                             'touch /etc/containers/registries.conf.d/docker.conf',
 
                             'echo '.
                             $ssh->lbsl."'".
-                            BashCharEscape::escape(
+                            bce(
                                 'unqualified-search-registries = ["docker.io"]',
                                 $ssh->lbsl,
                                 $ssh->hbsl

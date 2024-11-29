@@ -3,9 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\TrafficRouter;
+use App\Services\SSHEngine;
 use Illuminate\Console\Command;
-use K92\Phputils\BashCharEscape;
-use K92\SshExec\SSHEngine;
 
 class TrafficRouterPrepare extends Command
 {
@@ -32,7 +31,7 @@ class TrafficRouterPrepare extends Command
         $traffic_routers = $traffic_routers->with('machine')->get();
 
         foreach ($traffic_routers as $traffic_router) {
-            cache()->store('lock')->lock('tr_'.$traffic_router->id)->get(function() use ($traffic_router) {
+            app('rt')->lock($traffic_router, function () use ($traffic_router) {
                 $ssh = app('ssh');
                 $ssh
                     ->to([
@@ -52,7 +51,6 @@ class TrafficRouterPrepare extends Command
                     $ssh->exec('ps aux \| grep caddy');
 
                     if (count($ssh->getOutput()) < 3) { // grep process and bash process
-                        logger()->debug('caddy start');
                         $ssh->exec('caddy start');
                     }
                 }
@@ -80,7 +78,7 @@ class TrafficRouterPrepare extends Command
                         $commands[] =
                             'echo '.
                             $ssh->lbsl."'".
-                            BashCharEscape::escape($override_content_line, $ssh->lbsl, $ssh->hbsl).
+                            bce($override_content_line, $ssh->lbsl, $ssh->hbsl).
                             $ssh->lbsl."'".' '.
                             $ssh->lbsl.">".$ssh->lbsl."> ".
                             '/etc/systemd/system/caddy.service.d/override.conf';
@@ -113,8 +111,11 @@ class TrafficRouterPrepare extends Command
         }
     }
 
-    protected function prepareExtraRoute(TrafficRouter $traffic_router, SSHEngine $ssh, array|null $extra_routes)
-    {
+    protected function prepareExtraRoute(
+        TrafficRouter $traffic_router,
+        SSHEngine $ssh,
+        array|null $extra_routes
+    ) {
         // setup apps
         $ssh->clearOutput();
         $ssh->exec('curl -s localhost:2019/config/');
@@ -123,7 +124,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape('{"apps": {}}', $ssh->lbsl, $ssh->hbsl).
+                bce('{"apps": {}}', $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/'
             );
@@ -140,7 +141,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape('{"http": {}}', $ssh->lbsl, $ssh->hbsl).
+                bce('{"http": {}}', $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/'
             );
@@ -156,7 +157,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape('{"servers": {}}', $ssh->lbsl, $ssh->hbsl).
+                bce('{"servers": {}}', $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/http/'
             );
@@ -205,7 +206,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape(json_encode($http_route), $ssh->lbsl, $ssh->hbsl).
+                bce(json_encode($http_route), $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/http/servers/http'
             );
@@ -221,7 +222,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape('{"listen": [":443"], "routes": []}', $ssh->lbsl, $ssh->hbsl).
+                bce('{"listen": [":443"], "routes": []}', $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/http/servers/https'
             );
@@ -247,7 +248,7 @@ class TrafficRouterPrepare extends Command
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape($extra_route_json, $ssh->lbsl, $ssh->hbsl).
+                bce($extra_route_json, $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/http/servers/https/routes/'
             );

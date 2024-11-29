@@ -5,10 +5,9 @@ namespace Tests\Feature;
 use App\Models\Machine;
 
 use App\Models\TrafficRouter;
+use App\Services\SSHEngine;
 use Artisan;
 use Exception;
-use K92\Phputils\BashCharEscape;
-use K92\SshExec\SSHEngine;
 use Tests\TestCase;
 
 class TrafficRouterPrepareTest extends TestCase
@@ -45,7 +44,6 @@ class TrafficRouterPrepareTest extends TestCase
             ->exec('test ! -f /usr/bin/caddy'); // no exception
 
         Artisan::call('app:traffic-router-prepare');
-
 
         while (true) {
             $output = [];
@@ -119,7 +117,7 @@ class TrafficRouterPrepareTest extends TestCase
             $ssh->exec(
                 'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
                 $ssh->lbsl.'\''.
-                BashCharEscape::escape(json_encode($random_route), $ssh->lbsl, $ssh->hbsl).
+                bce(json_encode($random_route), $ssh->lbsl, $ssh->hbsl).
                 $ssh->lbsl.'\' '.
                 'localhost:2019/config/apps/http/servers/https/routes/',
             );

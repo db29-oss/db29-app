@@ -12,7 +12,7 @@
       <label for="email">email</label>
       <input type="text" id="email" name="email" value="{{ auth()->user()->email }}">
       @error('email')
-      <div style="display: inline; color: red">{{ __('trans.email_invalid') }}</div>
+      <div style="display: inline; color: red">{{ $message }}</div>
       @enderror
     </div>
 

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Machine;
 use App\Models\TrafficRouter;
-use K92\Phputils\BashCharEscape;
 use Tests\TestCase;
 
 class TrafficRouterTest extends TestCase
@@ -84,7 +83,7 @@ class TrafficRouterTest extends TestCase
         $curl_cmd = 'curl localhost:2019/load '.
             '-H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' '.
             '-d '.$ssh->lbsl.'\''.
-            BashCharEscape::escape($json_config, $ssh->lbsl, $ssh->hbsl).
+            bce($json_config, $ssh->lbsl, $ssh->hbsl).
             $ssh->lbsl.'\'';
 
         $ssh->exec($curl_cmd);

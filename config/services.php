@@ -18,6 +18,11 @@ return [
         'ssh_privatekey_path' => storage_path('app/private/'.env('SSH_PRIVATEKEY_NAME')),
     ],
 
+    'cloudflare' => [
+        'zone_id' => env('CF_ZONE_ID'),
+        'zone_token' => env('CF_ZONE_TOKEN'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

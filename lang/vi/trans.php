@@ -5,7 +5,6 @@ return [
     "advanced_feature" => "tính năng nâng cao",
     "blog" => "bài viết",
     "create" => "tạo mới",
-    "email_invalid" => "email không hợp lệ",
     "faq" => "câu hỏi thường gặp",
     "forum" => "diễn đàn",
     "login" => "đăng nhập",

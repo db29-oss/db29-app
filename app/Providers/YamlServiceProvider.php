@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Yaml;
 use Illuminate\Support\ServiceProvider;
-use Symfony\Component\Yaml\Yaml;
 
 class YamlServiceProvider extends ServiceProvider
 {
@@ -12,7 +12,7 @@ class YamlServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton('yml', function () {
+        $this->app->bind('yml', function () {
             return new Yaml;
         });
     }

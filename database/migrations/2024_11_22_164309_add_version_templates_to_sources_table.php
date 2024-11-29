@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::table('sources', function (Blueprint $table) {
             // $versions = [
             //     'tag' => 'version',
+            //     'commit' => 'commit',
             //     'init_tmpl' => 'init template',
             //     'bkup_tmpl' => 'backup template',
             //     'rsto_tmpl' => 'restore template,
+            //     'docker_compose' => 'docker compose',
             // ]
             $table->jsonb('version_templates')->nullable();
         });

@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Machine;
+use App\Services\SSHEngine;
 use Artisan;
-use K92\SshExec\SSHEngine;
 use Tests\TestCase;
 
 class MachinePrepareTest extends TestCase
