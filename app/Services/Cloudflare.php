@@ -20,7 +20,7 @@ class Cloudflare {
         $data = [];
 
         if (array_key_exists('comment', $info)) {
-            $data['comment'] = $info['comment'];
+            $data['comment'] = (string) $info['comment'];
         }
 
         $data['name'] = $subdomain.'.'.$this->domain;
@@ -40,7 +40,7 @@ class Cloudflare {
         $command =
             "curl -s -X POST ".
             "https://api.cloudflare.com/client/v4/zones/".$this->zone_id."/dns_records ".
-            "-H \"Contenp-Type: application/json\" ".
+            "-H \"Content-Type: application/json\" ".
             "-H \"Authorization: Bearer ".$this->zone_token."\" ".
             "-d '".json_encode($data)."'";
 

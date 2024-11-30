@@ -17,7 +17,4 @@ return [
     "update" => "cập nhật",
     "save_login_id" => "LƯU Ý: lưu login_id ở một nơi an toàn",
     "change_default_config_at" => "Bạn có thể thay đổi thiết lập mặc định tại",
-
-            // queue -> init -> dns_up -> ct_up -> rt_up ->
-            // ct_dw -> rt_dw -> dns_dw
 ];
