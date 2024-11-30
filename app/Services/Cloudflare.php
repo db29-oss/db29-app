@@ -30,7 +30,7 @@ class Cloudflare {
         $ip_address = gethostbyname($hostname);
 
         if ($ip_address === false) {
-            throw new Exception('XDB291991: unable get host ip address');
+            throw new Exception('DB291991: unable get host ip address');
         }
 
         $data['content'] = $ip_address;
@@ -47,13 +47,19 @@ class Cloudflare {
         exec($command, $output, $exit_code);
 
         if ($exit_code !== 0) {
-            throw new Exception('XDB291992: curl create new dns record fail');
+            throw new Exception('DB291992: curl create new dns record fail');
         }
 
         $result = json_decode($output[0], true);
 
         if ($result['success'] !== true) {
-            throw new Exception('XDB291993: create new dns record fail');
+            logger()->error('DB291994: create new dns record fail', [
+                'hostname' => $hostname,
+                'info' => $info
+                'subdomain' => $subdomain,
+            ]);
+
+            throw new Exception('DB291993: create new dns record fail');
         }
 
         return $result['result']['id'];

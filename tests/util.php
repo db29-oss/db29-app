@@ -53,7 +53,7 @@ function test_util_migrate_fresh(): bool { #cr_46869
 
     if (! $it_work) {
 
-        throw new \Exception('TDB291990: unable get tables');
+        throw new \Exception('DB291990: unable get tables');
     }
 
     while (! empty($tables)) {
