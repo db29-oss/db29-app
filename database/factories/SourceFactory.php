@@ -20,6 +20,7 @@ class SourceFactory extends Factory
             'name' => fake()->word . ' ' . fake()->word,
             'demo_link' => fake()->url,
             'source_link' => fake()->url,
+            'enabled' => fake()->boolean,
         ];
     }
 }

@@ -72,7 +72,23 @@ class PageController extends Controller
 
     public function instance()
     {
-        return view('instance.instance');
+        $instances = Instance::whereUserId(auth()->user()->id)->with('source')->get();
+
+        $sn_ii_map = []; // source_name_instance_id_map
+
+        foreach ($instances as $instance) {
+            if (! array_key_exists($instance->source->name, $sn_ii_map)) {
+                $sn_ii_map[$instance->source->name] = [];
+            }
+
+            $sn_ii_map[$instance->source->name][$instance->id] = true;
+        }
+
+        ksort($sn_ii_map);
+
+        return view('instance.instance')
+            ->with('instances', $instances)
+            ->with('sn_ii_map', $sn_ii_map);
     }
 
     public function source()
