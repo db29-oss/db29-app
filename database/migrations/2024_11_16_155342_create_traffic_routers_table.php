@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('traffic_routers', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('machine_id');
-            $table->foreign('machine_id')->references('id')->on('machines');
+            $table->uuid('id');
+            $table->uuid('machine_id')->nullable();
             $table->boolean('prepared')->default(false);
             $table->timestamps();
         });

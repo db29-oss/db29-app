@@ -28,7 +28,7 @@ class ShowSupportedSourceTest extends TestCase
 
         Source::factory()->count(10)->create();
 
-        $s_s = Source::get();
+        $s_s = Source::whereEnabled(false)->get();
 
         $response = $this->get('source');
 

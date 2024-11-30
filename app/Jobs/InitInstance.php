@@ -29,8 +29,8 @@ class InitInstance implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        private readonly int $instance_id,
-        private readonly int $source_id,
+        private readonly string $instance_id,
+        private readonly string $source_id,
         private readonly array $reg_info = []
     ) {
         $this->ssh = app('ssh');

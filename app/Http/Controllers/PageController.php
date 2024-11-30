@@ -161,42 +161,41 @@ class PageController extends Controller
             return redirect()->route('source');
         }
 
-        $now = now();
+        $now = now()->toDateTimeString();
+
+        $instance_id = str()->uuid()->toString();
+
         $sql_params = [];
-        $sql = 'with '.
-            'update_user as ('.
-                'update users set '.
-                'instance_count = instance_count + 1, '.
-                'updated_at = ? '. # $now
-                'where id = ? '. # auth()->user()->id
-                'returning id'.
-            ') '.
+        $sql =
+            'begin; '.
+            'update users set '.
+            'instance_count = instance_count + 1, '.
+            'updated_at = \''.$now.'\' '.
+            'where id = \''.auth()->user()->id.'\'; '.
             'insert into instances ('.
+                'id, '.
                 'source_id, '.
                 'user_id, '.
                 'created_at, '.
                 'updated_at'.
             ') values ('.
-                '?, '. # $source->id
-                '?, '. # auth()->user()->id
-                '?, '. # $now
-                '?'. # $now
-            ') '.
-            'returning id';
+                '\''.$instance_id.'\', '. # $instance_id
+                '\''.$source->id.'\', '. # $source->id
+                '\''.auth()->user()->id.'\', '. # auth()->user()->id
+                '\''.$now.'\', '. # $now
+                '\''.$now.'\' '. # $now
+            '); '.
+            'commit;';
 
-        $sql_params[] = $now;
-        $sql_params[] = auth()->user()->id;
+        $db = app('db')->unprepared($sql);
 
-        $sql_params[] = $source->id;
-        $sql_params[] = auth()->user()->id;
-        $sql_params[] = $now;
-        $sql_params[] = $now;
-
-        $db = app('db')->select($sql, $sql_params);
+        if ($db !== true) {
+            return redirect()->route('source');
+        }
 
         $reg_info = $this->{'filter_input_'.$source_name}();
 
-        InitInstance::dispatch($db[0]->id, $source->id, $reg_info);
+        InitInstance::dispatch($instance_id, $source->id, $reg_info);
 
         return redirect()->route('instance');
     }
