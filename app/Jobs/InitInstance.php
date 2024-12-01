@@ -65,15 +65,19 @@ class InitInstance implements ShouldQueue
             $subdomain = str(str()->random(8))->lower()->toString();
         }
 
-        $dns_id = str(str()->random(32))->lower(); // for testing
+        $dns_id = $instance->dns_id;
 
-        if (app('env') === 'production') {
-            $dns_id = app('cf')
-                ->addDnsRecord(
-                    $subdomain,
-                    $this->machine->ip_address,
-                    ['comment' => $this->instance_id]
-                );
+        if (! $dns_id) {
+            $dns_id = str(str()->random(32))->lower(); // for testing
+
+            if (app('env') === 'production') {
+                $dns_id = app('cf')
+                    ->addDnsRecord(
+                        $subdomain,
+                        $this->machine->ip_address,
+                        ['comment' => $this->instance_id]
+                    );
+            }
         }
 
         $now = now();
