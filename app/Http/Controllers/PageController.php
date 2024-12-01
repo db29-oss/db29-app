@@ -211,7 +211,7 @@ class PageController extends Controller
 
         $reg_info = $this->{'filter_input_'.$source_name}();
 
-        InitInstance::dispatch($instance_id, $source->id, $reg_info);
+        InitInstance::dispatch($instance_id, $reg_info);
 
         return redirect()->route('instance');
     }

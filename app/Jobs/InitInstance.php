@@ -31,7 +31,6 @@ class InitInstance implements ShouldQueue
      */
     public function __construct(
         private readonly string $instance_id,
-        private readonly string $source_id,
         private readonly array $reg_info = []
     ) {
         $this->ssh = app('ssh');
@@ -42,7 +41,9 @@ class InitInstance implements ShouldQueue
      */
     public function handle(): void
     {
-        $this->source = Source::whereId($this->source_id)->first();
+        $instance = Instance::whereId($this->instance_id)->with('source')->first();
+
+        $this->source = $instance->source;
 
         $this->version_templates = json_decode($this->source->version_templates, true);
 
@@ -52,14 +53,17 @@ class InitInstance implements ShouldQueue
 
         $this->machine = Machine::whereNull('user_id')->inRandomOrder()->first(); // TODO
 
-        Instance::whereId($this->instance_id)
-            ->update([
-                'status' => 'init',
-                'machine_id' => $this->machine->id,
-            ]);
+        // init
+        $instance->status = 'init';
+        $instance->machine_id = $this->machine->id;
+        $instance->save();
 
         // dns
-        $subdomain = str(str()->random(8))->lower()->toString();
+        $subdomain = $instance->subdomain;
+
+        if ($subdomain === null) {
+            $subdomain = str(str()->random(8))->lower()->toString();
+        }
 
         $dns_id = str(str()->random(32))->lower(); // for testing
 
@@ -78,13 +82,15 @@ class InitInstance implements ShouldQueue
             'update instances set '.
             'subdomain = ?, '. # $subdomain
             'dns_id = ?, '. # $dns_id
-            'status = ? '. # 'dns'
+            'status = ?, '. # 'dns'
+            'updated_at = ? '. # $now
             'where id = ? '. # $this->instance_id
             'returning *';
 
         $sql_params[] = $subdomain;
         $sql_params[] = $dns_id;
         $sql_params[] = 'dns_up';
+        $sql_params[] = $now;
         $sql_params[] = $this->instance_id;
 
         $db = app('db')->select($sql, $sql_params);
@@ -122,7 +128,7 @@ class InitInstance implements ShouldQueue
 
         $host_port = (new $job_class([
             'docker_compose' => $this->docker_compose,
-            'instance_id' => $this->instance_id,
+            'instance' => $instance,
             'latest_version_template' => $this->latest_version_template,
             'machine' => $this->machine,
             'reg_info' => $this->reg_info,
@@ -151,9 +157,7 @@ class InitInstance implements ShouldQueue
 
         app('rt', [$this->ssh])->addRule($rule);
 
-        Instance::whereId($this->instance_id)
-            ->update([
-                'status' => 'rt_up', // router up
-            ]);
+        $instance->status = 'rt_up'; // router up
+        $instance->save();
     }
 }

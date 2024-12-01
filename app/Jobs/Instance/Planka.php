@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Instance;
 
-use App\Models\Instance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -14,7 +13,7 @@ class Planka implements ShouldQueue
         private array $doc
     ) {
         $this->docker_compose = $doc['docker_compose'];
-        $this->instance_id = $doc['instance_id'];
+        $this->instance = $doc['instance'];
         $this->latest_version_template = $doc['latest_version_template'];
         $this->machine = $doc['machine'];
         $this->reg_info = $doc['reg_info'];
@@ -71,22 +70,22 @@ class Planka implements ShouldQueue
                 bce($yml_line, $this->ssh->lbsl, $this->ssh->hbsl).
                 $this->ssh->lbsl.'\''.' '.
                 $this->ssh->lbsl.">".$this->ssh->lbsl."> ".
-                $this->machine->storage_path.'instance/'.$this->instance_id.'/docker-compose.yml';
+                $this->machine->storage_path.'instance/'.$this->instance->id.'/docker-compose.yml';
         }
 
         $this->ssh
              ->exec(array_merge(
                  [
-                     'mkdir -p '.$this->machine->storage_path.'instance/'.$this->instance_id,
+                     'mkdir -p '.$this->machine->storage_path.'instance/'.$this->instance->id,
                      'rm -rf '.
-                     $this->machine->storage_path.'instance/'.$this->instance_id.'/docker-compose.yml',
-                     'mkdir -p '.$this->machine->storage_path.'instance/'.$this->instance_id
+                     $this->machine->storage_path.'instance/'.$this->instance->id.'/docker-compose.yml',
+                     'mkdir -p '.$this->machine->storage_path.'instance/'.$this->instance->id
                  ],
                  $commands,
                  [
-                     'cd '.$this->machine->storage_path.'instance/'.$this->instance_id.' \\&\\& '.
+                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
                      'podman-compose up -d',
-                     'podman port '.$this->instance_id.'_planka_1'
+                     'podman port '.$this->instance->id.'_planka_1'
                  ]
              ));
 
@@ -98,15 +97,15 @@ class Planka implements ShouldQueue
 
         $host_port = trim(end($port_explode));
 
-        Instance::whereId($this->instance_id)
-            ->update([
-                'status' => 'ct_up', // container up
-                'version_template' => [
-                    'docker_compose' => $this->docker_compose,
-                    'port' => $host_port,
-                    'tag' => $this->latest_version_template,
-                ]
-            ]);
+        $this->instance->status = 'ct_up';
+        $this->instance->version_template =
+            [
+                'docker_compose' => $this->docker_compose,
+                'port' => $host_port,
+                'tag' => $this->latest_version_template,
+            ];
+
+        $this->instance->save();
 
         return $host_port;
     }

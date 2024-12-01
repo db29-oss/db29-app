@@ -16,7 +16,6 @@ class Cloudflare {
 
     public function addDnsRecord(string $subdomain, string $hostname, array $info = []): string
     {
-
         $data = [];
 
         if (array_key_exists('comment', $info)) {

@@ -59,6 +59,9 @@ class PostRegisterInstanceTest extends TestCase
         $this->assertEquals(1, Instance::count());
 
         $inst = Instance::first();
+        $this->assertEquals('rt_up', $inst->status);
+        $this->assertNotNull($inst->dns_id);
+        $this->assertNotNull($inst->subdomain);
 
         $ssh = new SSHEngine;
 
@@ -78,6 +81,8 @@ class PostRegisterInstanceTest extends TestCase
                 break;
             }
         }
+
+        $inst->refresh();
 
         // clean up
         cleanup_container('db29_post_register_instance');
