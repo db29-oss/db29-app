@@ -16,6 +16,8 @@ class TrafficRouterTest extends TestCase
 
         $ssh_privatekey_path = sys_get_temp_dir().'/db29_traffic_router';
 
+        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
+
         // plan:
         // start caddy without any config
         // ensure no random path exist
@@ -35,8 +37,6 @@ class TrafficRouterTest extends TestCase
 
         $random_path = str()->random(20);
         $random_port = rand(1025, 30000);
-
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
 
         // no path exist
         $ssh = app('ssh')

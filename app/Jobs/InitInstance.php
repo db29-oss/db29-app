@@ -8,10 +8,11 @@ use App\Models\Source;
 use App\Services\SSHEngine;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\InteractsWithQueue;
 
 class InitInstance implements ShouldQueue
 {
-    use Queueable;
+    use InteractsWithQueue, Queueable;
 
     private Machine $machine;
 

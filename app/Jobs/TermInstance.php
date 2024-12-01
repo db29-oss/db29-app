@@ -9,19 +9,11 @@ class TermInstance implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        private readonly string $instance_id
+    ) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
-        //
     }
 }

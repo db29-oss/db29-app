@@ -9,9 +9,4 @@ use Illuminate\Database\Eloquent\Model;
 class Machine extends Model
 {
     use HasFactory, HasUuids;
-
-    public function trafficRouter()
-    {
-        return $this->hasOne(TrafficRouter::class);
-    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\InitInstance;
+use App\Jobs\TermInstance;
 use App\Models\Instance;
 use App\Models\Source;
 use App\Models\User;
@@ -89,6 +90,21 @@ class PageController extends Controller
         return view('instance.instance')
             ->with('instances', $instances)
             ->with('sn_ii_map', $sn_ii_map);
+    }
+
+    public function deleteInstance()
+    {
+        $instance = Instance::query()
+            ->whereId(request('instance_id'))
+            ->whereUserId(auth()->user()->id)->first(['id', 'user_id']);
+
+        if (! $instance) {
+            return redirect()->route('instance');
+        }
+
+        TermInstance::dispatch($instance->id);
+
+        return redirect()->route('instance');
     }
 
     public function source()

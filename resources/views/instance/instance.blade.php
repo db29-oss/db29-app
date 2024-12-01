@@ -33,7 +33,19 @@
             @endif
             />
           </svg>
-          {{ $instance->subdomain.'.'.config('app.domain') }}<br>
+          {{ $instance->subdomain.'.'.config('app.domain') }}
+          <form method="POST">
+            @csrf
+
+            @method('DELETE')
+
+            <input hidden name="instance_id" value="{{ $instance->id }}"/>
+
+            <button onclick="window.confirm('{{ __('trans.confirm').' '.__('trans.delete').'?' }}')">
+              {{ __('trans.delete') }}
+            </button>
+          </form>
+          <br>
         @endif
       @endforeach
     @endforeach
