@@ -19,4 +19,9 @@ class Instance extends Model
     {
         return $this->belongsTo(Source::class);
     }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
+    }
 }
