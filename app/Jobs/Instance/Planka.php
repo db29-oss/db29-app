@@ -31,6 +31,17 @@ class Planka implements ShouldQueue
 
     public function handle(): int
     {
+        foreach (
+            $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
+        ) {
+            if (str_starts_with($environment, 'BASE_URL=')) {
+                $this->docker_compose['services']['planka']['environment'][$env_idx] =
+                    'BASE_URL=https://'.$this->machine->subdomain.config('app.domain');
+
+                break;
+            }
+        }
+
         $this->docker_compose['services']['planka']['environment'][] =
             'DEFAULT_ADMIN_EMAIL='.$this->reg_info['email'];
 
