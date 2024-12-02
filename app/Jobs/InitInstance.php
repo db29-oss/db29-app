@@ -41,7 +41,11 @@ class InitInstance implements ShouldQueue
      */
     public function handle(): void
     {
-        $instance = Instance::whereId($this->instance_id)->with('source')->first();
+        $instance = Instance::query()
+            ->whereId($this->instance_id)
+            ->with('source')
+            ->with('machine')
+            ->first();
 
         $this->source = $instance->source;
 
@@ -51,11 +55,15 @@ class InitInstance implements ShouldQueue
 
         $resources = $job_class::initialResourceConsumption();
 
-        $this->machine = Machine::query()
-             ->where('enabled', true)
-             ->whereNull('user_id')
-             ->inRandomOrder()
-             ->first(); // TODO
+        $this->machine = $instance->machine;
+
+        if (! $this->machine) {
+            $this->machine = Machine::query()
+                 ->where('enabled', true)
+                 ->whereNull('user_id')
+                 ->inRandomOrder()
+                 ->first(); // TODO
+        }
 
         // init
         $instance->status = 'init';
