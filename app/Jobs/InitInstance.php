@@ -51,7 +51,11 @@ class InitInstance implements ShouldQueue
 
         $resources = $job_class::initialResourceConsumption();
 
-        $this->machine = Machine::whereNull('user_id')->inRandomOrder()->first(); // TODO
+        $this->machine = Machine::query()
+             ->where('enabled', true)
+             ->whereNull('user_id')
+             ->inRandomOrder()
+             ->first(); // TODO
 
         // init
         $instance->status = 'init';

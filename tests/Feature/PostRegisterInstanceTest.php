@@ -37,6 +37,7 @@ class PostRegisterInstanceTest extends TestCase
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
         $m->storage_path = '/opt/randomdirname/';
+        $m->enabled = true;
         $m->save();
 
         $tr = new TrafficRouter;
