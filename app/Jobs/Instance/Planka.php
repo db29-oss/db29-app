@@ -42,6 +42,8 @@ class Planka implements ShouldQueue
             }
         }
 
+        $this->docker_compose['services']['planka']['container_name'] = $this->instance->id;
+
         $this->docker_compose['services']['planka']['environment'][] =
             'DEFAULT_ADMIN_EMAIL='.$this->reg_info['email'];
 
@@ -96,7 +98,7 @@ class Planka implements ShouldQueue
                  [
                      'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
                      'podman-compose up -d',
-                     'podman port '.$this->instance->id.'_planka_1'
+                     'podman port '.$this->instance->id,
                  ]
              ));
 
