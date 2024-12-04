@@ -5,53 +5,232 @@ namespace App\Services;
 use App\Models\TrafficRouter;
 use Closure;
 use Exception;
-use Illuminate\Contracts\Cache\LockTimeoutException;
 
 class Router
 {
-    private readonly bool $ec_ssh;
+    private string|null $lock_owner = null;
 
     public function __construct(
-        private SSHEngine|null $ssh = null
+        private TrafficRouter $tr,
+        private SSHEngine|null $ssh = null,
     ) {
+        $this->tr = $tr;
         $this->ssh = $ssh;
 
-        $existing_connection_ssh = true;
-
-        if (is_null($this->ssh)) {
-            $this->ssh = app('ssh');
-            $existing_connection_ssh = false;
+        if (is_null($ssh)) {
+            $this->ssh = app('ssh')
+                 ->to([
+                     'ssh_address' => $tr->machine->ip_address,
+                     'ssh_port' => $tr->machine->ssh_port,
+                 ]);
         }
-
-        $this->ec_ssh = $existing_connection_ssh;
     }
 
-    public function lock(TrafficRouter $tr, Closure $callback = null)
+    public function lock(?Closure $callback = null)
     {
-        return cache()->store('lock')->lock('tr_'.$tr->id)->get($callback);
-    }
-
-    public function fetchRule(array|null $endpoint = null): string
-    {
-        if (! $this->ec_ssh) {
-            $this->ssh->to([
-                'ssh_address' => $endpoint['ip_address'],
-                'ssh_port' => $endpoint['ssh_port']
-            ]);
-
-            $this->ec_ssh = true;
+        if (! is_null($this->lock_owner)) {
+            return;
         }
 
+        if (is_null($this->tr)) {
+            throw new Exception('DB291995: must have traffic router first');
+        }
+
+        $lock = cache()->store('lock')->lock('tr_'.$this->tr->id);
+
+        $this->lock_owner = $lock->owner();
+
+        try {
+            $lock->get($callback);
+        } finally {
+            $this->unlock();
+        }
+    }
+
+    public function unlock()
+    {
+        try {
+            cache()
+                ->store('lock')
+                ->restoreLock('tr_'.$this->tr->id, $this->lock_owner)
+                ->release();
+        } finally {
+            $this->lock_owner = null;
+        }
+    }
+
+    public function fetchRule(): string
+    {
         $this->ssh->exec('curl -s localhost:2019/config/apps/http/servers/https/routes/');
 
         return $this->ssh->getLastLine();
     }
 
+    public function findRuleByDomainName(
+        string $domain_name,
+        array|null $endpoint = null
+    ): string|false {
+        $o_f_rule_str = $this->fetchRule($endpoint);
+
+        $strpos = strpos($o_f_rule_str, $domain_name);
+
+        if ($strpos === false) {
+            return false;
+        }
+
+        $s_idx = $strpos;
+        $e_idx = $strpos;
+        $s_count = 0;
+        $e_count = 0;
+
+        while ($s_idx > 0) {
+            $s_idx -= 1;
+
+            if ($o_f_rule_str[$s_idx] === '{') {
+                $s_count += 1;
+
+                if ($s_count === 4) {
+                    break;
+                }
+            }
+        }
+
+        while ($e_idx < strlen($o_f_rule_str)) {
+            $e_idx += 1;
+
+            if ($o_f_rule_str[$e_idx] === '}') {
+                $e_count += 1;
+
+                if ($e_count === 2) {
+                    break;
+                }
+            }
+        }
+
+        return substr($o_f_rule_str, $s_idx, $e_idx);
+    }
+
+    public function updatePortByDomainName(
+        string $domain_name,
+        int $port,
+    ) {
+        $this->lock();
+
+        $o_rule_str = $this->findRuleByDomainName($domain_name);
+
+        $preg_replace = preg_replace(
+            '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
+            '${1}'.$port.'"}',
+            $o_rule_str
+        );
+
+        if (is_null($preg_replace)) {
+            return;
+        }
+
+        $this->updateRule($o_rule_str, $preg_replace);
+
+        $this->unlock();
+    }
+
+    public function batchUpdatePortsByDomainNames(
+        array $domain_names,
+        array $ports,
+    ) {
+        $this->lock();
+
+        $o_f_rule_str = $this->fetchRule();
+
+        $domain_names_count = count($domain_names);
+        $ports_count = count($ports);
+
+        if ($domain_names_count !== $ports_count) {
+            throw new Exception('DB291996: elements of domain_names and ports must be the same');
+        }
+
+        $n_f_rule_str = $o_f_rule_str;
+
+        for ($i = 0; $i < count($domain_names); $i++) {
+            $strpos = strpos($o_f_rule_str, $domain_names[$i]);
+
+            if ($strpos === false) {
+                continue;
+            }
+
+            $s_idx = $strpos;
+            $e_idx = $strpos;
+            $s_count = 0;
+            $e_count = 0;
+
+            while ($s_idx > 0) {
+                $s_idx -= 1;
+
+                if ($o_f_rule_str[$s_idx] === '{') {
+                    $s_count += 1;
+
+                    if ($s_count === 4) {
+                        break;
+                    }
+                }
+            }
+
+            while ($e_idx < strlen($o_f_rule_str)) {
+                $e_idx += 1;
+
+                if ($o_f_rule_str[$e_idx] === '}') {
+                    $e_count += 1;
+
+                    if ($e_count === 2) {
+                        break;
+                    }
+                }
+            }
+
+            $substr = substr($n_f_rule_str, $s_idx, $e_idx);
+
+            $preg_replace = preg_replace(
+                '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
+                '${1}'.$ports[$i].'"}',
+                $substr
+            );
+
+            if (is_null($preg_replace)) {
+                continue;
+            }
+
+            $n_f_rule_str = str_replace(
+                substr($n_f_rule_str, $s_idx, $e_idx),
+                $preg_replace,
+                $n_f_rule_str
+            );
+        }
+
+        // TODO command max length is 2**16
+
+        $command =
+            'curl -s -X PATCH -H '.
+            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
+            $this->ssh->lbsl."'".
+            bce($n_f_rule_str, $this->ssh->lbsl, $this->ssh->hbsl).
+            $this->ssh->lbsl."'"." ".
+            "localhost:2019/config/apps/http/servers/https/routes/";
+
+        try {
+            $this->ssh->exec($command);
+        } finally {
+            $this->unlock();
+        }
+    }
+
     public function addRule(array $rule, array|null $endpoint = null)
     {
-        $o_rule_str = $this->fetchRule($endpoint);
+        ksort($rule);
 
-        if (str_contains($o_rule_str, $rule['match'][0]['host'][0])) {
+        $o_f_rule_str = $this->fetchRule($endpoint);
+
+        $json_rule = json_encode($rule);
+
+        if (str_contains($o_f_rule_str, $json_rule)) {
             return;
         }
 
@@ -66,32 +245,56 @@ class Router
         $this->ssh->exec($command);
     }
 
-    public function delRule(array $rule, array|null $endpoint = null)
+    public function updateRule(array|string $old_rule, array|string $rule, array|null $endpoint = null)
     {
-        ksort($rule);
+        $this->lock();
 
-        $o_rule_str = $this->fetchRule($endpoint);
+        $o_f_rule_str = $this->fetchRule($endpoint);
 
-        $json_rule = json_encode($rule);
-
-        $strpos = strpos($o_rule_str, $json_rule);
-
-        if ($strpos === false) {
-            return;
+        if (is_array($old_rule)) {
+            ksort($old_rule);
+            $old_rule = json_encode($old_rule);
         }
 
-        if ($o_rule_str[$strpos - 1] === ',') {
-            $n_rule_str =
-                substr($o_rule_str, 0, $strpos - 1).
-                substr($o_rule_str, $strpos);
-        } elseif ($o_rule_str[$strpos + strlen($json_rule)] === ',') {
-            $n_rule_str =
-                substr($o_rule_str, 0, $strpos).
-                substr($o_rule_str, $strpos + strlen($json_rule) + 1);
-        } else {
-            $n_rule_str =
-                substr($o_rule_str, $strpos).
-                substr($o_rule_str, $strpos + strlen($json_rule));
+        if (is_array($rule)) {
+            ksort($rule);
+            $rule = json_encode($rule);
+        }
+
+        $n_f_rule_str = str_replace($old_rule, $rule, $o_f_rule_str);
+
+        $command =
+            'curl -s -X PATCH -H '.
+            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
+            $this->ssh->lbsl."'".
+            bce($n_f_rule_str, $this->ssh->lbsl, $this->ssh->hbsl).
+            $this->ssh->lbsl."'"." ".
+            "localhost:2019/config/apps/http/servers/https/routes/";
+
+        try {
+            $this->ssh->exec($command);
+        } finally {
+            $this->unlock();
+        }
+    }
+
+    public function ruleExists(array|string $rule, array|null $endpoint = null): bool
+    {
+        if (is_array($rule)) {
+            ksort($rule);
+            $rule = json_encode($rule);
+        }
+
+        $o_f_rule_str = $this->fetchRule($endpoint);
+
+        return str_contains($o_f_rule_str, $rule);
+    }
+
+    public function deleteRule(array|string $rule, array|null $endpoint = null)
+    {
+        if (is_array($rule)) {
+            ksort($rule);
+            $rule = json_encode($rule);
         }
 
         $command =
@@ -105,17 +308,8 @@ class Router
         $this->ssh->exec($command);
     }
 
-    public function setup(TrafficRouter $traffic_router, array|null $endpoint = null)
+    public function setup()
     {
-        if (! $this->ec_ssh) {
-            $this->ssh->to([
-                'ssh_address' => $endpoint['ip_address'],
-                'ssh_port' => $endpoint['ssh_port']
-            ]);
-
-            $this->ec_ssh = true;
-        }
-
         $ssh = $this->ssh;
 
         // setup apps
@@ -182,7 +376,7 @@ class Router
                             "handle" => [
                                 [
                                     'handler' => 'file_server',
-                                    'root' => $traffic_router->machine->storage_path.'www/'
+                                    'root' => $this->tr->machine->storage_path.'www/'
                                 ]
                             ]
                         ],
@@ -236,7 +430,11 @@ class Router
 
         $existing_routes_str = $ssh->getLastLine();
 
-        foreach (json_decode($traffic_router->extra_routes, true) as $extra_route) {
+        if (is_null($this->tr->extra_routes)) {
+            return;
+        }
+
+        foreach (json_decode($this->tr->extra_routes, true) as $extra_route) {
             $extra_route_json = json_encode($extra_route);
 
             if (str_contains($existing_routes_str, $extra_route_json)) {

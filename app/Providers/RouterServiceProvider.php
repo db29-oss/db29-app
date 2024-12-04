@@ -14,13 +14,18 @@ class RouterServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind('rt', function ($app, $params) {
+            $traffic_router = null;
             $ssh = null;
 
-            if (count($params)) {
-                $ssh = $params[0];
+            if (array_key_exists(0, $params)) {
+                $traffic_router = $params[0];
             }
 
-            return new Router($ssh);
+            if (array_key_exists(1, $params)) {
+                $ssh = $params[1];
+            }
+
+            return new Router($traffic_router, $ssh);
         });
     }
 

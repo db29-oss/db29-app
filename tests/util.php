@@ -88,6 +88,8 @@ function test_util_migrate_fresh(): bool { #cr_46869
 }
 
 function setup_container(string $container_name): int {
+    setup_pod($container_name);
+
     $local_image = true; // to attach some process to it, e.g: tail -F /dev/null
 
     if (file_exists(base_path('tests/Dockerfile/'.$container_name.'.Dockerfile'))) {
@@ -107,13 +109,19 @@ function setup_container(string $container_name): int {
 
     exec('ssh-keygen -N "" -t ed25519 -C "'.$container_name.'" -f '.$ssh_privatekey_path);
 
+    $output = [];
+
     exec('podman container exists '.$container_name, $output, $exit_code);
 
     if ($exit_code === 0) {
         exec('podman kill '.$container_name, $output, $exit_code);
 
         while (true) {
-            exec('podman container exists '.$container_name, $output, $exit_code);
+            exec(
+                'podman container exists '.$container_name,
+                $output,
+                $exit_code
+            );
 
             if ($exit_code === 1) {
                 break;
@@ -122,7 +130,8 @@ function setup_container(string $container_name): int {
     }
 
     $podman_run_cmd =
-        'podman run --privileged --rm -d --name '.$container_name.' -p 22 '.$container_name;
+        'podman run --pod '.$container_name.'_pod '.
+        '--privileged --rm -d --name '.$container_name.' '.$container_name;
 
     if (! $local_image) {
         $podman_run_cmd .= ' tail -F /dev/null';
@@ -148,8 +157,15 @@ function setup_container(string $container_name): int {
     return parse_url($output[0])['port'];
 }
 
+function setup_pod(string $container_name) {
+    exec('podman pod create --name '.$container_name.'_pod -p 22 2>&1 > /dev/null');
+}
+
 function cleanup_container(string $container_name) {
-    exec('podman container exists '.$container_name.' && podman kill '.$container_name);
+    exec(
+        'podman container exists '.$container_name.' '.'&& '.
+        'podman kill '.$container_name
+    );
 
     unlink(sys_get_temp_dir().'/'.$container_name);
     unlink(sys_get_temp_dir().'/'.$container_name.'.pub');

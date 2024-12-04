@@ -30,16 +30,17 @@ class TrafficRouterPrepare extends Command
 
         $traffic_routers = $traffic_routers->with('machine')->get();
 
-        foreach ($traffic_routers as $traffic_router) {
-            app('rt')->lock($traffic_router, function () use ($traffic_router) {
-                $ssh = app('ssh');
-                $ssh
-                    ->to([
-                        'ssh_address' => $traffic_router->machine->ip_address,
-                        'ssh_port' => $traffic_router->machine->ssh_port,
-                    ])
-                    ->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
+        foreach ($traffic_routers as $tr) {
+            $ssh = app('ssh')
+                ->to([
+                    'ssh_address' => $tr->machine->ip_address,
+                    'ssh_port' => $tr->machine->ssh_port,
+                ]);
 
+            $rt = app('rt', [$tr, $ssh]);
+
+            $rt->lock(function () use ($ssh, $tr, $rt) {
+                $ssh->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
 
                 // on testing container env some systemd config cannot be run
                 // all config applied below was test using a real machine
@@ -101,9 +102,9 @@ class TrafficRouterPrepare extends Command
                     ));
                 }
 
-                app('rt', [$ssh])->setup($traffic_router);
+                $rt->setup();
 
-                TrafficRouter::whereId($traffic_router->id)->update(['prepared' => true]);
+                TrafficRouter::whereId($tr->id)->update(['prepared' => true]);
             });
         }
     }

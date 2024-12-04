@@ -45,6 +45,7 @@ class PostRegisterInstanceTest extends TestCase
         $tr->save();
 
         Artisan::call('app:machine-prepare');
+
         Artisan::call('app:traffic-router-prepare');
 
         $this->assertEquals(0, Instance::count());

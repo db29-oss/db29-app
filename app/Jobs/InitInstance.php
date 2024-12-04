@@ -44,7 +44,7 @@ class InitInstance implements ShouldQueue
         $instance = Instance::query()
             ->whereId($this->instance_id)
             ->with('source')
-            ->with('machine')
+            ->with('machine.trafficRouter')
             ->first();
 
         $this->source = $instance->source;
@@ -62,6 +62,7 @@ class InitInstance implements ShouldQueue
                  ->where('enabled', true)
                  ->whereNull('user_id')
                  ->inRandomOrder()
+                 ->with('trafficRouter')
                  ->first(); // TODO
         }
 
@@ -173,7 +174,7 @@ class InitInstance implements ShouldQueue
                 ]
             ];
 
-        app('rt', [$this->ssh])->addRule($rule);
+        app('rt', [$this->machine->trafficRouter, $this->ssh])->addRule($rule);
 
         $instance->status = 'rt_up'; // router up
         $instance->save();
