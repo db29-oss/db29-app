@@ -18,6 +18,7 @@ class TermInstance implements ShouldQueue
     {
         $instance = Instance::query()
             ->whereId($this->instance_id)
+            ->with('user')
             ->with('source')
             ->with('machine.trafficRouter')
             ->first();
@@ -52,7 +53,7 @@ class TermInstance implements ShouldQueue
             'update users set '.
             'instance_count = instance_count - 1, '.
             'updated_at = \''.$now.'\' '.
-            'where id = \''.auth()->user()->id.'\'; '.
+            'where id = \''.$instance->user->id.'\'; '.
             'delete from instances '.
             'where id = \''.$instance->id.'\'; '.
             'commit;';
