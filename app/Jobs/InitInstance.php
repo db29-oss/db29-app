@@ -69,7 +69,7 @@ class InitInstance implements ShouldQueue
         $dns_id = $instance->dns_id;
 
         if (! $dns_id) {
-            $dns_id = str(str()->random(32))->lower(); // for testing
+            $dns_id = str(str()->random(32))->lower()->toString(); // for testing
 
             if (app('env') === 'production') {
                 $dns_id = app('cf')
@@ -81,24 +81,10 @@ class InitInstance implements ShouldQueue
             }
         }
 
-        $now = now();
-        $sql_params = [];
-        $sql =
-            'update instances set '.
-            'subdomain = ?, '. # $subdomain
-            'dns_id = ?, '. # $dns_id
-            'status = ?, '. # 'dns'
-            'updated_at = ? '. # $now
-            'where id = ? '. # $this->instance_id
-            'returning *';
-
-        $sql_params[] = $subdomain;
-        $sql_params[] = $dns_id;
-        $sql_params[] = 'dns_up';
-        $sql_params[] = $now;
-        $sql_params[] = $this->instance_id;
-
-        $db = app('db')->select($sql, $sql_params);
+        $instance->subdomain = $subdomain;
+        $instance->dns_id = $dns_id;
+        $instance->status = 'dns';
+        $instance->save();
 
         $ssh = app('ssh')->to([
             'ssh_address' => $machine->ip_address,
