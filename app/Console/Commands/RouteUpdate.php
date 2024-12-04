@@ -72,15 +72,15 @@ class RouteUpdate extends Command
                 $instance_ids[$instance->id]['subdomain'] = $instance->subdomain;
             }
 
-            $domain_names = [];
+            $subdomain_names = [];
             $ports = [];
 
             foreach ($instance_ids as $arr_val) {
-                $domain_names[] = $arr_val['subdomain'];
+                $subdomain_names[] = $arr_val['subdomain'];
                 $ports[] = $arr_val['port'];
             }
 
-            $rt->batchUpdatePortsByDomainNames($domain_names, $ports);
+            $rt->batchUpdatePortsBySubdomainNames($subdomain_names, $ports);
         }
     }
 }

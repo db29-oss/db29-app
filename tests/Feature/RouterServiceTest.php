@@ -77,13 +77,14 @@ class RouterServiceTest extends TestCase
         $this->assertEquals(1, substr_count($ssh->getLastLine(), $subdomain));
 
         // find rule by domain name
-        $rule_str = $rt->findRuleByDomainName($subdomain.'.'.config('app.domain'));
+        $rule_str = $rt->findRuleBySubdomainName($subdomain.'.'.config('app.domain'));
 
         // update rule
         $new_rule = $rule;
         $new_port = fake()->numberBetween(1025, 61000);
         $new_socket = fake()->ipv4.':'.$new_port;
         $new_domain = fake()->domainName;
+        $new_subdomain = explode('.', $new_domain)[0];
         $new_rule['handle'][0]['upstreams'][0]['dial'] = $new_socket;
         $new_rule['match'][0]['host'][0] = $new_domain;
 
@@ -110,7 +111,7 @@ class RouterServiceTest extends TestCase
         // update port by domain name
         $new_port_2 = fake()->numberBetween(1025, 61000);
 
-        $rt->updatePortByDomainName($new_domain, $new_port_2);
+        $rt->updatePortBySubdomainName($new_subdomain, $new_port_2);
         $ssh->exec('curl -s localhost:2019/config/');
         $this->assertFalse($rt->ruleExists($new_rule));
         $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_domain));
@@ -144,9 +145,9 @@ class RouterServiceTest extends TestCase
         $this->assertEquals(0, substr_count($ssh->getLastLine(), '1001'));
         $this->assertEquals(0, substr_count($ssh->getLastLine(), '1002'));
 
-        $rt->batchUpdatePortsByDomainNames(
+        $rt->batchUpdatePortsBySubdomainNames(
             [
-                $new_domain,
+                $new_subdomain,
                 $subdomain_2
             ],
             [

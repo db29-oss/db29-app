@@ -40,23 +40,19 @@ class Router
 
         $this->lock_owner = $lock->owner();
 
-        try {
-            $lock->get($callback);
-        } finally {
-            $this->unlock();
-        }
+        $lock->get($callback);
+
+        $this->unlock();
     }
 
     public function unlock()
     {
-        try {
-            cache()
-                ->store('lock')
-                ->restoreLock('tr_'.$this->tr->id, $this->lock_owner)
-                ->release();
-        } finally {
-            $this->lock_owner = null;
-        }
+        cache()
+            ->store('lock')
+            ->restoreLock('tr_'.$this->tr->id, $this->lock_owner)
+            ->release();
+
+        $this->lock_owner = null;
     }
 
     public function fetchRule(): string
@@ -66,20 +62,19 @@ class Router
         return $this->ssh->getLastLine();
     }
 
-    public function findRuleByDomainName(
-        string $domain_name,
-        array|null $endpoint = null
+    public function findRuleBySubdomainName(
+        string $subdomain_name,
     ): string|false {
-        $o_f_rule_str = $this->fetchRule($endpoint);
+        $o_f_rule_str = $this->fetchRule();
 
-        $strpos = strpos($o_f_rule_str, $domain_name);
+        $strpos = strpos($o_f_rule_str, '"'.$subdomain_name.'.');
 
         if ($strpos === false) {
             return false;
         }
 
-        $s_idx = $strpos;
-        $e_idx = $strpos;
+        $s_idx = $strpos + 1; // double quote
+        $e_idx = $strpos + 1; // double quote
         $s_count = 0;
         $e_count = 0;
 
@@ -110,13 +105,13 @@ class Router
         return substr($o_f_rule_str, $s_idx, $e_idx);
     }
 
-    public function updatePortByDomainName(
-        string $domain_name,
+    public function updatePortBySubdomainName(
+        string $subdomain_name,
         int $port,
     ) {
         $this->lock();
 
-        $o_rule_str = $this->findRuleByDomainName($domain_name);
+        $o_rule_str = $this->findRuleBySubdomainName($subdomain_name);
 
         $preg_replace = preg_replace(
             '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
@@ -133,32 +128,32 @@ class Router
         $this->unlock();
     }
 
-    public function batchUpdatePortsByDomainNames(
-        array $domain_names,
+    public function batchUpdatePortsBySubdomainNames(
+        array $subdomain_names,
         array $ports,
     ) {
         $this->lock();
 
         $o_f_rule_str = $this->fetchRule();
 
-        $domain_names_count = count($domain_names);
+        $subdomain_names_count = count($subdomain_names);
         $ports_count = count($ports);
 
-        if ($domain_names_count !== $ports_count) {
+        if ($subdomain_names_count !== $ports_count) {
             throw new Exception('DB291996: elements of domain_names and ports must be the same');
         }
 
         $n_f_rule_str = $o_f_rule_str;
 
-        for ($i = 0; $i < count($domain_names); $i++) {
-            $strpos = strpos($o_f_rule_str, $domain_names[$i]);
+        for ($i = 0; $i < count($subdomain_names); $i++) {
+            $strpos = strpos($o_f_rule_str, '"'.$subdomain_names[$i].'.');
 
             if ($strpos === false) {
                 continue;
             }
 
-            $s_idx = $strpos;
-            $e_idx = $strpos;
+            $s_idx = $strpos + 1; // double quote
+            $e_idx = $strpos + 1; // double quote
             $s_count = 0;
             $e_count = 0;
 
@@ -222,11 +217,11 @@ class Router
         }
     }
 
-    public function addRule(array $rule, array|null $endpoint = null)
+    public function addRule(array $rule)
     {
         ksort($rule);
 
-        $o_f_rule_str = $this->fetchRule($endpoint);
+        $o_f_rule_str = $this->fetchRule();
 
         $json_rule = json_encode($rule);
 
@@ -245,11 +240,11 @@ class Router
         $this->ssh->exec($command);
     }
 
-    public function updateRule(array|string $old_rule, array|string $rule, array|null $endpoint = null)
+    public function updateRule(array|string $old_rule, array|string $rule)
     {
         $this->lock();
 
-        $o_f_rule_str = $this->fetchRule($endpoint);
+        $o_f_rule_str = $this->fetchRule();
 
         if (is_array($old_rule)) {
             ksort($old_rule);
@@ -278,19 +273,19 @@ class Router
         }
     }
 
-    public function ruleExists(array|string $rule, array|null $endpoint = null): bool
+    public function ruleExists(array|string $rule): bool
     {
         if (is_array($rule)) {
             ksort($rule);
             $rule = json_encode($rule);
         }
 
-        $o_f_rule_str = $this->fetchRule($endpoint);
+        $o_f_rule_str = $this->fetchRule();
 
         return str_contains($o_f_rule_str, $rule);
     }
 
-    public function deleteRule(array|string $rule, array|null $endpoint = null)
+    public function deleteRule(array|string $rule)
     {
         if (is_array($rule)) {
             ksort($rule);
