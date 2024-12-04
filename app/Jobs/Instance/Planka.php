@@ -34,7 +34,7 @@ class Planka implements ShouldQueue
         ) {
             if (str_starts_with($environment, 'BASE_URL=')) {
                 $this->docker_compose['services']['planka']['environment'][$env_idx] =
-                    'BASE_URL=https://'.$this->machine->subdomain.config('app.domain');
+                    'BASE_URL=https://'.$this->instance->subdomain.config('app.domain');
 
                 break;
             }

@@ -111,6 +111,13 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $u->refresh();
         $this->assertEquals(0, $u->instance_count);
 
+        // ensure no podman left
+        $ssh->clearOutput();
+
+        $ssh->exec('podman ps -q');
+
+        $this->assertEquals([], $ssh->getOutput());
+
         // clean up
         cleanup_container('db29_set_up_tear_down_instance_queue');
     }
