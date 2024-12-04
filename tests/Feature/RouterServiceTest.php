@@ -80,17 +80,17 @@ class RouterServiceTest extends TestCase
         $rule_str = $rt->findRuleBySubdomainName($subdomain.'.'.config('app.domain'));
 
         // update rule
-        $new_rule = $rule;
-        $new_port = fake()->numberBetween(1025, 61000);
-        $new_socket = fake()->ipv4.':'.$new_port;
-        $new_domain = fake()->domainName;
-        $new_subdomain = explode('.', $new_domain)[0];
-        $new_rule['handle'][0]['upstreams'][0]['dial'] = $new_socket;
-        $new_rule['match'][0]['host'][0] = $new_domain;
+        $new_rule_1 = $rule;
+        $new_port_1 = fake()->numberBetween(1025, 61000);
+        $new_socket_1 = fake()->ipv4.':'.$new_port_1;
+        $new_domain_1 = fake()->domainName;
+        $new_subdomain_1 = explode('.', $new_domain_1)[0];
+        $new_rule_1['handle'][0]['upstreams'][0]['dial'] = $new_socket_1;
+        $new_rule_1['match'][0]['host'][0] = $new_domain_1;
 
         if (fake()->boolean) {
-            ksort($new_rule);
-            $new_rule = json_encode($new_rule);
+            ksort($new_rule_1);
+            $new_rule_1 = json_encode($new_rule_1);
         }
 
         if (fake()->boolean) {
@@ -98,32 +98,34 @@ class RouterServiceTest extends TestCase
             $rule = json_encode($rule);
         }
 
-        $rt->updateRule($rule, $new_rule);
+        $rt->updateRule($rule, $new_rule_1);
 
         $ssh->exec('curl -s localhost:2019/config/');
         $this->assertFalse($rt->ruleExists($rule));
-        $this->assertTrue($rt->ruleExists($new_rule));
+        $this->assertTrue($rt->ruleExists($new_rule_1));
 
         $this->assertEquals(0, substr_count($ssh->getLastLine(), $subdomain));
-        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_domain));
-        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_socket));
+        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_subdomain_1));
+        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_domain_1));
+        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_socket_1));
 
         // update port by domain name
         $new_port_2 = fake()->numberBetween(1025, 61000);
 
-        $rt->updatePortBySubdomainName($new_subdomain, $new_port_2);
+        $rt->updatePortBySubdomainName($new_subdomain_1, $new_port_2);
         $ssh->exec('curl -s localhost:2019/config/');
-        $this->assertFalse($rt->ruleExists($new_rule));
-        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_domain));
-        $this->assertEquals(0, substr_count($ssh->getLastLine(), $new_socket));
+        $this->assertFalse($rt->ruleExists($new_rule_1));
+        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_port_2));
+        $this->assertEquals(1, substr_count($ssh->getLastLine(), $new_domain_1));
+        $this->assertEquals(0, substr_count($ssh->getLastLine(), $new_socket_1));
 
         // batch update port by domain name
-        $subdomain_2 = str(str()->random(8))->lower();
+        $new_subdomain_2 = str(str()->random(8))->lower();
         $new_rule_2 =
             [
                 'match' => [
                     [
-                        'host' => [$subdomain_2.'.'.config('app.domain')]
+                        'host' => [$new_subdomain_2.'.'.config('app.domain')]
                     ]
                 ],
                 'handle' => [
@@ -147,8 +149,8 @@ class RouterServiceTest extends TestCase
 
         $rt->batchUpdatePortsBySubdomainNames(
             [
-                $new_subdomain,
-                $subdomain_2
+                $new_subdomain_1,
+                $new_subdomain_2
             ],
             [
                 1001,
@@ -162,25 +164,62 @@ class RouterServiceTest extends TestCase
         $this->assertEquals(1, substr_count($ssh->getLastLine(), '1002'));
 
         // delete rule
-        if (fake()->boolean) {
-            $rt->deleteRule($new_rule); // old rule no longer exists
-        } else {
-            $rt->deleteRuleBySubdomainName($new_subdomain);
-        }
-        $this->assertFalse($rt->ruleExists($rule));
-        $this->assertFalse($rt->ruleExists($new_rule));
+        $subdomain_3 = str(str()->random(12))->lower();
+        $new_rule_3 =
+            [
+                'match' => [
+                    [
+                        'host' => [$subdomain_3.'.'.config('app.domain')]
+                    ]
+                ],
+                'handle' => [
+                    [
+                        'handler' => 'reverse_proxy',
+                        'upstreams' => [
+                            [
+                                'dial' => '127.0.0.1:'.fake()->numberBetween(1025, 61000)
+                            ]
+                        ]
+                    ]
+                ]
+            ];
 
-        $ssh->exec('curl -s localhost:2019/config/');
+        $subdomain_4 = str(str()->random(12))->lower();
+        $new_rule_4 =
+            [
+                'match' => [
+                    [
+                        'host' => [$subdomain_4.'.'.config('app.domain')]
+                    ]
+                ],
+                'handle' => [
+                    [
+                        'handler' => 'reverse_proxy',
+                        'upstreams' => [
+                            [
+                                'dial' => '127.0.0.1:'.fake()->numberBetween(1025, 61000)
+                            ]
+                        ]
+                    ]
+                ]
+            ];
 
-        $this->assertEquals(0, substr_count($ssh->getLastLine(), $subdomain));
-        $this->assertEquals(0, substr_count($ssh->getLastLine(), $new_domain));
-        $this->assertEquals(0, substr_count($ssh->getLastLine(), $new_socket));
+        $rt->addRule($new_rule_3);
+        $rt->addRule($new_rule_4);
+        $this->assertTrue($rt->ruleExists($new_rule_3));
+        $this->assertTrue($rt->ruleExists($new_rule_4));
 
-        $old_last_line = $ssh->getLastLine();
+        $rt->deleteRule($new_rule_3);
+        $this->assertFalse($rt->ruleExists($new_rule_3));
+        $this->assertTrue($rt->ruleExists($new_rule_4));
 
-        $ssh->exec('curl -s localhost:2019/config/');
+        $rt->deleteAllRules(); // old rule no longer exists
+        $this->assertFalse($rt->ruleExists($new_rule_3));
+        $this->assertFalse($rt->ruleExists($new_rule_4));
 
-        $this->assertEquals($ssh->getLastLine(), $old_last_line);
+        $ssh->exec('curl -s localhost:2019/config/apps/http/servers/https/routes/');
+
+        $this->assertEquals('[]', $ssh->getLastLine());
 
         // clean up
         cleanup_container('db29_router');

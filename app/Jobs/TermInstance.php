@@ -10,8 +10,6 @@ class TermInstance implements ShouldQueue
 {
     use Queueable;
 
-    private SSHEngine $ssh;
-
     public function __construct(
         private readonly string $instance_id
     ) {}
