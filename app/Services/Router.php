@@ -303,6 +303,52 @@ class Router
         $this->ssh->exec($command);
     }
 
+    public function deleteRuleBySubdomainName(string $subdomain_name)
+    {
+        $this->lock();
+
+        $o_f_rule_str = $this->fetchRule();
+
+        $strpos = strpos($o_f_rule_str, '"'.$subdomain_name.'.');
+
+        if ($strpos === false) {
+            return false;
+        }
+
+        $s_idx = $strpos + 1; // double quote
+        $e_idx = $strpos + 1; // double quote
+        $s_count = 0;
+        $e_count = 0;
+
+        while ($s_idx > 0) {
+            $s_idx -= 1;
+
+            if ($o_f_rule_str[$s_idx] === '{') {
+                $s_count += 1;
+
+                if ($s_count === 4) {
+                    break;
+                }
+            }
+        }
+
+        while ($e_idx < strlen($o_f_rule_str)) {
+            $e_idx += 1;
+
+            if ($o_f_rule_str[$e_idx] === '}') {
+                $e_count += 1;
+
+                if ($e_count === 2) {
+                    break;
+                }
+            }
+        }
+
+        $this->deleteRule(substr($o_f_rule_str, $s_idx, $e_idx));
+
+        $this->unlock();
+    }
+
     public function setup()
     {
         $ssh = $this->ssh;

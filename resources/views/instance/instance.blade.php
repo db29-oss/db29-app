@@ -34,6 +34,7 @@
             />
           </svg>
           {{ $instance->subdomain.'.'.config('app.domain') }}
+          @if (! $instance->queue_active)
           <form method="POST">
             @csrf
 
@@ -45,6 +46,7 @@
               {{ __('trans.delete') }}
             </button>
           </form>
+          @endif
           <br>
         @endif
       @endforeach

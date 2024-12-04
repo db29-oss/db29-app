@@ -119,7 +119,7 @@ class RouterServiceTest extends TestCase
 
         // batch update port by domain name
         $subdomain_2 = str(str()->random(8))->lower();
-        $rule_2 =
+        $new_rule_2 =
             [
                 'match' => [
                     [
@@ -138,8 +138,8 @@ class RouterServiceTest extends TestCase
                 ]
             ];
 
-        $rt->addRule($rule_2);
-        $this->assertTrue($rt->ruleExists($rule_2));
+        $rt->addRule($new_rule_2);
+        $this->assertTrue($rt->ruleExists($new_rule_2));
 
         $ssh->exec('curl -s localhost:2019/config/');
         $this->assertEquals(0, substr_count($ssh->getLastLine(), '1001'));
@@ -162,7 +162,11 @@ class RouterServiceTest extends TestCase
         $this->assertEquals(1, substr_count($ssh->getLastLine(), '1002'));
 
         // delete rule
-        $rt->deleteRule($new_rule); // old rule no longer exists
+        if (fake()->boolean) {
+            $rt->deleteRule($new_rule); // old rule no longer exists
+        } else {
+            $rt->deleteRuleBySubdomainName($new_subdomain);
+        }
         $this->assertFalse($rt->ruleExists($rule));
         $this->assertFalse($rt->ruleExists($new_rule));
 

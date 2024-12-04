@@ -39,7 +39,7 @@ class TrafficRouterPrepare extends Command
 
             $rt = app('rt', [$tr, $ssh]);
 
-            $rt->lock(function () use ($ssh, $tr, $rt) {
+            $rt->lock(function () use ($rt, $ssh, $tr) {
                 $ssh->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
 
                 // on testing container env some systemd config cannot be run

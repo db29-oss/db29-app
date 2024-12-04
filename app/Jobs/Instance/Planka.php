@@ -10,15 +10,13 @@ class Planka implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private array $doc
-    ) {
-        $this->docker_compose = $doc['docker_compose'];
-        $this->instance = $doc['instance'];
-        $this->latest_version_template = $doc['latest_version_template'];
-        $this->machine = $doc['machine'];
-        $this->reg_info = $doc['reg_info'];
-        $this->ssh = $doc['ssh'];
-    }
+        private $docker_compose = null,
+        private $instance = null,
+        private $latest_version_template = null,
+        private $machine = null,
+        private $reg_info = null,
+        private $ssh = null,
+    ) {}
 
     public static function initialResourceConsumption()
     {
@@ -29,7 +27,7 @@ class Planka implements ShouldQueue
         ];
     }
 
-    public function handle(): int
+    public function setUp(): int // host port
     {
         foreach (
             $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
@@ -121,5 +119,15 @@ class Planka implements ShouldQueue
         $this->instance->save();
 
         return $host_port;
+    }
+
+    public function tearDown()
+    {
+        $this->ssh
+             ->exec([
+                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
+                 'podman-compose down --volumes',
+                 'cd '.$this->machine->storage_path.'instance/ \\&\\& rm -rf '.$this->instance->id,
+             ]);
     }
 }

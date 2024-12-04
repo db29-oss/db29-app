@@ -64,4 +64,51 @@ class Cloudflare {
 
         return $result['result']['id'];
     }
+
+    public function deleteDnsRecord(string $dns_id)
+    {
+        $command =
+            "curl -s -X DELETE ".
+            "-H \"Content-Type: application/json\" ".
+            "-H \"Authorization: Bearer ".$this->zone_token."\" ".
+            "https://api.cloudflare.com/client/v4/zones/".$this->zone_id."/dns_records/".$dns_id;
+
+        exec($command, $output, $exit_code);
+
+        if ($exit_code !== 0) {
+            throw new Exception('DB292000: curl delete dns record fail');
+        }
+
+        $result = json_decode($output[0], true);
+
+        return $result['success'];
+    }
+
+    public function subdomainExists(string $subdomain): bool
+    {
+        $command =
+            "curl -s -X GET ".
+            "-H \"Content-Type: application/json\" ".
+            "-H \"Authorization: Bearer ".$this->zone_token."\" ".
+            "https://api.cloudflare.com/client/v4/zones/".$this->zone_id."/dns_records".
+            "?name=".$subdomain.'.'.config('app.domain');
+
+        exec($command, $output, $exit_code);
+
+        if ($exit_code !== 0) {
+            throw new Exception('DB291997: curl subdomain exists fail');
+        }
+
+        $result = json_decode($output[0], true);
+
+        if ($result['success'] !== true) {
+            throw new Exception('DB291999: curl subdomain result fail');
+        }
+
+        if (count($result['result']) > 0) {
+            return true;
+        }
+
+        return false;
+    }
 }

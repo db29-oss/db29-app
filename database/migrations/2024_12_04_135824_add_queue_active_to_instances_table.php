@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            // queue -> init -> dns_up -> ct_up -> rt_up ->
-            // rt_dw -> dns_dw -> ct_dw
-            $table->string('status')->default('queue');
+            // instance is currently being init/update/delete
+            $table->boolean('queue_active')->default(false);
         });
     }
 
@@ -24,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('instances', function (Blueprint $table) {
-            $table->dropColumn('status');
+            $table->dropColumn('queue_active');
         });
     }
 };

@@ -94,15 +94,29 @@ class PageController extends Controller
 
     public function deleteInstance()
     {
-        $instance = Instance::query()
-            ->whereId(request('instance_id'))
-            ->whereUserId(auth()->user()->id)->first(['id', 'user_id']);
+        $now = now();
+        $sql_params = [];
+        $sql = 'update instances set '.
+            'queue_active = ?, '. # true
+            'updated_at = ? '. # $now
+            'where id = ? '.# request('instance_id')
+            'and queue_active = ? '. # false
+            'and user_id = ? '. # auth()->user()->id
+            'returning id';
 
-        if (! $instance) {
+        $sql_params[] = true;
+        $sql_params[] = $now;
+        $sql_params[] = request('instance_id');
+        $sql_params[] = false;
+        $sql_params[] = auth()->user()->id;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (! count($db)) {
             return redirect()->route('instance');
         }
 
-        TermInstance::dispatch($instance->id);
+        TermInstance::dispatch($db[0]->id);
 
         return redirect()->route('instance');
     }
@@ -192,12 +206,14 @@ class PageController extends Controller
                 'id, '.
                 'source_id, '.
                 'user_id, '.
+                'queue_active, '.
                 'created_at, '.
                 'updated_at'.
             ') values ('.
                 '\''.$instance_id.'\', '. # $instance_id
                 '\''.$source->id.'\', '. # $source->id
                 '\''.auth()->user()->id.'\', '. # auth()->user()->id
+                '\'true\', '. # auth()->user()->id
                 '\''.$now.'\', '. # $now
                 '\''.$now.'\' '. # $now
             '); '.

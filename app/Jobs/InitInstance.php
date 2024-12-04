@@ -14,27 +14,13 @@ class InitInstance implements ShouldQueue
 {
     use InteractsWithQueue, Queueable;
 
-    private Machine $machine;
-
-    private SSHEngine $ssh;
-
-    private Source $source;
-
-    private array $docker_compose;
-
-    private readonly array $version_templates;
-
-    private readonly string $latest_version_template;
-
     /**
      * Create a new job instance.
      */
     public function __construct(
         private readonly string $instance_id,
         private readonly array $reg_info = []
-    ) {
-        $this->ssh = app('ssh');
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -47,11 +33,11 @@ class InitInstance implements ShouldQueue
             ->with('machine.trafficRouter')
             ->first();
 
-        $this->source = $instance->source;
+        $source = $instance->source;
 
-        $this->version_templates = json_decode($this->source->version_templates, true);
+        $version_templates = json_decode($source->version_templates, true);
 
-        $job_class = "\\App\\Jobs\\Instance\\".str()->studly($this->source->name);
+        $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
 
         $resources = $job_class::initialResourceConsumption();
 
@@ -66,11 +52,11 @@ class InitInstance implements ShouldQueue
                  ->first(); // TODO
         }
 
-        $this->machine = $machine;
+        $traffic_router = $machine->trafficRouter;
 
         // init
         $instance->status = 'init';
-        $instance->machine_id = $this->machine->id;
+        $instance->machine_id = $machine->id;
         $instance->save();
 
         // dns
@@ -89,7 +75,7 @@ class InitInstance implements ShouldQueue
                 $dns_id = app('cf')
                     ->addDnsRecord(
                         $subdomain,
-                        $this->machine->ip_address,
+                        $machine->ip_address,
                         ['comment' => $this->instance_id]
                     );
             }
@@ -114,22 +100,21 @@ class InitInstance implements ShouldQueue
 
         $db = app('db')->select($sql, $sql_params);
 
-        $this->ssh
-             ->to([
-                 'ssh_address' => $this->machine->ip_address,
-                 'ssh_port' => $this->machine->ssh_port,
-             ])->compute();
+        $ssh = app('ssh')->to([
+            'ssh_address' => $machine->ip_address,
+            'ssh_port' => $machine->ssh_port,
+        ])->compute();
 
         // get deploy information
         $latest_version_template = null;
         $docker_compose = null;
 
-        foreach ($this->version_templates as $vt_idx => $version_template) {
+        foreach ($version_templates as $vt_idx => $version_template) {
             if ($latest_version_template === null) {
                 $latest_version_template = $version_template['tag'];
 
-                if (array_key_exists('docker_compose', $this->version_templates[$vt_idx])) {
-                    $docker_compose = $this->version_templates[$vt_idx]['docker_compose'];
+                if (array_key_exists('docker_compose', $version_templates[$vt_idx])) {
+                    $docker_compose = $version_templates[$vt_idx]['docker_compose'];
                 }
 
                 continue;
@@ -137,22 +122,18 @@ class InitInstance implements ShouldQueue
 
             if ($version_template['tag'] > $latest_version_template) {
                 $latest_version_template = $version_template;
-                $docker_compose = $this->version_templates[$vt_idx]['docker_compose'];
+                $docker_compose = $version_templates[$vt_idx]['docker_compose'];
             }
         }
 
-        $this->latest_version_template = $latest_version_template;
-        $this->docker_compose = $docker_compose;
-
-
-        $host_port = (new $job_class([
-            'docker_compose' => $this->docker_compose,
-            'instance' => $instance,
-            'latest_version_template' => $this->latest_version_template,
-            'machine' => $this->machine,
-            'reg_info' => $this->reg_info,
-            'ssh' => $this->ssh,
-        ]))->handle();
+        $host_port = (new $job_class(
+            docker_compose: $docker_compose,
+            instance: $instance,
+            latest_version_template: $latest_version_template,
+            machine: $machine,
+            reg_info: $this->reg_info,
+            ssh: $ssh
+        ))->setUp();
 
         // router
         $rule =
@@ -174,9 +155,10 @@ class InitInstance implements ShouldQueue
                 ]
             ];
 
-        app('rt', [$this->machine->trafficRouter, $this->ssh])->addRule($rule);
+        app('rt', [$traffic_router, $ssh])->addRule($rule);
 
         $instance->status = 'rt_up'; // router up
+        $instance->queue_active = false; // could be delete by user
         $instance->save();
     }
 }

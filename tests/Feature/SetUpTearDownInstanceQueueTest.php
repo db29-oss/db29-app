@@ -11,15 +11,15 @@ use App\Services\SSHEngine;
 use Artisan;
 use Tests\TestCase;
 
-class PostRegisterInstanceTest extends TestCase
+class SetUpTearDownInstanceQueueTest extends TestCase
 {
     public function test_generic(): void
     {
         test_util_migrate_fresh();
 
-        $ssh_port = setup_container('db29_post_register_instance');
+        $ssh_port = setup_container('db29_set_up_tear_down_instance_queue');
 
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_post_register_instance';
+        $ssh_privatekey_path = sys_get_temp_dir().'/db29_set_up_tear_down_instance_queue';
 
         config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
 
@@ -49,6 +49,10 @@ class PostRegisterInstanceTest extends TestCase
         Artisan::call('app:traffic-router-prepare');
 
         $this->assertEquals(0, Instance::count());
+
+        /**
+         * SET UP INSTANCE TEST
+         */
 
         $response = $this->post('instance/register', [
             'source' => 'planka',
@@ -86,7 +90,28 @@ class PostRegisterInstanceTest extends TestCase
 
         $inst->refresh();
 
+        $this->assertEquals('rt_up', $inst->status);
+        $this->assertEquals(false, $inst->queue_active);
+
+        /**
+         * TEAR DOWN INSTANCE TEST
+         */
+
+        $u->refresh();
+        $this->assertEquals(1, $u->instance_count);
+
+        $this->assertEquals(1, Instance::count());
+
+        $response = $this->delete('instance', [
+            'instance_id' => $inst->id,
+        ]);
+
+        $this->assertEquals(0, Instance::count());
+
+        $u->refresh();
+        $this->assertEquals(0, $u->instance_count);
+
         // clean up
-        cleanup_container('db29_post_register_instance');
+        cleanup_container('db29_set_up_tear_down_instance_queue');
     }
 }
