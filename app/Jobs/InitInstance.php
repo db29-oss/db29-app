@@ -6,6 +6,7 @@ use App\Models\Instance;
 use App\Models\Machine;
 use App\Models\Source;
 use App\Services\SSHEngine;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -134,6 +135,21 @@ class InitInstance implements ShouldQueue
             ]);
 
             throw new Exception('DB292002: debug podman host port bug');
+        }
+
+        while (true) {
+            try {
+                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' 0.0.0.0:'.$host_port);
+            } catch (Exception) {
+                sleep(1);
+                continue;
+            }
+
+            if ($ssh->getLastLine() === '200') {
+                break;
+            }
+
+            sleep(1);
         }
 
         $instance->status = 'ct_up';
