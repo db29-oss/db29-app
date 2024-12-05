@@ -191,6 +191,8 @@ class PageController extends Controller
             return redirect()->route('source');
         }
 
+        $reg_info = $this->{'filter_input_'.$source_name}();
+
         $now = now()->toDateTimeString();
 
         $instance_id = str()->uuid()->toString();
@@ -213,7 +215,7 @@ class PageController extends Controller
                 '\''.$instance_id.'\', '. # $instance_id
                 '\''.$source->id.'\', '. # $source->id
                 '\''.auth()->user()->id.'\', '. # auth()->user()->id
-                '\'true\', '. # auth()->user()->id
+                'true, '. # true
                 '\''.$now.'\', '. # $now
                 '\''.$now.'\' '. # $now
             '); '.
@@ -224,8 +226,6 @@ class PageController extends Controller
         if ($db !== true) {
             return redirect()->route('source');
         }
-
-        $reg_info = $this->{'filter_input_'.$source_name}();
 
         InitInstance::dispatch($instance_id, $reg_info);
 
