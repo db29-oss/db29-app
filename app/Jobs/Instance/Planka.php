@@ -27,7 +27,7 @@ class Planka implements ShouldQueue
         ];
     }
 
-    public function setUp(): int // host port
+    public function setUp(): void
     {
         foreach (
             $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
@@ -96,29 +96,8 @@ class Planka implements ShouldQueue
                  [
                      'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
                      'podman-compose up -d',
-                     'podman port '.$this->instance->id,
                  ]
              ));
-
-        $output = $this->ssh->getOutput();
-
-        $port_mapping = $output[array_key_last($output)];
-
-        $port_explode = explode(':', $port_mapping);
-
-        $host_port = trim(end($port_explode));
-
-        $this->instance->status = 'ct_up';
-        $this->instance->version_template =
-            [
-                'docker_compose' => $this->docker_compose,
-                'port' => $host_port,
-                'tag' => $this->latest_version_template,
-            ];
-
-        $this->instance->save();
-
-        return $host_port;
     }
 
     public function tearDown()
