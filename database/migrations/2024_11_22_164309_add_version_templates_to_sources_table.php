@@ -20,7 +20,7 @@ return new class extends Migration
             //     'rsto_tmpl' => 'restore template,
             //     'docker_compose' => 'docker compose',
             // ]
-            $table->jsonb('version_templates')->nullable();
+            $table->jsonb('version_templates')->default('[]');
         });
     }
 

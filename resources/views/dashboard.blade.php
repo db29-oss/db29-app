@@ -13,8 +13,8 @@
 
   <div style="margin-top: 1.5rem;"></div>
 
-  <pre><a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a></pre>
   <pre><a href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a></pre>
+  <pre><a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a></pre>
 
   <div style="margin-top: 1.5rem;"></div>
 

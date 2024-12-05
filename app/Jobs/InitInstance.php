@@ -53,6 +53,14 @@ class InitInstance implements ShouldQueue
                  ->first(); // TODO
         }
 
+        if ($machine === null) {
+            throw new Exception('DB292001: machine is null');
+        }
+
+        if ($machine->trafficRouter === null) {
+            throw new Exception('DB292002: trafficRouter is null');
+        }
+
         $traffic_router = $machine->trafficRouter;
 
         // init

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('traffic_routers', function (Blueprint $table) {
-            $table->jsonb('extra_routes')->default('{}');
+            $table->jsonb('extra_routes')->default('[]');
         });
     }
 
