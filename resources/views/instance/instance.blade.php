@@ -26,9 +26,11 @@
             <circle cx="5" cy="5" r="5"
             @if ($instance->status === 'queue')
               fill="darkgrey"
-              @elseif ($instance->status === 'rt_up')
+            @elseif ($instance->queue_active)
+              fill="coral"
+            @elseif ($instance->status === 'rt_up')
               fill="lime"
-              @else
+            @else
               fill="coral"
             @endif
             />

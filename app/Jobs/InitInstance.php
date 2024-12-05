@@ -124,18 +124,17 @@ class InitInstance implements ShouldQueue
 
         $ssh->clearOutput();
 
-        $ssh->exec('podman port '.$instance->id);
+        while (true) {
+            $ssh->exec('podman port '.$instance->id);
+
+            if ($ssh->getLastLine() !== null) {
+                break;
+            }
+
+            sleep(1);
+        }
 
         $host_port = parse_url($ssh->getLastLine())['port'];
-
-        if ($host_port === 0) {
-            logger()->debug('DB292001: debug podman host port bug', [
-                'host_port' => $host_port,
-                'ssh_last_line' => $ssh->getLastLine(),
-            ]);
-
-            throw new Exception('DB292002: debug podman host port bug');
-        }
 
         while (true) {
             try {
