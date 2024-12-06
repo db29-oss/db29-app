@@ -1,9 +1,4 @@
-<style>
-  body {
-    font-family: monospace;
-  }
-</style>
-
+@include('header')
 <div>
   <form method="POST">
     @csrf

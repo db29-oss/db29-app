@@ -1,8 +1,9 @@
+@include('header', ['title' => 'DB29 - LOGIN'])
 <div>
   <pre style="color: red">{{ __('trans.save_login_id') }}.</pre>
-  <pre>login_id: {{ $user->login_id }}</pre>
+  <div class="font-mono">{{ $user->login_id }}</div>
 
-  <form method="POST" action="{{ route('login') }}">
+  <form class="mt-4" method="POST" action="{{ route('login') }}">
     <input type="hidden" id="login_id" name="login_id" value ="{{ $user->login_id }}" required>
 
     @csrf

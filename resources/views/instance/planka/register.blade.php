@@ -1,8 +1,4 @@
-<style>
-  body {
-    font-family: monospace;
-  }
-</style>
+@include('header', ['title' => 'DB29 - SOURCE'])
 
 <div>
   <div>
