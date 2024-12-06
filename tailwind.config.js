@@ -20,7 +20,10 @@ export default {
     plugins: [
       plugin(function ({ addBase }) {
         addBase({
-          '*': { fontSize: '1.125rem' }, // Matches `text-lg` (18px by default)
+          '*': {
+            fontSize: '1.125rem',
+            fontFamily: 'monospace',
+          },
         });
       }),
     ],
