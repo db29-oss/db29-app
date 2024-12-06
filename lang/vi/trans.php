@@ -3,6 +3,7 @@
 return [
     "account_update" => "cập nhật tài khoản",
     "advanced_feature" => "tính năng nâng cao",
+    "back" => "quay về",
     "blog" => "bài viết",
     "change_default_config_at" => "Bạn có thể thay đổi thiết lập mặc định tại",
     "confirm" => "xác nhận",
