@@ -23,4 +23,9 @@
   <pre><b>Câu hỏi: mô hình kinh doanh của bạn là gì?</b></pre>
   <pre>Mặc dù mã nguồn là mở, nhưng để phần mềm có thể xuất hiện được trên internet cần nhiều ở khâu vận hành hậu cần, vd: đảm bảo phần mềm luôn sẵn sàng khi bạn cần nó, nâng cấp mã nguồn lên phiên bản mới, cập nhật các bản vá lỗi, nâng cấp hệ điều hành lên phiên bản mới và hơn nữa khi phần mềm chạy cần tiêu tốn tài nguyên. Nếu bạn không có thời gian, mình có thể vận hành giúp bạn với một mức phí nhỏ.</pre>
 
+  <br>
+
+  <pre><b>Câu hỏi: liệu có bị lộ hay mất mát dữ liệu của tôi không?</b></pre>
+  <pre>Bạn yên tâm nhé, dữ liệu của bạn sẽ không bị mất hay lộ đi đâu cả, mình sử dụng raid ổ cứng để lưu trữ dữ liệu, kể cả hư hỏng phần cứng vẫn không mất dữ liệu, hơn nữa mình cũng backup dữ liệu thường xuyên, xui nhất sẽ là mất dữ liệu trong vòng 1h gần nhất thôi.</pre>
+
 </div>
