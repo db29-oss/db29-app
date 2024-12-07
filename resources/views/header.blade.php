@@ -11,6 +11,6 @@
 
 @if (request()->route()->getName() !== 'dashboard' && ! auth()->guest())
 <div>
-  <pre><a href="{{ route('dashboard') }}"><< {{ __('trans.back') }}</a></pre>
+  <pre><a class="select-none" href="{{ route('dashboard') }}"><< {{ __('trans.back') }}</a></pre>
 </div>
 @endif

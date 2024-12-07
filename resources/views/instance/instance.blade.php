@@ -1,4 +1,48 @@
 @include('header')
+
+@if (count($instances) === 1 && $instances[0]->status !== 'rt_up')
+<!--explain bubble color-->
+<div class="text-gray-400 pointer-events-none select-none">
+  <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="5" cy="5" r="5" fill="darkgrey"/>
+  </svg>
+  {{ __('trans.explain_darkgrey') }}
+</div>
+
+<div class="text-gray-400 pointer-events-none select-none">
+  <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="5" cy="5" r="5" fill="coral"/>
+  </svg>
+  {{ __('trans.explain_coral') }}
+</div>
+
+<div class="text-gray-400 pointer-events-none select-none">
+  <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="5" cy="5" r="5" fill="lime"/>
+  </svg>
+  {{ __('trans.explain_lime') }}
+</div>
+@endif
+
+@foreach ($instances as $instance)
+@if ($instance->status === 'queue')
+<!--reload page every 5s if there was instance queue/queue_active-->
+  <script>
+    setTimeout(() => {
+      window.location.reload();
+    }, 5000);
+  </script>
+  @break
+@elseif ($instance->status !== 'rt_up')
+<!--reload page every 10s if there was instance queue/queue_active-->
+  <script>
+    setTimeout(() => {
+      window.location.reload();
+    }, 10_000);
+  </script>
+@endif
+@endforeach
+
 <div>
   @foreach ($sn_ii_map as $source_name => $instance_ids)
     <h3>{{ str($source_name)->upper() }}</h3>
@@ -20,13 +64,16 @@
           />
         </svg>
         <a class="inline-block"
-          @if ($instance->status !== 'rt_up')
+          @if ($instance->status === 'rt_up')
           href="https://{{ $instance->subdomain.'.'.config('app.domain') }}"
           target="_blank"
           @endif
         >
           {{ $instance->subdomain.'.'.config('app.domain') }}
         </a>
+        @if ($instance->status !== 'rt_up')
+        <span class="text-gray-400 pointer-events-none select-none">({{ __('trans.wait_a_sec') }})</span>
+        @endif
         @if (! $instance->queue_active)
         <form class="inline" method="POST">
           @csrf
@@ -39,8 +86,16 @@
             {{ __('trans.delete') }}
           </button>
         </form>
+        @if ($instance->status === 'rt_up' && auth()->user()->instance_count === 1)
+        <!--tutorial for new user-->
+        <div class="text-gray-400 pointer-events-none select-none pl-28">↑</div>
+        <div class="text-gray-400 pointer-events-none select-none pl-14">
+          {{ __('trans.click_here') }}
+        </div>
+        @endif
         @endif
       </div>
       @endif
     @endforeach
   @endforeach
+</div>

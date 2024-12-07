@@ -60,6 +60,7 @@ class PageController extends Controller
         $substr = substr($user->login_id, 0, 11);
 
         $user->email = $substr.'__@db29.ovh';
+        $user->name = $substr;
         $user->username = $substr;
         $user->save();
 
@@ -128,15 +129,17 @@ class PageController extends Controller
         return view('source')->with('sources', $sources);
     }
 
-    public function accountUpdate()
+    public function account()
     {
-        return view('account_update');
+        return view('account');
     }
 
-    public function postAccountUpdate()
+    public function postAccount()
     {
         $validator = validator(request()->all(), [ 
-            'email' => 'email:rfc'
+            'email' => ['required', 'email:rfc'],
+            'name' => ['required', 'alpha_num:ascii'], // docker-compose env validation complexity
+            'username' => ['required', 'alpha_num:ascii'],
         ]);
 
         $data = $validator->validated();
@@ -145,6 +148,14 @@ class PageController extends Controller
 
         if ($data['email']) {
             $user->email = $data['email'];
+        }
+
+        if ($data['name']) {
+            $user->name = $data['name'];
+        }
+
+        if ($data['username']) {
+            $user->username = $data['username'];
         }
 
         if ($user->isDirty()) {
@@ -168,17 +179,23 @@ class PageController extends Controller
     {
         $source_name = request('source');
 
-        $source_exists = Source::whereName($source_name)->where('enabled', true)->exists();
+        $source = Source::whereName($source_name)->where('enabled', true)->first('id');
 
-        if (! $source_exists) {
+        if ($source === null) {
             return redirect()->route('source');
         }
 
         if (! view()->exists('instance.'.$source_name.'.register')) {
+
             return redirect()->route('source');
         }
 
-        return view('instance.'.$source_name.'.register');
+        $i_s_count = Instance::query()
+            ->where('user_id', auth()->user()->id)
+            ->where('source_id', $source->id)
+            ->count();
+
+        return view('instance.'.$source_name.'.register')->with('i_s_count', $i_s_count);
     }
 
     public function postRegisterInstance()

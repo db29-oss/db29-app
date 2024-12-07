@@ -19,14 +19,16 @@ class AccountUpdateTest extends TestCase
 
         $this->assertNull($u->email);
 
-        $response = $this->post('account-update', [
+        $response = $this->post('account', [
             'email' => fake()->word
         ]);
 
         $this->assertNull(User::whereId($u->id)->first()->email);
 
-        $response = $this->post('account-update', [
-            'email' => fake()->email
+        $response = $this->post('account', [
+            'email' => fake()->email,
+            'name' => fake()->word,
+            'username' => fake()->word,
         ]);
 
         $this->assertNotNull(User::whereId($u->id)->first()->email);

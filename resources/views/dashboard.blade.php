@@ -8,10 +8,25 @@
 
   <div style="margin-top: 1.5rem;"></div>
 
-  <pre><a href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a></pre>
-  <pre><a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a></pre>
-  <pre><a href="{{ route('advanced-feature') }}">{{ mb_ucfirst(__('trans.advanced_feature')) }}</a></pre>
-  <pre><a href="{{ route('account-update') }}">{{ mb_ucfirst(__('trans.account_update')) }}</a></pre>
+  <div class="pb-4">
+    <a class="" href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a>
+    @if (auth()->user()->instance_count === 0)
+    <span class="text-gray-400 pointer-events-none select-none">
+      <-- {{ __('trans.click_here') }}
+    </span>
+    @endif
+  </div>
+  @if (auth()->user()->instance_count !== 0)
+  <div class="pb-4">
+    <a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a>
+    <span class="text-gray-400 pointer-events-none select-none">
+      ({{ auth()->user()->instance_count }})
+    </span>
+  </div>
+  <div class="pb-4">
+    <a href="{{ route('account') }}">{{ mb_ucfirst(__('trans.account')) }}</a>
+  </div>
+  @endif
 
 </div>
 

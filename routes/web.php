@@ -21,8 +21,8 @@ Route::group(['middleware' => 'auth'], function () {
             ->name('post-register-instance');
     });
     Route::get('source', [PageController::class, 'source'])->name('source');
-    Route::get('account-update', [PageController::class, 'accountUpdate'])->name('account-update');
-    Route::post('account-update', [PageController::class, 'postAccountUpdate'])->name('post-account-update');
+    Route::get('account', [PageController::class, 'account'])->name('account');
+    Route::post('account', [PageController::class, 'postAccount'])->name('post-account');
     Route::get('advanced-feature', [PageController::class, 'advancedFeature'])->name('advanced-feature');
     Route::post('fill-instance', [PageController::class, 'fillInstance'])->name('fill-instance');
 });

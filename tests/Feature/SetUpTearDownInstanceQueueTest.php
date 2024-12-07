@@ -15,6 +15,10 @@ class SetUpTearDownInstanceQueueTest extends TestCase
 {
     public function test_generic(): void
     {
+        if (! $this->isExplicitlyRun()) {
+            $this->markTestSkipped('Skipped because it takes too long - can manually run it.');
+        }
+
         test_util_migrate_fresh();
 
         $ssh_port = setup_container('db29_set_up_tear_down_instance_queue');
@@ -120,5 +124,10 @@ class SetUpTearDownInstanceQueueTest extends TestCase
 
         // clean up
         cleanup_container('db29_set_up_tear_down_instance_queue');
+    }
+
+    private function isExplicitlyRun(): bool
+    {
+        return in_array(__CLASS__, $_SERVER['argv']);
     }
 }

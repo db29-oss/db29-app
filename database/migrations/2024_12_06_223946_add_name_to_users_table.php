@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('instances', function (Blueprint $table) {
-            $table->uuid('id');
-            $table->uuid('user_id');
-            $table->uuid('source_id');
-            $table->uuid('machine_id')->nullable();
-            $table->jsonb('version_template')->default('[]');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('name')->nullable();
         });
     }
 
@@ -26,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('instances');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('name');
+        });
     }
 };
