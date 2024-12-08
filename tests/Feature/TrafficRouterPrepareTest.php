@@ -16,11 +16,11 @@ class TrafficRouterPrepareTest extends TestCase
     {
         test_util_migrate_fresh();
 
-        $ssh_port = setup_container('db29_traffic_router_prepare');
+        $m = Machine::factory()->create();
+        $m->refresh();
 
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_traffic_router_prepare';
+        $ssh_port = setup_container('db29_traffic_router_prepare', $m->id);
 
-        $m = new Machine;
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
         $m->storage_path = '/opt/randomdirname/';
@@ -30,18 +30,7 @@ class TrafficRouterPrepareTest extends TestCase
         $tr->machine_id = $m->id;
         $tr->save();
 
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
-
-        $ssh = new SSHEngine;
-
-        $ssh
-            ->from([
-                'ssh_privatekey_path' => $ssh_privatekey_path
-            ])
-            ->to([
-                'ssh_port' => $ssh_port,
-            ])
-            ->exec('test ! -f /usr/bin/caddy'); // no exception
+        $ssh = app('ssh')->toMachine($m)->exec('test ! -f /usr/bin/caddy'); // no exception
 
         Artisan::call('app:traffic-router-prepare');
 
@@ -61,15 +50,7 @@ class TrafficRouterPrepareTest extends TestCase
             }
         }
 
-        $ssh = new SSHEngine;
-        $ssh
-            ->from([
-                'ssh_privatekey_path' => $ssh_privatekey_path
-            ])
-            ->to([
-                'ssh_port' => $ssh_port,
-            ])
-            ->exec('caddy'); // no exception
+        $ssh->exec('caddy'); // no exception
 
         $this->assertEquals(true, TrafficRouter::first()->prepared);
 
@@ -185,7 +166,9 @@ class TrafficRouterPrepareTest extends TestCase
         $this->assertTrue(str_contains($output[0], 'db29.ovh'));
         $this->assertTrue(str_contains($output[0], 'acme-challenge'));
 
+        unset($ssh);
+
         // clean up
-        cleanup_container('db29_traffic_router_prepare');
+        cleanup_container('db29_traffic_router_prepare', $m->id);
     }
 }

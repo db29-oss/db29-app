@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 # Apache/Caddy/Nginx/etc...
 class TrafficRouter extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     public function machine()
     {

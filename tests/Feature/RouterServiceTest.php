@@ -11,18 +11,14 @@ class RouterServiceTest extends TestCase
 {
     public function test_generic(): void
     {
-        $ssh_port = setup_container('db29_router');
-
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_router';
-
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
-
-        $ssh = app('ssh')
-            ->to([
-                'ssh_port' => $ssh_port,
-            ]);
-
         $m = Machine::factory()->create();
+        $m->refresh();
+
+        $ssh_port = setup_container('db29_router', $m->id);
+
+        $m->ip_address = '127.0.0.1';
+        $m->ssh_port = $ssh_port;
+        $m->save();
 
         $tr = new TrafficRouter;
         $tr->machine_id = $m->id;
@@ -31,6 +27,8 @@ class RouterServiceTest extends TestCase
         $tr->refresh();
 
         // setup
+        $ssh = app('ssh')->toMachine($m)->compute();
+
         $rt = app('rt', [$tr, $ssh]);
         $rt->setup();
 
@@ -221,7 +219,10 @@ class RouterServiceTest extends TestCase
 
         $this->assertEquals('[]', $ssh->getLastLine());
 
+        unset($rt);
+        unset($ssh);
+
         // clean up
-        cleanup_container('db29_router');
+        cleanup_container('db29_router', $m->id);
     }
 }

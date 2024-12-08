@@ -9,14 +9,8 @@ class SSHServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->bind('ssh', function ($app, array $endpoint = []) {
-            return (new SSHEngine)
-                ->from(array_merge(
-                    [
-                        'ssh_privatekey_path' => config('services.ssh.ssh_privatekey_path')
-                    ],
-                    $endpoint
-                ));
+        $this->app->bind('ssh', function () {
+            return new SSHEngine;
         });
     }
 

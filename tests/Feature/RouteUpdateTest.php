@@ -16,19 +16,16 @@ class RouteUpdateTest extends TestCase
     {
         test_util_migrate_fresh();
 
-        $ssh_port = setup_container('db29_route_update');
-
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_route_update';
-
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
-
         $u = User::factory()->create();
 
-        $m = new Machine;
+        $m = Machine::factory()->create();
+
+        $m->refresh();
+
+        $ssh_port = setup_container('db29_route_update', $m->id);
+
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
-        $m->storage_path = '/opt/randomdirname/';
-        $m->enabled = true;
         $m->save();
 
         $tr = new TrafficRouter;
@@ -48,10 +45,7 @@ class RouteUpdateTest extends TestCase
 
         $inst->refresh();
 
-        $ssh = app('ssh')->to([
-            'ssh_address' => $m->ip_address,
-            'ssh_port' => $m->ssh_port
-        ]);
+        $ssh = app('ssh')->toMachine($m);
 
         $ssh->exec('podman run -p 80 -d --name '.$inst->id.' --rm alpine tail -F /dev/null');
 
@@ -100,7 +94,10 @@ class RouteUpdateTest extends TestCase
 
         $this->assertFalse($rt->ruleExists($rule));
 
+
         // clean up
-        cleanup_container('db29_route_update');
+        unset($rt);
+        unset($ssh);
+        cleanup_container('db29_route_update', $m->id);
     }
 }

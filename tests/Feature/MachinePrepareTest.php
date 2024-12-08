@@ -13,27 +13,18 @@ class MachinePrepareTest extends TestCase
     {
         test_util_migrate_fresh();
 
-        $ssh_port = setup_container('db29_machine_prepare');
+        $m = Machine::factory()->create();
+        $m->refresh();
 
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_machine_prepare';
+        $ssh_port = setup_container('db29_machine_prepare', $m->id);
 
-        $m = new Machine;
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
         $m->storage_path = '/opt/randomdirname/';
         $m->save();
 
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
-
-        $ssh = new SSHEngine;
-
-        $ssh
-            ->from([
-                'ssh_privatekey_path' => $ssh_privatekey_path
-            ])
-            ->to([
-                'ssh_port' => $ssh_port,
-            ])
+        $ssh = app('ssh')
+            ->toMachine($m)
             ->exec('ls -1 /opt/');
 
         $this->assertEquals(0, count($ssh->getOutput()));
@@ -44,22 +35,13 @@ class MachinePrepareTest extends TestCase
 
         $this->assertEquals(true, Machine::whereId($m->id)->first()->prepared);
 
-        $ssh = new SSHEngine;
-
-        $ssh
-            ->from([
-                'ssh_privatekey_path' => $ssh_privatekey_path
-            ])
-           ->to([
-               'ssh_port' => $ssh_port,
-           ])
-           ->exec('ls -1 /opt/');
+        $ssh->exec('ls -1 /opt/');
 
         $this->assertEquals(1, count($ssh->getOutput()));
 
         // test --force option
 
-        $m = $m->fresh();
+        $m->refresh();
 
         $m2 = new Machine;
         $m2->ip_address = '127.0.0.1';
@@ -84,6 +66,8 @@ class MachinePrepareTest extends TestCase
         $this->assertEquals($m2->updated_at, Machine::whereId($m2->id)->first()->updated_at);
 
         // clean up
-        cleanup_container('db29_machine_prepare');
+        unset($ssh);
+
+        cleanup_container('db29_machine_prepare', $m->id);
     }
 }

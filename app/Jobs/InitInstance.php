@@ -95,10 +95,7 @@ class InitInstance implements ShouldQueue
         $instance->status = 'dns';
         $instance->save();
 
-        $ssh = app('ssh')->to([
-            'ssh_address' => $machine->ip_address,
-            'ssh_port' => $machine->ssh_port,
-        ])->compute();
+        $ssh = app('ssh')->toMachine($machine)->compute();
 
         // get deploy information
         $latest_version_template = null;
@@ -145,11 +142,11 @@ class InitInstance implements ShouldQueue
         $host_port = parse_url($ssh->getLastLine())['port'];
 
         while (true) {
+            $ssh->clearOutput();
+
             try {
                 $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' 0.0.0.0:'.$host_port);
             } catch (Exception) {
-                sleep(1);
-                continue;
             }
 
             if ($ssh->getLastLine() === '200') {

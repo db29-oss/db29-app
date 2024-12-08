@@ -29,12 +29,7 @@ class RouteUpdate extends Command
             ->get();
 
         foreach ($machines as $machine) {
-            $ssh = app('ssh')->to([
-                'ssh_address' => $machine->ip_address,
-                'ssh_port' => $machine->ssh_port,
-            ]);
-
-            $ssh->compute();
+            $ssh = app('ssh')->toMachine($machine);
 
             $rt = app('rt', [$machine->trafficRouter, $ssh]);
 

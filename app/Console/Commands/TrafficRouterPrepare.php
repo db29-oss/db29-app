@@ -31,11 +31,7 @@ class TrafficRouterPrepare extends Command
         $traffic_routers = $traffic_routers->with('machine')->get();
 
         foreach ($traffic_routers as $tr) {
-            $ssh = app('ssh')
-                ->to([
-                    'ssh_address' => $tr->machine->ip_address,
-                    'ssh_port' => $tr->machine->ssh_port,
-                ]);
+            $ssh = app('ssh')->toMachine($tr->machine);
 
             $rt = app('rt', [$tr, $ssh]);
 

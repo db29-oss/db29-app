@@ -11,8 +11,6 @@ class MachinePrepare extends Command
 
     protected $description = 'Basic installation/config';
 
-    protected $machines;
-
     public function handle()
     {
         $machines = Machine::query();
@@ -25,22 +23,13 @@ class MachinePrepare extends Command
             $machines->where('prepared', false);
         }
 
-        $this->machines = $machines->get();
+        $machines = $machines->get();
 
-        $this->setupPodman();
-    }
-
-    public function setupPodman()
-    {
-        foreach ($this->machines as $machine) {
+        foreach ($machines as $machine) {
             cache()->store('lock')->lock('m_'.$machine->id)->get(function() use ($machine) {
-                $ssh = app('ssh')
-                    ->to([
-                        'ssh_address' => $machine->ip_address,
-                        'ssh_port' => $machine->ssh_port,
-                    ]);
+                $ssh = app('ssh')->toMachine($machine)->compute();
 
-                $ssh->compute();
+                $ssh->exec('touch /etc/containers/storage.conf');
 
                 $storage_conf_lines = [
                     '[storage]',
@@ -51,14 +40,21 @@ class MachinePrepare extends Command
 
                 $commands = [];
 
-                foreach ($storage_conf_lines as $storage_conf_line) {
-                    $commands[] =
-                        'echo '.
-                        $ssh->lbsl."'".
-                        bce($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
-                        $ssh->lbsl."'".' '.
-                        $ssh->lbsl.">".$ssh->lbsl."> ".
-                        '/etc/containers/storage.conf';
+                $md5sum_storage_conf = md5(implode("\n", $storage_conf_lines));
+
+                $ssh->clearOutput();
+                $ssh->exec('md5sum /etc/containers/storage.conf');
+
+                if (explode(' ', $ssh->getLastLine())[0] !== $md5sum_storage_conf) {
+                    foreach ($storage_conf_lines as $storage_conf_line) {
+                        $commands[] =
+                            'echo '.
+                            $ssh->lbsl."'".
+                            bce($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
+                            $ssh->lbsl."'".' '.
+                            $ssh->lbsl.">".$ssh->lbsl."> ".
+                            '/etc/containers/storage.conf';
+                    }
                 }
 
                 // podman

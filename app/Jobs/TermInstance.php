@@ -26,10 +26,7 @@ class TermInstance implements ShouldQueue
         $machine = $instance->machine;
         $traffic_router = $instance->machine->trafficRouter;
 
-        $ssh = app('ssh')->to([
-            'ssh_address' => $machine->ip_address,
-            'ssh_port' => $machine->ssh_port,
-        ])->compute();
+        $ssh = app('ssh')->toMachine($machine)->compute();
 
         // rt_dw
         app('rt', [$traffic_router, $ssh])->deleteRuleBySubdomainName($instance->subdomain);

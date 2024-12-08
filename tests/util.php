@@ -87,7 +87,7 @@ function test_util_migrate_fresh(): bool { #cr_46869
     return $it_work;
 }
 
-function setup_container(string $container_name): int {
+function setup_container(string $container_name, $ssh_privatekey_name): int {
     setup_pod($container_name);
 
     $local_image = true; // to attach some process to it, e.g: tail -F /dev/null
@@ -102,12 +102,6 @@ function setup_container(string $container_name): int {
         $local_image = false;
         exec('podman pull '.$container_name);
     }
-
-    $ssh_privatekey_path = sys_get_temp_dir().'/'.$container_name;
-
-    @unlink($ssh_privatekey_path);
-
-    exec('ssh-keygen -N "" -t ed25519 -C "'.$container_name.'" -f '.$ssh_privatekey_path);
 
     $output = [];
 
@@ -146,7 +140,7 @@ function setup_container(string $container_name): int {
     exec(
         'podman exec '.$container_name.' '.
         'sh -c \'echo "'.
-        file_get_contents($ssh_privatekey_path.'.pub').
+        file_get_contents(storage_path('app/private/').$ssh_privatekey_name.'.pub').
         '" >> /root/.ssh/authorized_keys\''
     );
 
@@ -161,12 +155,12 @@ function setup_pod(string $container_name) {
     exec('podman pod create --name '.$container_name.'_pod -p 22 2>&1 > /dev/null');
 }
 
-function cleanup_container(string $container_name) {
+function cleanup_container(string $container_name, string $ssh_privatekey_name) {
     exec(
         'podman container exists '.$container_name.' '.'&& '.
         'podman kill '.$container_name
     );
 
-    unlink(sys_get_temp_dir().'/'.$container_name);
-    unlink(sys_get_temp_dir().'/'.$container_name.'.pub');
+    unlink(storage_path('app/private/').$ssh_privatekey_name);
+    unlink(storage_path('app/private/').$ssh_privatekey_name.'.pub');
 }

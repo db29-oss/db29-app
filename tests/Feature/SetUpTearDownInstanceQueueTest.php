@@ -21,12 +21,6 @@ class SetUpTearDownInstanceQueueTest extends TestCase
 
         test_util_migrate_fresh();
 
-        $ssh_port = setup_container('db29_set_up_tear_down_instance_queue');
-
-        $ssh_privatekey_path = sys_get_temp_dir().'/db29_set_up_tear_down_instance_queue';
-
-        config(['services.ssh.ssh_privatekey_path' => $ssh_privatekey_path]);
-
         $u = User::factory()->create();
 
         auth()->login($u);
@@ -37,7 +31,11 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $s->version_templates = '[{"commit": "617246ec407353cd69c875baff5524b5e0c852dd", "docker_compose": {"services": {"planka": {"depends_on": {"postgres": {"condition": "service_healthy"}}, "environment": ["BASE_URL=http://localhost:3000", "DATABASE_URL=postgresql://postgres@postgres/planka", "SECRET_KEY=notsecretkey"], "image": "ghcr.io/plankanban/planka:latest", "ports": ["3000:1337"], "restart": "on-failure", "volumes": ["user-avatars:/app/public/user-avatars", "project-background-images:/app/public/project-background-images", "attachments:/app/private/attachments"]}, "postgres": {"environment": ["POSTGRES_DB=planka", "POSTGRES_HOST_AUTH_METHOD=trust"], "healthcheck": {"interval": "10s", "retries": 5, "test": ["CMD-SHELL", "pg_isready -U postgres -d planka"], "timeout": "5s"}, "image": "postgres:16-alpine", "restart": "on-failure", "volumes": ["db-data:/var/lib/postgresql/data"]}}, "version": "3", "volumes": {"attachments": null, "db-data": null, "project-background-images": null, "user-avatars": null}}, "tag": "v1.24.2"}]';
         $s->save();
 
-        $m = new Machine;
+        $m = Machine::factory()->create();
+        $m->refresh();
+
+        $ssh_port = setup_container('db29_set_up_tear_down_instance_queue', $m->id);
+
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
         $m->storage_path = '/opt/randomdirname/';
@@ -73,19 +71,12 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $this->assertNotNull($inst->dns_id);
         $this->assertNotNull($inst->subdomain);
 
-        $ssh = new SSHEngine;
+        $ssh = app('ssh')->toMachine($m);
 
         while (true) {
             $output = [];
 
-            $ssh
-                ->from([
-                    'ssh_privatekey_path' => $ssh_privatekey_path
-                ])
-                ->to([
-                    'ssh_port' => $ssh_port,
-                ])
-                ->exec('curl localhost:2019/config/');
+            $ssh->exec('curl localhost:2019/config/');
 
             if (str_contains($ssh->getLastline(), $inst->subdomain)) {
                 break;
@@ -122,12 +113,23 @@ class SetUpTearDownInstanceQueueTest extends TestCase
 
         $this->assertEquals([], $ssh->getOutput());
 
+        unset($ssh);
+
         // clean up
-        cleanup_container('db29_set_up_tear_down_instance_queue');
+        cleanup_container('db29_set_up_tear_down_instance_queue', $m->id);
     }
 
     private function isExplicitlyRun(): bool
     {
-        return in_array(__CLASS__, $_SERVER['argv']);
+        $class_arr = explode('\\', __CLASS__);
+        $class_name = end($class_arr);
+
+        foreach ($_SERVER['argv'] as $server_argv) {
+            if (str_contains($server_argv, $class_name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
