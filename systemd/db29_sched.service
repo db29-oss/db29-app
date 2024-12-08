@@ -1,0 +1,12 @@
+[Unit]
+Description=DB29 SCHEDULE
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=TO_BE_REPLACE
+ExecStart=/usr/bin/php artisan queue:listen --timeout=600
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

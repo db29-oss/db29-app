@@ -71,7 +71,7 @@
         >
           {{ $instance->subdomain.'.'.config('app.domain') }}
         </a>
-        @if ($instance->status !== 'rt_up')
+        @if ($instance->status !== 'rt_up' && ! $instance->queue_active)
         <span class="text-gray-400 pointer-events-none select-none">({{ __('trans.wait_a_sec') }})</span>
         @endif
         @if (! $instance->queue_active)

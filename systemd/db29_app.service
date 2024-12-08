@@ -1,0 +1,12 @@
+[Unit]
+Description=DB29 APP
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=TO_BE_REPLACE
+ExecStart=/usr/bin/php artisan octane:start --host=0.0.0.0 --port=8000 --workers=4 --watch
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

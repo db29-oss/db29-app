@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+
+use App\Models\Machine;
 use Exception;
 use Illuminate\Console\Command;
 
@@ -19,7 +21,9 @@ class MachineUpdate extends Command
             $ip_address = gethostbyname($machine->hostname);
 
             if ($ip_address !== $machine->ip_address) {
+                $machine->last_ip_address = $machine->ip_address;
                 $machine->ip_address = $ip_address;
+                $machine->save();
             }
         }
     }
