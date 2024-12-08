@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\TrafficRouter;
-use App\Services\SSHEngine;
 use Illuminate\Console\Command;
 
 class TrafficRouterPrepare extends Command

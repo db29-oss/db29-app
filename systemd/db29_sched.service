@@ -6,7 +6,6 @@ After=network.target
 User=root
 WorkingDirectory=TO_BE_REPLACE
 ExecStart=/usr/bin/php artisan schedule:run
-Restart=always
 
 [Install]
 WantedBy=multi-user.target

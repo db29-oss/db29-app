@@ -211,13 +211,24 @@ class RouterServiceTest extends TestCase
         $this->assertFalse($rt->ruleExists($new_rule_3));
         $this->assertTrue($rt->ruleExists($new_rule_4));
 
-        $rt->deleteAllRules(); // old rule no longer exists
+        $rt->deleteHttpsRules(); // old rule no longer exists
         $this->assertFalse($rt->ruleExists($new_rule_3));
         $this->assertFalse($rt->ruleExists($new_rule_4));
 
         $ssh->exec('curl -s localhost:2019/config/apps/http/servers/https/routes/');
 
         $this->assertEquals('[]', $ssh->getLastLine());
+
+        // wipe config
+        $ssh->exec('curl -s localhost:2019/config/');
+
+        $this->assertNotEquals('null', $ssh->getLastLine());
+
+        $rt->wipecf();
+
+        $ssh->exec('curl -s localhost:2019/config/');
+
+        $this->assertEquals('null', $ssh->getLastLine());
 
         unset($rt);
         unset($ssh);

@@ -267,7 +267,16 @@ class Router
         return str_contains($o_f_rule_str, $rule);
     }
 
-    public function deleteAllRules()
+    public function wipecf() // wipe config
+    {
+        $this->lock();
+
+        $this->ssh->exec('curl -s -X DELETE localhost:2019/config/');
+
+        $this->unlock();
+    }
+
+    public function deleteHttpsRules()
     {
         $this->lock();
 
@@ -452,6 +461,20 @@ class Router
                                     [
                                         'handler' => 'file_server',
                                         'root' => $this->tr->machine->storage_path.'www/'
+                                    ]
+                                ]
+                            ],
+                            [
+                                "match" => [
+                                    [
+                                        "path" => ["/ping"]
+                                    ]
+                                ],
+                                "handle" => [
+                                    [
+                                        "handler" => "static_response",
+                                        "status_code" => 200,
+                                        "body" => $this->tr->machine->id
                                     ]
                                 ]
                             ],

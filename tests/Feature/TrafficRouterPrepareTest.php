@@ -50,6 +50,8 @@ class TrafficRouterPrepareTest extends TestCase
             }
         }
 
+        $this->assertTrue(str_contains($output[0], $m->id));
+
         $ssh->exec('caddy'); // no exception
 
         $this->assertEquals(true, TrafficRouter::first()->prepared);
