@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=TO_BE_REPLACE
-ExecStart=/usr/bin/php artisan octane:start --host=0.0.0.0 --port=8000 --workers=4 --watch
+ExecStart=/usr/bin/php artisan octane:start --port=8000 --watch
 Restart=always
 
 [Install]

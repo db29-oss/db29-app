@@ -1,0 +1,10 @@
+[Unit]
+Description=DB29 SCHEDULER TIMER
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1min
+Unit=db29_sched.service
+
+[Install]
+WantedBy=timers.target
