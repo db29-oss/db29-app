@@ -9,7 +9,7 @@ class TrafficRouterPrepare extends Command
 {
     protected $signature = 'app:traffic-router-prepare {--tr_id=} {--force}';
 
-    protected $description = 'Prepare traffic router';
+    protected $description = 'Install caddy and set up skeleton rule, will not rewrite already exists rules';
 
     public function handle()
     {
@@ -52,7 +52,6 @@ class TrafficRouterPrepare extends Command
                 }
 
                 if (app('env') === 'production') {
-                    // get replace ExecStart and replace it with add --resume
                     $ssh->exec('cat /lib/systemd/system/caddy.service');
 
                     foreach ($ssh->getOutput() as $line) {
@@ -67,7 +66,7 @@ class TrafficRouterPrepare extends Command
                         [
                             "[Service]",
                             "ExecStart=", // reset mechanism of systemd
-                            "ExecStart=/usr/bin/caddy run --resume"
+                            "ExecStart=/usr/bin/caddy run" // run without preconfig
                         ];
 
                     foreach ($override_content_lines as $override_content_line) {

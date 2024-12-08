@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Machine;
 use App\Models\TrafficRouter;
+use Artisan;
 use Tests\TestCase;
 
 class TrafficRouterTest extends TestCase
@@ -83,13 +84,13 @@ class TrafficRouterTest extends TestCase
         $ssh->exec('pkill caddy');
 
 
-        // ssh: caddy run --resume run as front ground so we run as podman exec
-        exec('podman exec -d db29_traffic_router caddy run --resume', $output, $exit_code);
+        // ssh: caddy rerun will be null in config
+        exec('podman exec -d db29_traffic_router caddy run', $output, $exit_code);
 
         $this->assertEquals(0, $exit_code);
 
-        // random path still work
-        $ssh->exec('nc -z localhost '.$random_port);
+        // because config was wipe it should not work anymore
+        $ssh->exec('! nc -z localhost '.$random_port);
 
         unset($ssh);
 
