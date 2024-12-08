@@ -10,7 +10,7 @@ class TrafficRouterRebuild extends Command
 {
     protected $signature = 'app:traffic-router-rebuild {--tr_id=}';
 
-    protected $description = 'Wipe out config and rebuild all rules on traffic router';
+    protected $description = 'Forceful wipe out config and rebuild all rules on traffic router';
 
     public function handle()
     {
@@ -56,7 +56,7 @@ class TrafficRouterRebuild extends Command
                 }
             }
 
-            foreach ($machine->instances as $instance) {
+            foreach ($tr->machine->instances as $instance) {
                 if (! array_key_exists($instance->id, $instance_ids)) {
                     continue;
                 }
