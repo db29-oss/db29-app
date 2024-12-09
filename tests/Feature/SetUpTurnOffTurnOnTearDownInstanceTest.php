@@ -11,7 +11,7 @@ use App\Services\SSHEngine;
 use Artisan;
 use Tests\TestCase;
 
-class SetUpTearDownInstanceQueueTest extends TestCase
+class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
 {
     public function test_generic(): void
     {
@@ -34,7 +34,7 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $m = Machine::factory()->create();
         $m->refresh();
 
-        $ssh_port = setup_container('db29_set_up_tear_down_instance_queue', $m->id);
+        $ssh_port = setup_container('db29_su_tof_ton_td_instance_queue', $m->id);
 
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
@@ -53,7 +53,7 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $this->assertEquals(0, Instance::count());
 
         /**
-         * SET UP INSTANCE TEST
+         * SET UP
          */
 
         $response = $this->post('instance/register', [
@@ -89,15 +89,75 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         $this->assertEquals(false, $inst->queue_active);
 
         /**
-         * TEAR DOWN INSTANCE TEST
+         * TURN OFF
          */
 
+        $ssh->exec('curl localhost:2019/config/');
+
+        $this->assertTrue(str_contains($ssh->getLastline(), $inst->subdomain));
+
+        $this->assertFalse(str_contains($ssh->getLastline(), 'instance is currently off'));
+
+        $response = $this->post('instance/turn-off', [
+            'instance_id' => $inst->id,
+        ]);
+
+        $inst->refresh();
+
+        $this->assertEquals('ct_dw', $inst->status);
+
+        $this->assertEquals(0, $inst->queue_active);
+
+        $ssh->clearOutput();
+
+        $ssh->exec('podman ps -q');
+
+        $this->assertEquals([], $ssh->getOutput());
+
+        $ssh->exec('curl localhost:2019/config/');
+
+        $this->assertTrue(str_contains($ssh->getLastline(), $inst->subdomain));
+
+        $this->assertTrue(str_contains($ssh->getLastline(), 'instance is currently off'));
+
+        /**
+         * TURN ON
+         */
+        $response = $this->post('instance/turn-on', [
+            'instance_id' => $inst->id,
+        ]);
+
+        $inst->refresh();
+
+        $this->assertEquals('rt_up', $inst->status);
+
+        $this->assertEquals(0, $inst->queue_active);
+
+        $ssh->clearOutput();
+
+        $ssh->exec('podman ps -q');
+
+        $this->assertNotEquals([], $ssh->getOutput());
+
+        $ssh->exec('curl localhost:2019/config/');
+
+        $this->assertFalse(str_contains($ssh->getLastline(), 'instance is currently off'));
+
+        /**
+         * TEAR DOWN
+         */
+
+        $response = $this->post('instance/turn-off', [
+            'instance_id' => $inst->id,
+        ]);
+
         $u->refresh();
+
         $this->assertEquals(1, $u->instance_count);
 
         $this->assertEquals(1, Instance::count());
 
-        $response = $this->delete('instance', [
+        $response = $this->post('instance/delete', [
             'instance_id' => $inst->id,
         ]);
 
@@ -116,7 +176,7 @@ class SetUpTearDownInstanceQueueTest extends TestCase
         unset($ssh);
 
         // clean up
-        cleanup_container('db29_set_up_tear_down_instance_queue', $m->id);
+        cleanup_container('db29_su_tof_ton_td_instance_queue', $m->id);
     }
 
     private function isExplicitlyRun(): bool

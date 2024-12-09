@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Jobs\InitInstance;
 use App\Jobs\TermInstance;
+use App\Jobs\TurnOffInstance;
+use App\Jobs\TurnOnInstance;
 use App\Models\Instance;
 use App\Models\Source;
 use App\Models\User;
@@ -101,6 +103,7 @@ class PageController extends Controller
             'queue_active = ?, '. # true
             'updated_at = ? '. # $now
             'where id = ? '.# request('instance_id')
+            'and status = ? '. # 'ct_dw'
             'and queue_active = ? '. # false
             'and user_id = ? '. # auth()->user()->id
             'returning id';
@@ -108,6 +111,7 @@ class PageController extends Controller
         $sql_params[] = true;
         $sql_params[] = $now;
         $sql_params[] = request('instance_id');
+        $sql_params[] = 'ct_dw';
         $sql_params[] = false;
         $sql_params[] = auth()->user()->id;
 
@@ -118,6 +122,68 @@ class PageController extends Controller
         }
 
         TermInstance::dispatch($db[0]->id);
+
+        return redirect()->route('instance');
+    }
+
+    public function turnOnInstance()
+    {
+        $now = now();
+        $sql_params = [];
+        $sql = 'update instances set '.
+            'queue_active = ?, '. # true
+            'updated_at = ? '. # $now
+            'where id = ? '.# request('instance_id')
+            'and status = ? '. # 'ct_dw'
+            'and queue_active = ? '. # false
+            'and user_id = ? '. # auth()->user()->id
+            'returning id';
+
+        $sql_params[] = true;
+        $sql_params[] = $now;
+        $sql_params[] = request('instance_id');
+        $sql_params[] = 'ct_dw';
+        $sql_params[] = false;
+        $sql_params[] = auth()->user()->id;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (! count($db)) {
+            return redirect()->route('instance');
+        }
+
+        TurnOnInstance::dispatch($db[0]->id);
+
+        return redirect()->route('instance');
+    }
+
+    public function turnOffInstance()
+    {
+        $now = now();
+        $sql_params = [];
+        $sql = 'update instances set '.
+            'queue_active = ?, '. # true
+            'updated_at = ? '. # $now
+            'where id = ? '.# request('instance_id')
+            'and status = ? '. # 'rt_up'
+            'and queue_active = ? '. # false
+            'and user_id = ? '. # auth()->user()->id
+            'returning id';
+
+        $sql_params[] = true;
+        $sql_params[] = $now;
+        $sql_params[] = request('instance_id');
+        $sql_params[] = 'rt_up';
+        $sql_params[] = false;
+        $sql_params[] = auth()->user()->id;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (! count($db)) {
+            return redirect()->route('instance');
+        }
+
+        TurnOffInstance::dispatch($db[0]->id);
 
         return redirect()->route('instance');
     }

@@ -59,22 +59,8 @@ class Router
             return false;
         }
 
-        $s_idx = $strpos + 1; // double quote
         $e_idx = $strpos + 1; // double quote
-        $s_count = 0;
         $e_count = 0;
-
-        while ($s_idx > 0) {
-            $s_idx -= 1;
-
-            if ($o_f_rule_str[$s_idx] === '{') {
-                $s_count += 1;
-
-                if ($s_count === 4) {
-                    break;
-                }
-            }
-        }
 
         while ($e_idx < strlen($o_f_rule_str)) {
             $e_idx += 1;
@@ -85,6 +71,23 @@ class Router
                 if ($e_count === 2) {
                     break;
                 }
+            }
+        }
+
+        $s_idx = $e_idx;
+        $bracket_count = 1;
+
+        while ($s_idx > 0) {
+            $s_idx -= 1;
+
+            if ($o_f_rule_str[$s_idx] === '}') {
+                $bracket_count += 1;
+            } elseif ($o_f_rule_str[$s_idx] === '{') {
+                $bracket_count -= 1;
+            }
+
+            if ($bracket_count === 0) {
+                break;
             }
         }
 

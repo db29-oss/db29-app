@@ -15,7 +15,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('dashboard', [PageController::class, 'dashboard'])->name('dashboard');
     Route::prefix('instance')->group(function () {
         Route::get('/', [PageController::class, 'instance'])->name('instance');
-        Route::delete('/', [PageController::class, 'deleteInstance'])->name('deleteInstance');
+        Route::post('delete', [PageController::class, 'deleteInstance'])->name('delete-instance');
+        Route::post('turn-on', [PageController::class, 'turnOnInstance'])->name('turn-on-instance');
+        Route::post('turn-off', [PageController::class, 'turnOffInstance'])->name('turn-off-instance');
         Route::get('register', [PageController::class, 'registerInstance'])->name('register-instance');
         Route::post('register', [PageController::class, 'postRegisterInstance'])
             ->name('post-register-instance');

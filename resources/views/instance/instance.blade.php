@@ -52,7 +52,7 @@
       <div class="pb-3">
         <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
           <circle cx="5" cy="5" r="5"
-          @if ($instance->status === 'queue')
+          @if ($instance->status === 'queue' || $instance->status === 'ct_dw')
             fill="darkgrey"
           @elseif ($instance->queue_active)
             fill="coral"
@@ -71,28 +71,45 @@
         >
           {{ $instance->subdomain.'.'.config('app.domain') }}
         </a>
-        @if ($instance->status !== 'rt_up' && ! $instance->queue_active)
+        @if ($instance->queue_active)
         <span class="text-gray-400 pointer-events-none select-none">({{ __('trans.wait_a_sec') }})</span>
         @endif
+
         @if (! $instance->queue_active)
-        <form class="inline" method="POST">
+
+        @if ($instance->status === 'ct_dw')
+        <form class="inline" method="POST" action="{{ route('turn-on-instance') }}">
           @csrf
-
-          @method('DELETE')
-
           <input hidden name="instance_id" value="{{ $instance->id }}"/>
+          <button type="submit">{{ __('trans.turn_on') }}</button>
+        </form>
 
-          <button onclick="if (! window.confirm('{{ __('trans.confirm').' '.__('trans.delete').' '.$instance->subdomain.'.'.config('app.domain').'?' }}')) { event.preventDefault(); }">
+        <form class="inline" method="POST" action="{{ route('delete-instance') }}">
+          @csrf
+          <input hidden name="instance_id" value="{{ $instance->id }}"/>
+          <button type="submit" onclick="if (! window.confirm('{{ __('trans.confirm').' '.__('trans.delete').' '.$instance->subdomain.'.'.config('app.domain').'?' }}')) { event.preventDefault(); }">
             {{ __('trans.delete') }}
           </button>
         </form>
+        @elseif ($instance->status === 'rt_up')
+        <form class="inline" method="POST" action="{{ route('turn-off-instance') }}">
+          @csrf
+          <input hidden name="instance_id" value="{{ $instance->id }}"/>
+          <button type="submit" onclick="if (! window.confirm('{{ __('trans.confirm').' '.__('trans.turn_off').' '.$instance->subdomain.'.'.config('app.domain').'?' }}')) { event.preventDefault(); }">
+            {{ __('trans.turn_off') }}
+          </button>
+        </form>
+        @endif
+
+        @endif
+
         @if ($instance->status === 'rt_up' && auth()->user()->instance_count === 1)
         <!--tutorial for new user-->
         <div class="text-gray-400 pointer-events-none select-none pl-28">↑</div>
         <div class="text-gray-400 pointer-events-none select-none pl-14">
           {{ __('trans.click_here') }}
         </div>
-        @endif
+        <!--end tutorial-->
         @endif
       </div>
       @endif

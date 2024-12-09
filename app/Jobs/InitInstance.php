@@ -5,27 +5,19 @@ namespace App\Jobs;
 use App\Models\Instance;
 use App\Models\Machine;
 use App\Models\Source;
-use App\Services\SSHEngine;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Queue\InteractsWithQueue;
 
 class InitInstance implements ShouldQueue
 {
-    use InteractsWithQueue, Queueable;
+    use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
         private readonly string $instance_id,
         private readonly array $reg_info = []
     ) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         $instance = Instance::query()

@@ -109,4 +109,22 @@ class Planka implements ShouldQueue
                  'cd '.$this->machine->storage_path.'instance/ \\&\\& rm -rf '.$this->instance->id,
              ]);
     }
+
+    public function turnOff()
+    {
+        $this->ssh->exec(
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& podman-compose down'
+        );
+    }
+
+    public function turnOn()
+    {
+
+        $this->ssh->exec(
+             [
+                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
+                 'podman-compose up -d',
+             ]
+        );
+    }
 }
