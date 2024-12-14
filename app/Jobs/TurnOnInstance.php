@@ -92,11 +92,13 @@ class TurnOnInstance implements ShouldQueue
         $sql = 'update instances set '.
             'status = ?, '. # 'rt_up'
             'queue_active = ?, '. # false
+            'turned_on_at = ?, '. # $now
             'updated_at = ? '. # $now
             'where id = ?'; # $instance->id
 
         $sql_params[] = 'rt_up';
         $sql_params[] = false;
+        $sql_params[] = $now;
         $sql_params[] = $now;
         $sql_params[] = $instance->id;
 

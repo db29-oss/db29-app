@@ -36,12 +36,12 @@ class RouteUpdateTest extends TestCase
 
         $subdomain = str(str()->random(8))->lower();
 
-        $inst = new Instance;
-        $inst->user_id = $u->id;
-        $inst->machine_id = $m->id;
-        $inst->source_id = $s->id;
-        $inst->subdomain = $subdomain;
-        $inst->save();
+        $inst = Instance::factory()->create([
+            'user_id' => $u->id,
+            'machine_id' => $m->id,
+            'source_id' => $s->id,
+            'subdomain' => $subdomain,
+        ]);
 
         $inst->refresh();
 

@@ -1,12 +1,13 @@
 @include('header', ['title' => 'DB29 Dashboard'])
 <div>
-  <pre>{{ auth()->user()->login_id }}</pre>
+  <div class="text-base">{{ auth()->user()->login_id }}</div>
+  <div class="my-2">{{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}</div>
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf
     <button>{{ __('logout') }}</button>
   </form>
 
-  <div style="margin-top: 1.5rem;"></div>
+  <div style="margin-top: 2rem;"></div>
 
   <div class="pb-4">
     <a class="" href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a>

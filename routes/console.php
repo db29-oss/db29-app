@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
+Schedule::command('app:traffic-router-maintain')->onOneServer()->withoutOverlapping()->everyMinute();
+
+Schedule::command('app:take-credit')->onOneServer()->withoutOverlapping()->hourly();
+Schedule::command('app:turn-off-free-instance')->onOneServer()->withoutOverlapping()->hourly();
+
+Schedule::command('app:user-cleanup')->onOneServer()->withoutOverlapping()->daily();

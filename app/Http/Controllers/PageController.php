@@ -58,6 +58,7 @@ class PageController extends Controller
 
         $user = new User;
         $user->login_id = str()->random(31);
+        $user->credit = 50_000;
 
         $substr = substr($user->login_id, 0, 11);
 
@@ -268,7 +269,12 @@ class PageController extends Controller
     {
         $source_name = request('source');
 
-        $source = Source::whereName($source_name)->where('enabled', true)->first(['id', 'name']);
+        $source = Source::whereName($source_name)
+            ->where('enabled', true)
+            ->with(['plans' => function ($query) {
+                $query->where('base', true);
+            }])
+            ->first(['id', 'name']);
 
         if (! $source) {
             return redirect()->route('source');
@@ -291,6 +297,7 @@ class PageController extends Controller
                 'id, '.
                 'source_id, '.
                 'user_id, '.
+                'plan_id, '.
                 'queue_active, '.
                 'created_at, '.
                 'updated_at'.
@@ -298,6 +305,7 @@ class PageController extends Controller
                 '\''.$instance_id.'\', '. # $instance_id
                 '\''.$source->id.'\', '. # $source->id
                 '\''.auth()->user()->id.'\', '. # auth()->user()->id
+                '\''.$source->plans[0]->id.'\', '. # $source->plans[0]->id
                 'true, '. # true
                 '\''.$now.'\', '. # $now
                 '\''.$now.'\' '. # $now

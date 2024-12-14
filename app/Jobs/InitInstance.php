@@ -56,9 +56,12 @@ class InitInstance implements ShouldQueue
         $traffic_router = $machine->trafficRouter;
 
         // init
-        $instance->status = 'init';
-        $instance->machine_id = $machine->id;
-        $instance->save();
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'status' => 'init',
+                'machine_id' => $machine->id
+            ]);
 
         // dns
         $subdomain = $instance->subdomain;
@@ -82,10 +85,13 @@ class InitInstance implements ShouldQueue
             }
         }
 
-        $instance->subdomain = $subdomain;
-        $instance->dns_id = $dns_id;
-        $instance->status = 'dns';
-        $instance->save();
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'subdomain' => $subdomain,
+                'dns_id' => $dns_id,
+                'status' => 'dns',
+            ]);
 
         $ssh = app('ssh')->toMachine($machine)->compute();
 
@@ -148,13 +154,16 @@ class InitInstance implements ShouldQueue
             sleep(1);
         }
 
-        $instance->status = 'ct_up';
-        $instance->version_template =
-            [
-                'docker_compose' => $docker_compose,
-                'port' => $host_port,
-                'tag' => $latest_version_template,
-            ];
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'status' => 'ct_up',
+                'version_template' => [
+                    'docker_compose' => $docker_compose,
+                    'port' => $host_port,
+                    'tag' => $latest_version_template,
+                ]
+            ]);
 
         // router
         $rule =
@@ -178,8 +187,12 @@ class InitInstance implements ShouldQueue
 
         app('rt', [$traffic_router, $ssh])->addRule($rule);
 
-        $instance->status = 'rt_up'; // router up
-        $instance->queue_active = false; // could be delete by user
-        $instance->save();
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'status' => 'rt_up', // router up
+                'queue_active' => false,
+                'turned_on_at' => now()
+            ]);
     }
 }

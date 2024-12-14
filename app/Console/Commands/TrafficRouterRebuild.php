@@ -24,6 +24,7 @@ class TrafficRouterRebuild extends Command
 
         foreach ($trs as $tr) {
             $ssh = app('ssh')->toMachine($tr->machine)->compute();
+
             $rt = app('rt', [$tr, $ssh]);
 
             $rt->wipecf();

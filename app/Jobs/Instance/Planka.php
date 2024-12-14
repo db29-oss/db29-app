@@ -2,10 +2,11 @@
 
 namespace App\Jobs\Instance;
 
+use App\Contracts\InstanceInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class Planka implements ShouldQueue
+class Planka implements InstanceInterface, ShouldQueue
 {
     use Queueable;
 
@@ -27,7 +28,7 @@ class Planka implements ShouldQueue
         ];
     }
 
-    public function setUp(): void
+    public function setUp()
     {
         foreach (
             $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
@@ -126,5 +127,21 @@ class Planka implements ShouldQueue
                  'podman-compose up -d',
              ]
         );
+    }
+
+    public function backUp()
+    {
+    }
+
+    public function restore()
+    {
+    }
+
+    public function downgrade()
+    {
+    }
+
+    public function upgrade()
+    {
     }
 }

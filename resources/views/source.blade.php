@@ -2,8 +2,7 @@
 <div>
   @if (auth()->user()->instance_count === 0)
   <div class="text-gray-400 pb-4 pointer-events-none select-none">
-    {{ __('trans.select_source_and_click') }}
-    <span class="underline">{{ __('trans.create') }}</span>
+    {{ __('trans.explain_plan') }}
   </div>
   @endif
 

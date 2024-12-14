@@ -14,4 +14,9 @@ class Source extends Model
     {
         return $this->hasMany(Instance::class);
     }
+
+    public function plans()
+    {
+        return $this->hasMany(Plan::class);
+    }
 }

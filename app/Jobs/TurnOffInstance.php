@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Instance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 
 class TurnOffInstance implements ShouldQueue
 {
@@ -18,8 +19,12 @@ class TurnOffInstance implements ShouldQueue
     {
         $instance = Instance::query()
             ->whereId($this->instance_id)
-            ->with('source')
-            ->with('machine.trafficRouter')
+            ->with([
+                'machine.trafficRouter',
+                'plan',
+                'source',
+                'user'
+            ])
             ->first();
 
         $source = $instance->source;
@@ -72,19 +77,35 @@ class TurnOffInstance implements ShouldQueue
             ssh: $ssh,
         ))->turnOff();
 
+
+        // we also need to take credit from user
+        // by calculate how much time instance was on/or how long since last pay
+        $pay_since = $instance->paid_at;
+
+        if ($instance->paid_at < $instance->turned_on_at) {
+            $pay_since = $instance->turned_on_at;
+        }
+
+        $pay_since = Carbon::parse($pay_since);
+
         $now = now();
-        $sql_params = [];
-        $sql = 'update instances set '.
-            'status = ?, '. # 'ct_dw'
-            'queue_active = ?, '. # false
-            'updated_at = ? '. # $now
-            'where id = ?'; # $instance->id
 
-        $sql_params[] = 'ct_dw';
-        $sql_params[] = false;
-        $sql_params[] = $now;
-        $sql_params[] = $instance->id;
+        $pay_amount = (int) ceil($pay_since->diffInHours($now) * $instance->plan->price);
 
-        app('db')->select($sql, $sql_params);
+        $sql = 'begin;'.
+            'update users set '.
+            'credit = credit - '.$pay_amount.', '.
+            'updated_at = \''.$now->toDateTimeString().'\' '.
+            'where id = \''.$instance->user->id.'\'; '.
+            'update instances set '.
+            'status = \'ct_dw\', '. # 'ct_dw'
+            'queue_active = false, '. # false
+            'paid_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
+            'turned_off_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
+            'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
+            'where id = \''.$instance->id.'\';'. # $instance->id
+            'commit;';
+
+        app('db')->unprepared($sql);
     }
 }
