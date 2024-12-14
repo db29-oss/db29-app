@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Plan;
 use App\Models\Source;
 use App\Models\User;
 use Tests\TestCase;
@@ -26,11 +27,12 @@ class ShowSupportedSourceTest extends TestCase
 
         $this->assertEquals(0, Source::count());
 
-        Source::factory()->count(10)->create();
+        Source::factory()->count(10)->hasPlans(3)->create();
 
         $s_s = Source::whereEnabled(false)->get();
 
         $response = $this->get('source');
+        $response->assertOk();
 
         foreach ($s_s as $s) {
             $response->assertDontSee($s->name);
@@ -39,6 +41,8 @@ class ShowSupportedSourceTest extends TestCase
         $s = Source::first();
         $s->enabled = true;
         $s->save();
+
+        Plan::factory()->for($s)->create();
 
         $s_id = $s->id;
 

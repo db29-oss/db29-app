@@ -58,7 +58,7 @@ class PageController extends Controller
 
         $user = new User;
         $user->login_id = str()->random(31);
-        $user->credit = 50_000;
+        $user->credit = User::FREE_CREDIT;
 
         $substr = substr($user->login_id, 0, 11);
 
@@ -191,7 +191,13 @@ class PageController extends Controller
 
     public function source()
     {
-        $sources = Source::where('enabled', true)->orderBy('name')->get();
+        $sources = Source::query()
+            ->where('enabled', true)
+            ->with(['plans' => function ($q) {
+                $q->where('base', true);
+            }])
+            ->orderBy('name')
+            ->get();
 
         return view('source')->with('sources', $sources);
     }

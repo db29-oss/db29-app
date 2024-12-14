@@ -1,7 +1,9 @@
 @include('header', ['title' => 'DB29 Dashboard'])
 <div>
-  <div class="text-base">{{ auth()->user()->login_id }}</div>
-  <div class="my-2">{{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}</div>
+  <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
+  @if (auth()->user()->instance_count !== 0)
+  <div class="mb-2">{{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}</div>
+  @endif
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf
     <button>{{ __('logout') }}</button>
