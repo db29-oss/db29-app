@@ -56,16 +56,53 @@ class PageController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $user = new User;
-        $user->login_id = str()->random(31);
-        $user->credit = User::FREE_CREDIT;
+        $login_id = str()->random(31);
+        $substr = substr($login_id, 0, 11);
 
-        $substr = substr($user->login_id, 0, 11);
+        $sql = 'delete from recharge_number_holes where '.
+            'recharge_number = (select recharge_number from recharge_number_holes limit 1) '.
+            'returning recharge_number';
 
-        $user->email = $substr.'__@db29.ovh';
-        $user->name = $substr;
-        $user->username = $substr;
-        $user->save();
+        $db = app('db')->select($sql);
+
+        $now = now();
+        $sql_params = [];
+        $sql =
+            'insert into users ('.
+                'id, login_id, credit, email, name, '.
+                'username, recharge_number, created_at, updated_at'.
+            ') '.
+            'values ('.
+                '?, '. # str()->uuid()
+                '?, '. # str()->random(31)
+                '?, '. # User::FREE_CREDIT
+                '?, '. # $substr.'__@db29.ovh'
+                '?, '. # $substr
+                '?, '; # $substr
+
+        $sql_params[] = str()->uuid();
+        $sql_params[] = str()->random(31);
+        $sql_params[] = User::FREE_CREDIT;
+        $sql_params[] = $substr.'__@db29.ovh';
+        $sql_params[] = $substr;
+        $sql_params[] = $substr;
+
+        if (count($db) === 0) {
+            $sql .=  '(select coalesce(max(recharge_number), 0) + 1 as recharge_number from users), ';
+        } else {
+            $sql .= '?, '; # $db[0]->recharge_number;
+            $sql_params[] = $db[0]->recharge_number;
+        }
+
+        $sql .=
+                '?, '. # $now
+                '?'. # $now
+            ') returning *';
+
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+
+        $user = User::hydrate(app('db')->select($sql, $sql_params))[0];
 
         return view('register')->with('user', $user);
     }

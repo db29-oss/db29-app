@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class UserRegistrationFlowTest extends TestCase
@@ -18,6 +19,7 @@ class UserRegistrationFlowTest extends TestCase
         $this->assertEquals(0, User::count());
 
         $response = $this->post('register');
+        $response->assertOk();
 
         $this->assertEquals(1, User::count());
 
@@ -55,5 +57,42 @@ class UserRegistrationFlowTest extends TestCase
         $this->post('logout');
 
         $this->assertGuest();
+    }
+
+    public function test_reuse_recharge_number(): void
+    {
+        $user_count = rand(1, 10);
+
+        User::query()->delete();
+
+        User::factory()->count($user_count)->create();
+
+        $u = User::inRandomOrder()->first();
+
+        $recharge_number = $u->recharge_number;
+
+        DB::insert('insert into recharge_number_holes (recharge_number) values ('.$recharge_number.')');
+
+        $this->assertEquals(1, count(DB::select('select * from recharge_number_holes')));
+
+        $u->delete();
+
+        $this->assertNull(User::whereRechargeNumber($recharge_number)->first());
+
+        $response = $this->post('register');
+
+        $response->assertOk();
+
+        $this->assertNotNull(User::whereRechargeNumber($recharge_number)->first());
+
+        $this->assertEquals(0, count(DB::select('select * from recharge_number_holes')));
+
+        $this->assertNull(User::whereRechargeNumber($user_count + 1)->first());
+
+        $response = $this->post('register');
+
+        $response->assertOk();
+
+        $this->assertNotNull(User::whereRechargeNumber($user_count + 1)->first());
     }
 }

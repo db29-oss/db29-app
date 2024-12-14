@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class UserCleanup extends Command
 {
@@ -13,6 +14,20 @@ class UserCleanup extends Command
 
     public function handle()
     {
-        User::whereInstanceCount(0)->where('updated_at', '<', now()->subDays(30))->delete();
+        $users = User::whereInstanceCount(0)->where('updated_at', '<', now()->subDays(30))->get();
+
+        $sql_params = [];
+        $sql = 'insert into recharge_number_holes (recharge_number) values ';
+
+        foreach ($users as $user) {
+            $sql .= '(?), ';
+            $sql_params[] = $user->recharge_number;
+        }
+
+        $sql = substr($sql, 0, -2);
+
+        User::whereIn('id', $users->pluck('id'))->delete();
+
+        DB::insert($sql, $sql_params);
     }
 }

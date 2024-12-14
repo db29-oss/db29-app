@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -15,7 +16,10 @@ class UserFactory extends Factory
 
         return [
             'login_id' => $str,
-            'username' => $str
+            'username' => $str,
+            'recharge_number' => DB::raw(
+                '(select coalesce(max(recharge_number), 0) + 1 as recharge_number from users)'
+            ),
         ];
     }
 }
