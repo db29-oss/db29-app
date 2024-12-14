@@ -24,18 +24,13 @@ class TurnOffFreeInstanceTest extends TestCase
         $i->paid_at = now(); // will not be subject to turn-off-free-instance
         $i->save();
 
-        $i2 = Instance::whereNotIn('id', [$i->id])->inRandomOrder()->first();
-        $i2->paid_at = now()->subDays(2);
-        $i2->turned_on_at = now()->subHours(23); // will not be subject to turn-off-free-instance
-        $i2->save();
-
         config()->set('queue.default', 'database');
 
         $this->assertEquals(0, app('db')->table('jobs')->count());
 
         $this->artisan('app:turn-off-free-instance');
 
-        $this->assertEquals(8, app('db')->table('jobs')->count());
+        $this->assertEquals(9, app('db')->table('jobs')->count());
 
         test_util_migrate_fresh(); // prevent composer run dev kick in
     }

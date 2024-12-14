@@ -31,6 +31,11 @@
 
   <br>
 
+  <pre><b>Câu hỏi: các ứng dụng đã tắt có bị tính phí không?</b></pre>
+  <pre>Các ứng dụng đã tắt (nhưng chưa xóa) vẫn bị tính phí bởi vì máy vẫn chừa tài nguyên để khởi động ứng dụng lại.</pre>
+
+  <br>
+
   <pre><b>Câu hỏi: ứng dụng và tài khoản của tôi có thể bị xóa không?</b></pre>
   <pre>Ứng dụng sẽ bị xóa nếu như không được kích hoạt khởi động lại trong 30 ngày. Tài khoản sẽ bị xoá nếu không còn ứng dụng nào và cũng không đăng nhập trong 30 ngày.</pre>
 

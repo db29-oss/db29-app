@@ -2,7 +2,9 @@
 <div>
   <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
   @if (auth()->user()->instance_count !== 0)
-  <div class="mb-2">{{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}</div>
+  <div class="mb-2 @if (auth()->user()->credit < 0) text-red-600 @endif">
+    {{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}
+  </div>
   @endif
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf

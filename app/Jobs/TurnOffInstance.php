@@ -80,23 +80,19 @@ class TurnOffInstance implements ShouldQueue
 
         // we also need to take credit from user
         // by calculate how much time instance was on/or how long since last pay
-        $pay_since = $instance->paid_at;
-
-        if ($instance->paid_at < $instance->turned_on_at) {
-            $pay_since = $instance->turned_on_at;
-        }
-
-        $pay_since = Carbon::parse($pay_since);
+        $paid_at = Carbon::parse($instance->paid_at);
 
         $now = now();
 
-        $pay_amount = (int) ceil($pay_since->diffInHours($now) * $instance->plan->price);
+        $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
         $sql = 'begin;'.
+
             'update users set '.
             'credit = credit - '.$pay_amount.', '.
             'updated_at = \''.$now->toDateTimeString().'\' '.
             'where id = \''.$instance->user->id.'\'; '.
+
             'update instances set '.
             'status = \'ct_dw\', '. # 'ct_dw'
             'queue_active = false, '. # false
@@ -104,6 +100,7 @@ class TurnOffInstance implements ShouldQueue
             'turned_off_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
             'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
             'where id = \''.$instance->id.'\';'. # $instance->id
+
             'commit;';
 
         app('db')->unprepared($sql);

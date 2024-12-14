@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Instance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 
 class TermInstance implements ShouldQueue
 {
@@ -45,14 +46,23 @@ class TermInstance implements ShouldQueue
             ssh: $ssh,
         ))->tearDown();
 
-        $now = now()->toDateTimeString();
+        $paid_at = Carbon::parse($instance->paid_at);
+
+        $now = now();
+
+        $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
+
         $sql = 'begin; '.
+
             'update users set '.
+            'credit = credit - '.$pay_amount.', '.
             'instance_count = instance_count - 1, '.
-            'updated_at = \''.$now.'\' '.
+
+            'updated_at = \''.$now->toDateTimeString().'\' '.
             'where id = \''.$instance->user->id.'\'; '.
             'delete from instances '.
             'where id = \''.$instance->id.'\'; '.
+
             'commit;';
 
         app('db')->unprepared($sql);

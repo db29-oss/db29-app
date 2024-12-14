@@ -17,8 +17,7 @@ class TakeCredit extends Command
         $now = now();
 
         $instances = Instance::query()
-            ->where('queue_active', false) # because we also take credit when turn off
-            ->where('status', 'rt_up') # if user turn off instance - it already collect credit
+            ->where('queue_active', false) # already calc take credit when turn off/delete
             ->with([
                 'plan',
                 'user'
@@ -32,19 +31,9 @@ class TakeCredit extends Command
             ]);
 
         foreach ($instances as $instance) {
-            if ($instance->user->credit < 0) {
-                continue; // let app:turn-off-free-instance calculate credit
-            }
+            $paid_at = Carbon::parse($instance->paid_at);
 
-            $pay_since = $instance->paid_at;
-
-            if ($instance->paid_at < $instance->turned_on_at) {
-                $pay_since = $instance->turned_on_at;
-            }
-
-            $pay_since = Carbon::parse($pay_since);
-
-            $pay_amount = (int) ceil($pay_since->diffInHours($now) * $instance->plan->price);
+            $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
             $sql = 'begin;'.
                 'update users set '.

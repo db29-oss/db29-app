@@ -1,8 +1,8 @@
 @include('header', ['title' => 'DB29 - SOURCE'])
 <div>
-  @if (auth()->user()->instance_count === 0)
+  @if (auth()->user()->instance_count === 0 && \App\Models\User::FREE_CREDIT === auth()->user()->credit)
   <div class="text-gray-400 pb-4 pointer-events-none select-none">
-    {{ __('trans.explain_plan', ['amount' => formatNumberShort(\App\Models\User::FREE_CREDIT)]) }}
+    {{ __('trans.explain_plan', ['amount' => formatNumberShort(auth()->user()->credit)]) }}
   </div>
   @endif
 

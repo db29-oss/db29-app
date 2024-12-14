@@ -30,7 +30,7 @@ class TakeCreditTest extends TestCase
         $p = Plan::first();
         $i = Instance::first();
 
-        $pay_amount = (int) ceil(Carbon::parse($i->paid_at)->diffInHours($now) * $p->price);
+        $pay_amount = (int) ceil(Carbon::parse($i->paid_at)->diffInDays($now) * $p->price);
 
         $this->freezeTime(function () use ($now) {
             $this->travelTo($now, function () {
