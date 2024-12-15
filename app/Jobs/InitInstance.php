@@ -37,7 +37,7 @@ class InitInstance implements ShouldQueue
 
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
 
-        $machine = $instance->machine;
+        $machine = $instance->machine; // sometime first time run bug and we dont want to reassign machine
 
         if (! $machine) {
             $machine = Machine::query()
@@ -65,6 +65,9 @@ class InitInstance implements ShouldQueue
                 'status' => 'init',
                 'machine_id' => $machine->id
             ]);
+
+        $instance->status = 'init';
+        $instance->machine = $machine;
 
         // dns
         $subdomain = $instance->subdomain;
@@ -95,6 +98,10 @@ class InitInstance implements ShouldQueue
                 'dns_id' => $dns_id,
                 'status' => 'dns',
             ]);
+
+        $instance->subdomain = $subdomain;
+        $instance->dns_id = $dns_id;
+        $instance->status = 'dns';
 
         $ssh = app('ssh')->toMachine($machine)->compute();
 
@@ -168,6 +175,13 @@ class InitInstance implements ShouldQueue
                     'tag' => $latest_version_template,
                 ]
             ]);
+
+        $instance->status = 'ct_up';
+        $instance->version_template = [
+            'docker_compose' => $docker_compose,
+            'port' => $host_port,
+            'tag' => $latest_version_template,
+        ];
 
         // router
         $rule =

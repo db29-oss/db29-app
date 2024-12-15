@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Instance;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
