@@ -18,11 +18,16 @@ class TurnOnInstance implements ShouldQueue
     {
         $instance = Instance::query()
             ->whereId($this->instance_id)
-            ->with('source')
-            ->with('machine.trafficRouter')
+            ->with([
+                'machine.trafficRouter',
+                'plan',
+                'source',
+            ])
             ->first();
 
         $source = $instance->source;
+
+        $plan = $instance->plan;
 
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
 
@@ -39,6 +44,7 @@ class TurnOnInstance implements ShouldQueue
         (new $job_class(
             instance: $instance,
             machine: $machine,
+            plan: $plan,
             ssh: $ssh,
         ))->turnOn();
 

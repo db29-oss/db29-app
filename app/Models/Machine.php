@@ -10,6 +10,8 @@ class Machine extends Model
 {
     use HasFactory, HasUuids;
 
+    protected $hidden = ['ssh_privatekey'];
+
     public function instances()
     {
         return $this->hasMany(Instance::class);

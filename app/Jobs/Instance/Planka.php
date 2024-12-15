@@ -106,19 +106,7 @@ class Planka implements InstanceInterface, ShouldQueue
             $create_instance_path = 'btrfs subvolume create '.$instance_path;
         }
 
-        $apply_limit_commands = [];
-
-        $constraint = json_decode($this->plan->constraint);
-
-        if (app('env') === 'production') {
-            $apply_limit_commands[] = 'btrfs qgroup limit '.$constraint->max_disk.' '.$instance_path;
-
-            $apply_limit_commands[] = 'podman update --memory '.
-                (int) ($constraint->max_memory * 0.75).' '.$this->instance->id;
-
-            $apply_limit_commands[] = 'podman update --memory '.
-                (int) ($constraint->max_memory * 0.25).' '.$this->instance->id.'_postgres_1';
-        }
+        $apply_limit_commands = $this->buildLimitCommands();
 
         $this->ssh
              ->exec(array_merge(
@@ -164,21 +152,7 @@ class Planka implements InstanceInterface, ShouldQueue
 
     public function turnOn()
     {
-        $apply_limit_commands = [];
-
-        if (app('env') === 'production') {
-            $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
-
-            $constraint = json_decode($this->plan->constraint);
-
-            $apply_limit_commands[] = 'btrfs qgroup limit '.$constraint->max_disk.' '.$instance_path;
-
-            $apply_limit_commands[] = 'podman update --memory '.
-                (int) ($constraint->max_memory * 0.75).' '.$this->instance->id;
-
-            $apply_limit_commands[] = 'podman update --memory '.
-                (int) ($constraint->max_memory * 0.25).' '.$this->instance->id.'_postgres_1';
-        }
+        $apply_limit_commands = $this->buildLimitCommands();
 
         $this->ssh->exec(array_merge(
              [
@@ -203,5 +177,43 @@ class Planka implements InstanceInterface, ShouldQueue
 
     public function upgrade()
     {
+    }
+
+    private function buildLimitCommands(): array
+    {
+        $apply_limit_commands = [];
+
+        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+
+        $constraint = json_decode($this->plan->constraint, true);
+
+        if (app('env') === 'production') {
+
+            if (array_key_exists('max_disk', $constraint)) {
+                $apply_limit_commands[] = 'btrfs qgroup limit '.$constraint['max_disk'].' '.$instance_path;
+            }
+
+            if (array_key_exists('max_cpu', $constraint)) {
+                $apply_limit_commands[] = 'podman update --cpu-shares '.
+                    (int) ($constraint['max_cpu'] * 0.75).' '.$this->instance->id;
+            }
+
+            if (array_key_exists('max_cpu', $constraint)) {
+                $apply_limit_commands[] = 'podman update --cpu-shares '.
+                    (int) ($constraint['max_cpu'] * 0.25).' '.$this->instance->id.'_postgres_1';
+            }
+
+            if (array_key_exists('max_memory', $constraint)) {
+                $apply_limit_commands[] = 'podman update --memory '.
+                    (int) ($constraint['max_memory'] * 0.75).' '.$this->instance->id;
+            }
+
+            if (array_key_exists('max_memory', $constraint)) {
+                $apply_limit_commands[] = 'podman update --memory '.
+                    (int) ($constraint['max_memory'] * 0.25).' '.$this->instance->id.'_postgres_1';
+            }
+        }
+
+        return $apply_limit_commands;
     }
 }
