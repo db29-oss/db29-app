@@ -22,17 +22,20 @@ class InitInstance implements ShouldQueue
     {
         $instance = Instance::query()
             ->whereId($this->instance_id)
-            ->with('source')
-            ->with('machine.trafficRouter')
+            ->with([
+                'machine.trafficRouter',
+                'plan',
+                'source'
+            ])
             ->first();
 
         $source = $instance->source;
 
+        $plan = $instance->plan;
+
         $version_templates = json_decode($source->version_templates, true);
 
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
-
-        $resources = $job_class::initialResourceConsumption();
 
         $machine = $instance->machine;
 
@@ -121,6 +124,7 @@ class InitInstance implements ShouldQueue
             instance: $instance,
             latest_version_template: $latest_version_template,
             machine: $machine,
+            plan: $plan,
             reg_info: $this->reg_info,
             ssh: $ssh
         ))->setUp();
