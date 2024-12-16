@@ -7,6 +7,7 @@ use App\Jobs\TermInstance;
 use App\Jobs\TurnOffInstance;
 use App\Jobs\TurnOnInstance;
 use App\Models\Instance;
+use App\Models\Setting;
 use App\Models\Source;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -239,12 +240,12 @@ class PageController extends Controller
         return view('source')->with('sources', $sources);
     }
 
-    public function account()
+    public function prefill()
     {
-        return view('account');
+        return view('prefill');
     }
 
-    public function postAccount()
+    public function postPrefill()
     {
         $validator = validator(request()->all(), [ 
             'email' => ['required', 'email:rfc'],
@@ -273,6 +274,25 @@ class PageController extends Controller
         }
 
         return view('dashboard');
+    }
+
+    public function recharge()
+    {
+        $banking_details = json_decode(Setting::where('k', 'banking_details')->first()?->v, true);
+
+        if ($banking_details === null) {
+            $banking_details = [];
+        }
+
+        $crypto_details = json_decode(Setting::where('k', 'crypto_details')->first()?->v, true);
+
+        if ($crypto_details === null) {
+            $crypto_details = [];
+        }
+
+        return view('recharge')
+            ->with('banking_details', $banking_details)
+            ->with('crypto_details', $crypto_details);
     }
 
     public function faq()
@@ -319,7 +339,7 @@ class PageController extends Controller
             }])
             ->first(['id', 'name']);
 
-        if (! $source) {
+        if ($source === null) {
             return redirect()->route('source');
         }
 

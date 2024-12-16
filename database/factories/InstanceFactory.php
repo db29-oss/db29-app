@@ -26,7 +26,7 @@ class InstanceFactory extends Factory
             'plan_id' => Plan::factory(),
             'source_id' => Source::factory(),
             'subdomain' => bin2hex(random_bytes(8)),
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->create(['instance_count' => 1]),
             'status' => fake()->randomElement([
                 'queue', 'init', 'dns_up', 'ct_up', 'rt_up', 'ct_dw', 'rt_dw', 'dns_dw'
             ]),

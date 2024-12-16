@@ -10,7 +10,7 @@ class UserCleanup extends Command
 {
     protected $signature = 'app:user-cleanup';
 
-    protected $description = 'Cleanup unused account';
+    protected $description = 'Cleanup unused user';
 
     public function handle()
     {

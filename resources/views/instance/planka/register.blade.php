@@ -4,7 +4,7 @@
   @if (str()->after(auth()->user()->email, '@') === config('app.domain'))
   <div class="text-gray-400 pointer-events-none select-none">
     {{ __('trans.change_default_config_at') }}
-    <a class="pointer-events-auto" href={{ route('account') }}>{{ __('trans.account') }}</a>
+    <a class="pointer-events-auto" href={{ route('prefill') }}>{{ __('trans.prefill') }}</a>
   </div><br>
   @endif
 

@@ -3,9 +3,15 @@
   <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
   @if (auth()->user()->instance_count !== 0)
   <div class="mb-2 @if (auth()->user()->credit < 0) text-red-600 @endif">
+    <div class="inline-block">
     {{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}
+    </div>
+    <div class="ml-4 inline-block">
+      <a href="{{ route('recharge') }}">{{ __('trans.recharge') }}</a>
+    </div>
   </div>
   @endif
+
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf
     <button>{{ __('logout') }}</button>
@@ -29,7 +35,7 @@
     </span>
   </div>
   <div class="pb-4">
-    <a href="{{ route('account') }}">{{ mb_ucfirst(__('trans.account')) }}</a>
+    <a href="{{ route('prefill') }}">{{ mb_ucfirst(__('trans.prefill')) }}</a>
   </div>
   @endif
 

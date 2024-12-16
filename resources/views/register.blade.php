@@ -1,6 +1,6 @@
 @include('header', ['title' => 'DB29 - LOGIN'])
 <div>
-  <pre style="color: red">{{ __('trans.save_login_id') }}.</pre>
+  <pre class="text-red-500">{{ __('trans.save_login_id') }}.</pre>
   <div class="text-base font-mono">{{ $user->login_id }}</div>
 
   <form class="mt-4" method="POST" action="{{ route('login') }}">

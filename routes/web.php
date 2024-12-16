@@ -23,8 +23,9 @@ Route::group(['middleware' => 'auth'], function () {
             ->name('post-register-instance');
     });
     Route::get('source', [PageController::class, 'source'])->name('source');
-    Route::get('account', [PageController::class, 'account'])->name('account');
-    Route::post('account', [PageController::class, 'postAccount'])->name('post-account');
+    Route::get('prefill', [PageController::class, 'prefill'])->name('prefill');
+    Route::post('prefill', [PageController::class, 'postPrefill'])->name('post-prefill');
+    Route::get('recharge', [PageController::class, 'recharge'])->name('recharge');
     Route::get('advanced-feature', [PageController::class, 'advancedFeature'])->name('advanced-feature');
     Route::post('fill-instance', [PageController::class, 'fillInstance'])->name('fill-instance');
 });
