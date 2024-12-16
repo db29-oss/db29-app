@@ -24,14 +24,17 @@ class RechargePageTest extends TestCase
             [
                 'bank_name' => fake()->name,
                 'account_number' => fake()->numberBetween(1000, 20000),
+                'account_name' => fake()->name,
             ],
             [
                 'bank_name' => fake()->name,
                 'account_number' => fake()->numberBetween(1000, 20000),
+                'account_name' => fake()->name,
             ],
             [
                 'bank_name' => fake()->name,
                 'account_number' => fake()->numberBetween(1000, 20000),
+                'account_name' => fake()->name,
             ],
         ];
         $s->v = json_encode($banking_details);
@@ -42,7 +45,8 @@ class RechargePageTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertSee($banking_details[0]['bank_name']);
-        $response->assertSee($banking_details[1]['bank_name']);
+        $response->assertSee($banking_details[1]['account_number']);
+        $response->assertSee($banking_details[2]['account_name']);
         $response->assertDontSee(fake()->name);
     }
 }

@@ -2,10 +2,11 @@
 
 return [
     "account" => "tài khoản",
+    "account_name" => "tên tài khoản",
+    "account_number" => "số tài khoản",
     "advanced_feature" => "tính năng nâng cao",
     "amount_money" => "số tiền",
     "back" => "quay về",
-    "copy_to_prevent_mistake" => "nội dung tin nhắn là mã số để phân biệt tài khoản của bạn",
     "balance" => "số dư",
     "bank" => "ngân hàng",
     "blog" => "bài viết",
@@ -28,6 +29,7 @@ return [
     "logout" => "đăng xuất",
     "message" => "tin nhắn",
     "minimum_amount_money" => "tối thiểu :amount",
+    "notice_bank_message" => "nội dung tin nhắn là mã số để phân biệt tài khoản của bạn",
     "prefill" => "điền sẵn",
     "question" => "câu hỏi",
     "recharge" => "nạp tiền",
