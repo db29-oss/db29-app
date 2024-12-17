@@ -70,8 +70,8 @@ class PageController extends Controller
         $sql_params = [];
         $sql =
             'insert into users ('.
-                'id, login_id, credit, email, name, '.
-                'username, recharge_number, created_at, updated_at'.
+                'id, login_id, credit, email, name, username, '.
+                'recharge_number, last_logged_in_at, created_at, updated_at'.
             ') '.
             'values ('.
                 '?, '. # str()->uuid()
@@ -97,9 +97,11 @@ class PageController extends Controller
 
         $sql .=
                 '?, '. # $now
+                '?, '. # $now
                 '?'. # $now
             ') returning *';
 
+        $sql_params[] = $now;
         $sql_params[] = $now;
         $sql_params[] = $now;
 

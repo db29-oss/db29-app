@@ -18,12 +18,12 @@ class UserCleanupTest extends TestCase
         $this->assertEquals(10, User::count());
 
         $u = User::inRandomOrder()->first();
-        $u->updated_at = now()->subDays(31);
+        $u->last_logged_in_at = now()->subDays(31);
         $u->save();
 
         $u2 = User::whereNotIn('id', [$u->id])->inRandomOrder()->first();
         $u2->instance_count = rand(1, 10);
-        $u2->updated_at = now()->subDays(31);
+        $u2->last_logged_in_at = now()->subDays(31);
         $u2->save();
 
         $this->assertEquals(0, DB::table('recharge_number_holes')->count());

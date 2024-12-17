@@ -10,11 +10,11 @@ class UserCleanup extends Command
 {
     protected $signature = 'app:user-cleanup';
 
-    protected $description = 'Cleanup unused user';
+    protected $description = 'Cleanup unused user after 30 days';
 
     public function handle()
     {
-        $users = User::whereInstanceCount(0)->where('updated_at', '<', now()->subDays(30))->get();
+        $users = User::whereInstanceCount(0)->where('last_logged_in_at', '<', now()->subDays(30))->get();
 
         $sql_params = [];
         $sql = 'insert into recharge_number_holes (recharge_number) values ';

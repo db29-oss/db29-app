@@ -26,8 +26,6 @@ class UserRegistrationFlowTest extends TestCase
         $u = User::first();
 
         $this->assertNotNull($u);
-
-        $this->assertNull($u->last_logged_in_at);
     }
 
     public function test_login_logout(): void
@@ -37,8 +35,6 @@ class UserRegistrationFlowTest extends TestCase
         $this->assertEquals(1, User::count());
 
         $u = User::first();
-
-        $this->assertNull($u->last_logged_in_at);
 
         $response = $this->get('dashboard');
 

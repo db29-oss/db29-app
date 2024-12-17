@@ -20,6 +20,7 @@ class UserFactory extends Factory
             'recharge_number' => DB::raw(
                 '(select coalesce(max(recharge_number), 0) + 1 as recharge_number from users)'
             ),
+            'last_logged_in_at' => now()->toDateTimeString(),
         ];
     }
 }
