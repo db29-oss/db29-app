@@ -44,9 +44,9 @@ class TrafficRouterPrepare extends Command
                 if (app('env') === 'testing') {
                     $ssh->clearOutput();
 
-                    $ssh->exec('ps aux \| grep caddy');
+                    $ssh->exec('ps aux | grep caddy');
 
-                    if (count($ssh->getOutput()) < 3) { // grep process and bash process
+                    if (count($ssh->getOutput()) < 2) { // grep process and bash process
                         $ssh->exec('caddy start');
                     }
                 }
@@ -70,12 +70,8 @@ class TrafficRouterPrepare extends Command
                         ];
 
                     foreach ($override_content_lines as $override_content_line) {
-                        $commands[] =
-                            'echo '.
-                            $ssh->lbsl."'".
-                            bce($override_content_line, $ssh->lbsl, $ssh->hbsl).
-                            $ssh->lbsl."'".' '.
-                            $ssh->lbsl.">".$ssh->lbsl."> ".
+                        $commands[] = 'echo '.
+                            escapeshellarg($override_content_line).' >> '.
                             '/etc/systemd/system/caddy.service.d/override.conf';
                     }
 

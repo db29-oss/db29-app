@@ -92,12 +92,8 @@ class Planka implements InstanceInterface, ShouldQueue
         $put_docker_compose_commands = [];
 
         foreach ($yml_lines as $yml_line) {
-            $put_docker_compose_commands[] = 'echo '.
-                $this->ssh->lbsl.'\''.
-                bce($yml_line, $this->ssh->lbsl, $this->ssh->hbsl).
-                $this->ssh->lbsl.'\''.' '.
-                $this->ssh->lbsl.">".$this->ssh->lbsl."> ".
-                $instance_path.'docker-compose.yml';
+            $put_docker_compose_commands[] =
+                'echo '.escapeshellarg($yml_line).' >> '.$instance_path.'docker-compose.yml';
         }
 
         $create_instance_path = 'mkdir '.$instance_path;
@@ -116,7 +112,7 @@ class Planka implements InstanceInterface, ShouldQueue
                  $mkdir_volume_paths,
                  $put_docker_compose_commands,
                  [
-                     'cd '.$instance_path.' \\&\\& podman-compose up -d',
+                     'cd '.$instance_path.' && podman-compose up -d',
                  ],
                  $apply_limit_commands
              ));
@@ -124,7 +120,7 @@ class Planka implements InstanceInterface, ShouldQueue
 
     public function tearDown()
     {
-        $rm_instance_dir = 'cd '.$this->machine->storage_path.'instance/ \\&\\& rm -rf '.$this->instance->id;
+        $rm_instance_dir = 'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
 
         if (app('env') === 'production') {
             $rm_instance_dir = 'btrfs subvolume delete '.
@@ -134,7 +130,7 @@ class Planka implements InstanceInterface, ShouldQueue
         $this->ssh
              ->exec(array_merge(
                  [
-                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
+                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
                      'podman-compose down --volumes',
                  ],
                  [
@@ -146,7 +142,7 @@ class Planka implements InstanceInterface, ShouldQueue
     public function turnOff()
     {
         $this->ssh->exec(
-            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& podman-compose down'
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && podman-compose down'
         );
     }
 
@@ -156,7 +152,7 @@ class Planka implements InstanceInterface, ShouldQueue
 
         $this->ssh->exec(array_merge(
              [
-                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' \\&\\& '.
+                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
                  'podman-compose up -d',
              ],
              $apply_limit_commands

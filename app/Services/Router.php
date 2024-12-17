@@ -191,14 +191,11 @@ class Router
             );
         }
 
-        // TODO command max length is 2**16
         $command =
-            'curl -s -X PATCH -H '.
-            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
-            $this->ssh->lbsl."'".
-            bce($n_f_rule_str, $this->ssh->lbsl, $this->ssh->hbsl).
-            $this->ssh->lbsl."'"." ".
+            'curl -s -X PATCH -H \'Content-Type: application/json\' -d '.
+            "'".$n_f_rule_str."'"." ".
             "localhost:2019/config/apps/http/servers/https/routes/";
+
         $this->ssh->exec($command);
 
         $this->unlock();
@@ -218,10 +215,8 @@ class Router
 
         $command =
             'curl -s -X POST -H '.
-            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
-            $this->ssh->lbsl."'".
-            bce(json_encode($rule), $this->ssh->lbsl, $this->ssh->hbsl).
-            $this->ssh->lbsl."'"." ".
+            escapeshellarg('Content-Type: application/json').' -d '.
+            escapeshellarg(json_encode($rule)).' '.
             "localhost:2019/config/apps/http/servers/https/routes/";
 
         $this->ssh->exec($command);
@@ -247,10 +242,8 @@ class Router
 
         $command =
             'curl -s -X PATCH -H '.
-            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
-            $this->ssh->lbsl."'".
-            bce($n_f_rule_str, $this->ssh->lbsl, $this->ssh->hbsl).
-            $this->ssh->lbsl."'"." ".
+            '\'Content-Type: application/json\' -d '.
+            '\''.$n_f_rule_str.'\' '.
             "localhost:2019/config/apps/http/servers/https/routes/";
 
         $this->ssh->exec($command);
@@ -294,10 +287,8 @@ class Router
 
         $this->ssh->exec(
             'curl -s -X PATCH -H '.
-            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
-            $this->ssh->lbsl.'\''.
-            bce(json_encode($https_route), $this->ssh->lbsl, $this->ssh->hbsl).
-            $this->ssh->lbsl.'\' '.
+            '\'Content-Type: application/json\' -d '.
+            '\''.json_encode($https_route).'\' '.
             'localhost:2019/config/apps/http/servers/https'
         );
 
@@ -333,10 +324,8 @@ class Router
 
         $command =
             'curl -s -X PATCH -H '.
-            $this->ssh->lbsl.'\'Content-Type: application/json'.$this->ssh->lbsl.'\' -d '.
-            $this->ssh->lbsl."'".
-            bce($n_f_rule_str, $this->ssh->lbsl, $this->ssh->hbsl).
-            $this->ssh->lbsl."'"." ".
+            '\'Content-Type: application/json\' -d '.
+            '\''.$n_f_rule_str.'\' '.
             "localhost:2019/config/apps/http/servers/https/routes/";
 
         $this->ssh->exec($command);
@@ -402,10 +391,8 @@ class Router
             if ($ssh->getLastLine() === 'null') {
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl."'".
-                    bce('{"apps": {}}', $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl."'".' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg('{"apps": {}}').' '.
                     'localhost:2019/config/'
                 );
             }
@@ -418,10 +405,8 @@ class Router
             if (! array_key_exists('http', $config)) {
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl.'\''.
-                    bce('{"http": {}}', $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl.'\' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg('{"http": {}}').' '.
                     'localhost:2019/config/apps/'
                 );
             }
@@ -434,10 +419,8 @@ class Router
             if (! array_key_exists('servers', $config)) {
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl.'\''.
-                    bce('{"servers": {}}', $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl.'\' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg('{"servers": {}}').' '.
                     'localhost:2019/config/apps/http/'
                 );
             }
@@ -499,10 +482,8 @@ class Router
 
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl.'\''.
-                    bce(json_encode($http_route), $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl.'\' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg(json_encode($http_route)).' '.
                     'localhost:2019/config/apps/http/servers/http'
                 );
             }
@@ -522,10 +503,8 @@ class Router
 
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl.'\''.
-                    bce(json_encode($https_route), $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl.'\' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg(json_encode($https_route)).' '.
                     'localhost:2019/config/apps/http/servers/https'
                 );
             }
@@ -548,10 +527,8 @@ class Router
 
                 $ssh->exec(
                     'curl -s -X POST '.
-                    '-H '.$ssh->lbsl.'\'Content-Type: application/json'.$ssh->lbsl.'\' -d '.
-                    $ssh->lbsl.'\''.
-                    bce($extra_route_json, $ssh->lbsl, $ssh->hbsl).
-                    $ssh->lbsl.'\' '.
+                    '-H '.escapeshellarg('Content-Type: application/json').' -d '.
+                    escapeshellarg($extra_route_json).' '.
                     'localhost:2019/config/apps/http/servers/https/routes/'
                 );
             }

@@ -68,10 +68,8 @@ class TrafficRouterTest extends TestCase
 
         // set up caddy
         $curl_cmd = 'curl localhost:2019/load '.
-            '-H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' '.
-            '-d '.$ssh->lbsl.'\''.
-            bce($json_config, $ssh->lbsl, $ssh->hbsl).
-            $ssh->lbsl.'\'';
+            '-H '.escapeshellarg('Content-Type: application/json').' '.
+            '-d '.escapeshellarg($json_config);
 
         $ssh->exec($curl_cmd);
 

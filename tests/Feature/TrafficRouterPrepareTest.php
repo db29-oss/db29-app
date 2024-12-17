@@ -98,10 +98,8 @@ class TrafficRouterPrepareTest extends TestCase
 
         foreach ($random_routes as $random_route) {
             $ssh->exec(
-                'curl -s -X POST -H '.$ssh->lbsl.'\'"Content-Type: application/json"'.$ssh->lbsl.'\' -d '.
-                $ssh->lbsl.'\''.
-                bce(json_encode($random_route), $ssh->lbsl, $ssh->hbsl).
-                $ssh->lbsl.'\' '.
+                'curl -s -X POST -H '.escapeshellarg('Content-Type: application/json').' -d '.
+                escapeshellarg(json_encode($random_route)).' '.
                 'localhost:2019/config/apps/http/servers/https/routes/',
             );
         }

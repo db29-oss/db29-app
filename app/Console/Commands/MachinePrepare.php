@@ -47,13 +47,8 @@ class MachinePrepare extends Command
 
                 if (explode(' ', $ssh->getLastLine())[0] !== $md5sum_storage_conf) {
                     foreach ($storage_conf_lines as $storage_conf_line) {
-                        $commands[] =
-                            'echo '.
-                            $ssh->lbsl."'".
-                            bce($storage_conf_line, $ssh->lbsl, $ssh->hbsl).
-                            $ssh->lbsl."'".' '.
-                            $ssh->lbsl.">".$ssh->lbsl."> ".
-                            '/etc/containers/storage.conf';
+                        $commands[] = "echo ".
+                            escapeshellarg($storage_conf_line)." >> /etc/containers/storage.conf";
                     }
                 }
 
@@ -65,15 +60,7 @@ class MachinePrepare extends Command
                             'mkdir -p '.$machine->storage_path,
                             'touch /etc/containers/registries.conf.d/docker.conf',
 
-                            'echo '.
-                            $ssh->lbsl."'".
-                            bce(
-                                'unqualified-search-registries = ["docker.io"]',
-                                $ssh->lbsl,
-                                $ssh->hbsl
-                            ).
-                            $ssh->lbsl."'".' '.
-                            $ssh->lbsl."> ".
+                            'echo '.escapeshellarg('unqualified-search-registries = ["docker.io"]').' > '.
                             '/etc/containers/registries.conf.d/docker.conf',
                             'touch /etc/containers/storage.conf',
                             'mkdir -p '.$machine->storage_path.'podman/graphroot',
