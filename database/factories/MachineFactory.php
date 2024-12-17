@@ -34,6 +34,10 @@ class MachineFactory extends Factory
 
         $file_put_contents = file_put_contents(storage_path('app/private/'.$uuid.'.pub'), $ssh_publickey);
 
+        $max_cpu = rand(4_000, 32_000);
+        $max_disk = rand(2, 10) * 1024 * 1024 * 1024;
+        $max_memory = rand(2, 10) * 1024 * 1024 * 1024;
+
         return [
             'id' => $uuid,
             'ssh_privatekey' => $ssh_privatekey,
@@ -42,6 +46,12 @@ class MachineFactory extends Factory
             'ssh_port' => fake()->numberBetween(1, 65535),
             'storage_path' => '/opt/',
             'enabled' => true,
+            'max_cpu' => $max_cpu,
+            'remain_cpu' => $max_cpu,
+            'max_disk' => $max_disk,
+            'remain_disk' => $max_disk,
+            'max_memory' => $max_memory,
+            'remain_memory' => $max_memory,
         ];
     }
 }

@@ -92,6 +92,23 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
         $this->assertEquals('rt_up', $inst->status);
         $this->assertEquals(false, $inst->queue_active);
 
+        $m->refresh();
+
+        $this->assertEquals(
+            $m->max_cpu - $m->remain_cpu,
+            json_decode($inst->plan->constraint, true)['max_cpu']
+        );
+
+        $this->assertEquals(
+            $m->max_disk - $m->remain_disk,
+            json_decode($inst->plan->constraint, true)['max_disk']
+        );
+
+        $this->assertEquals(
+            $m->max_memory - $m->remain_memory,
+            json_decode($inst->plan->constraint, true)['max_memory']
+        );
+
         /**
          * TURN OFF
          */
@@ -130,6 +147,23 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
 
         $this->assertTrue(str_contains($ssh->getLastline(), 'instance is currently off'));
 
+        $m->refresh();
+
+        $this->assertEquals(
+            0,
+            $m->max_cpu - $m->remain_cpu,
+        );
+
+        $this->assertEquals(
+            $m->max_disk - $m->remain_disk,
+            json_decode($inst->plan->constraint, true)['max_disk']
+        );
+
+        $this->assertEquals(
+            0,
+            $m->max_memory - $m->remain_memory,
+        );
+
         /**
          * TURN ON
          */
@@ -152,6 +186,23 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
         $ssh->exec('curl localhost:2019/config/');
 
         $this->assertFalse(str_contains($ssh->getLastline(), 'instance is currently off'));
+
+        $m->refresh();
+
+        $this->assertEquals(
+            $m->max_cpu - $m->remain_cpu,
+            json_decode($inst->plan->constraint, true)['max_cpu']
+        );
+
+        $this->assertEquals(
+            $m->max_disk - $m->remain_disk,
+            json_decode($inst->plan->constraint, true)['max_disk']
+        );
+
+        $this->assertEquals(
+            $m->max_memory - $m->remain_memory,
+            json_decode($inst->plan->constraint, true)['max_memory']
+        );
 
         /**
          * TEAR DOWN
@@ -177,6 +228,23 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
 
         $u->refresh();
         $this->assertEquals(0, $u->instance_count);
+
+        $m->refresh();
+
+        $this->assertEquals(
+            0,
+            $m->max_cpu - $m->remain_cpu,
+        );
+
+        $this->assertEquals(
+            0,
+            $m->max_disk - $m->remain_disk,
+        );
+
+        $this->assertEquals(
+            0,
+            $m->max_memory - $m->remain_memory,
+        );
 
         // ensure no podman left
         $ssh->clearOutput();

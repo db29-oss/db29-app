@@ -8,6 +8,7 @@ use App\Models\Source;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 
 class InitInstance implements ShouldQueue
 {
@@ -20,6 +21,8 @@ class InitInstance implements ShouldQueue
 
     public function handle(): void
     {
+        $now = now();
+
         $instance = Instance::query()
             ->whereId($this->instance_id)
             ->with([
@@ -33,19 +36,50 @@ class InitInstance implements ShouldQueue
 
         $plan = $instance->plan;
 
+        $constraint = json_decode($plan->constraint, true);
+
         $version_templates = json_decode($source->version_templates, true);
 
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
 
         $machine = $instance->machine; // sometime first time run bug and we dont want to reassign machine
 
+        // init
         if (! $machine) {
+            $sql = 'begin; '.
+
+                'create temp table select_machine as '.
+                'select * from machines '.
+                'where enabled = true '.
+                'and user_id is null '.
+                'and remain_cpu > '.$constraint['max_cpu'].' '.
+                'and remain_disk > '.$constraint['max_disk'].' '.
+                'and remain_memory > '.$constraint['max_memory'].' '.
+                'limit 1; '.
+
+                'update machines set '.
+                'remain_cpu = remain_cpu - '.$constraint['max_cpu'].', '.
+                'remain_disk = remain_disk - '.$constraint['max_disk'].', '.
+                'remain_memory = remain_memory - '.$constraint['max_memory'].', '.
+                'updated_at = \''.$now->toDateTimeString().'\' '.
+                'where id = (select id from select_machine); '.
+
+                'update instances set '.
+                'status = \'init\', '.
+                'machine_id = (select id from select_machine), '.
+                'updated_at = \''.$now->toDateTimeString().'\' '.
+                'where id = \''.$instance->id.'\'; '.
+
+                'commit;';
+
+            DB::unprepared($sql);
+
+            $instance->refresh();
+
             $machine = Machine::query()
-                 ->where('enabled', true)
-                 ->whereNull('user_id')
-                 ->inRandomOrder()
+                 ->where('id', $instance->machine_id)
                  ->with('trafficRouter')
-                 ->first(); // TODO
+                 ->first();
         }
 
         if ($machine === null) {
@@ -57,14 +91,6 @@ class InitInstance implements ShouldQueue
         }
 
         $traffic_router = $machine->trafficRouter;
-
-        // init
-        Instance::query()
-            ->whereId($instance->id)
-            ->update([
-                'status' => 'init',
-                'machine_id' => $machine->id
-            ]);
 
         $instance->status = 'init';
         $instance->machine = $machine;

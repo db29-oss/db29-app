@@ -86,12 +86,20 @@ class TurnOffInstance implements ShouldQueue
 
         $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
-        $sql = 'begin;'.
+        $constraint = json_decode($instance->plan->constraint, true);
+
+        $sql = 'begin; '.
 
             'update users set '.
             'credit = credit - '.$pay_amount.', '.
             'updated_at = \''.$now->toDateTimeString().'\' '.
             'where id = \''.$instance->user->id.'\'; '.
+
+            'update machines set '.
+            'remain_cpu = remain_cpu + '.$constraint['max_cpu'].', '.
+            'remain_memory = remain_memory + '.$constraint['max_memory'].', '.
+            'updated_at = \''.$now->toDateTimeString().'\' '.
+            'where id = \''.$machine->id.'\'; '.
 
             'update instances set '.
             'status = \'ct_dw\', '. # 'ct_dw'
@@ -99,7 +107,7 @@ class TurnOffInstance implements ShouldQueue
             'paid_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
             'turned_off_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
             'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
-            'where id = \''.$instance->id.'\';'. # $instance->id
+            'where id = \''.$instance->id.'\'; '. # $instance->id
 
             'commit;';
 

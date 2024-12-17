@@ -94,21 +94,28 @@ class TurnOnInstance implements ShouldQueue
 
         $rt->updateRule($old_rule, $new_rule);
 
+        $constraint = json_decode($instance->plan->constraint, true);
+
         $now = now();
-        $sql_params = [];
-        $sql = 'update instances set '.
-            'status = ?, '. # 'rt_up'
-            'queue_active = ?, '. # false
-            'turned_on_at = ?, '. # $now
-            'updated_at = ? '. # $now
-            'where id = ?'; # $instance->id
 
-        $sql_params[] = 'rt_up';
-        $sql_params[] = false;
-        $sql_params[] = $now;
-        $sql_params[] = $now;
-        $sql_params[] = $instance->id;
+        $sql =
+            'begin; '.
 
-        app('db')->select($sql, $sql_params);
+            'update instances set '.
+            'status = \'rt_up\', '.
+            'queue_active = false, '.
+            'turned_on_at = \''.$now->toDateTimeString().'\', '.
+            'updated_at = \''.$now->toDateTimeString().'\' '.
+            'where id = \''.$instance->id.'\'; '.
+
+            'update machines set '.
+            'remain_cpu = remain_cpu - '.$constraint['max_cpu'].', '.
+            'remain_memory = remain_memory - '.$constraint['max_memory'].', '.
+            'updated_at = \''.$now->toDateTimeString().'\' '.
+            'where id = \''.$machine->id.'\'; '.
+
+            'commit;';
+
+        app('db')->unprepared($sql);
     }
 }

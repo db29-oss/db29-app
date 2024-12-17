@@ -23,9 +23,9 @@ class PlanFactory extends Factory
             'price' => 1667,
             'source_id' => Source::factory(),
             'constraint' => json_encode([
-                'max_cpu' => 40, // score rating
-                'max_memory' => 200 * 1024 * 1024, // 200 MB
-                'max_disk' => 1 * 1024 * 1024 * 1024, // 1 GB
+                'max_cpu' => rand(40, 400), // score rating
+                'max_memory' => rand(50, 250) * 1024 * 1024, // 200 MB
+                'max_disk' => rand(1, 4) * 1024 * 1024 * 1024, // 1 GB
             ])
         ];
     }

@@ -35,7 +35,7 @@ class TakeCredit extends Command
 
             $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
-            $sql = 'begin;'.
+            $sql = 'begin; '.
                 'update users set '.
                 'credit = credit - '.$pay_amount.', '.
                 'updated_at = \''.$now->toDateTimeString().'\' '.
@@ -43,7 +43,7 @@ class TakeCredit extends Command
                 'update instances set '.
                 'paid_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
                 'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
-                'where id = \''.$instance->id.'\';'. # $instance->id
+                'where id = \''.$instance->id.'\'; '. # $instance->id
                 'commit;';
 
             app('db')->unprepared($sql);

@@ -52,14 +52,21 @@ class TermInstance implements ShouldQueue
 
         $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
+        $constraint = json_decode($instance->plan->constraint, true);
+
         $sql = 'begin; '.
 
             'update users set '.
             'credit = credit - '.$pay_amount.', '.
             'instance_count = instance_count - 1, '.
-
             'updated_at = \''.$now->toDateTimeString().'\' '.
             'where id = \''.$instance->user->id.'\'; '.
+
+            'update machines set '.
+            'remain_disk = remain_disk + '.$constraint['max_disk'].', '.
+            'updated_at = \''.$now->toDateTimeString().'\' '.
+            'where id = \''.$machine->id.'\'; '.
+
             'delete from instances '.
             'where id = \''.$instance->id.'\'; '.
 
