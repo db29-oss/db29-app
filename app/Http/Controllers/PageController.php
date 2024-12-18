@@ -239,7 +239,14 @@ class PageController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('source')->with('sources', $sources);
+        $user = auth()->user();
+
+        $user_setting = json_decode($user->setting, true);
+
+        return view('source')
+            ->with('sources', $sources)
+            ->with('user', $user)
+            ->with('user_setting', $user_setting);
     }
 
     public function prefill()

@@ -42,7 +42,10 @@ class ShowSupportedSourceTest extends TestCase
         $s->enabled = true;
         $s->save();
 
-        Plan::factory()->for($s)->create();
+        $u->credit = User::FREE_CREDIT;
+        $u->save();
+
+        Plan::factory()->for($s)->create(['base' => true]);
 
         $s_id = $s->id;
 
@@ -51,10 +54,33 @@ class ShowSupportedSourceTest extends TestCase
         foreach ($s_s as $s) {
             if ($s->id === $s_id) {
                 $response->assertSee($s->name);
+
+                $s->load(['plans' => function ($q) { $q->whereBase(true); }]);
+
+                $response->assertSee(formatNumberShort($s->plans[0]->price));
+
+                $response->assertSee('explain plan');
+
                 continue;
             }
 
             $response->assertDontSee($s->name);
+        }
+
+        // should not show any price
+        $u->setting = json_encode(['disable_pricing' => true]);
+        $u->save();
+
+        $response = $this->get('source');
+
+        foreach ($s_s as $s) {
+            if ($s->id === $s_id) {
+                $response->assertSee($s->name);
+
+                $response->assertDontSee(formatNumberShort($s->plans[0]->price));
+
+                $response->assertDontSee('explain plan');
+            }
         }
     }
 }
