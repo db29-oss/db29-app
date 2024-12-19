@@ -91,7 +91,7 @@ class Router
             }
         }
 
-        return substr($o_f_rule_str, $s_idx, $e_idx);
+        return substr($o_f_rule_str, $s_idx, $e_idx - $s_idx + 1);
     }
 
     public function updatePortBySubdomainName(
@@ -172,7 +172,7 @@ class Router
                 }
             }
 
-            $substr = substr($n_f_rule_str, $s_idx, $e_idx);
+            $substr = substr($n_f_rule_str, $s_idx, $e_idx - $s_idx + 1);
 
             $preg_replace = preg_replace(
                 '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
@@ -185,7 +185,7 @@ class Router
             }
 
             $n_f_rule_str = str_replace(
-                substr($n_f_rule_str, $s_idx, $e_idx),
+                substr($n_f_rule_str, $s_idx, $e_idx - $s_idx + 1),
                 $preg_replace,
                 $n_f_rule_str
             );
@@ -375,7 +375,7 @@ class Router
             }
         }
 
-        $this->deleteRule(substr($o_f_rule_str, $s_idx, $e_idx));
+        $this->deleteRule(substr($o_f_rule_str, $s_idx, $e_idx - $s_idx + 1));
 
         $this->unlock();
     }

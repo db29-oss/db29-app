@@ -74,8 +74,42 @@ class RouterServiceTest extends TestCase
 
         $this->assertEquals(1, substr_count($ssh->getLastLine(), $subdomain));
 
+        // add another rule then findRuleBySubdomainName by both domain should work
+        $subdomain_dummy = str(str()->random(8))->lower();
+        $rule_dummy =
+            [
+                'match' => [
+                    [
+                        'host' => [$subdomain_dummy.'.'.config('app.domain')]
+                    ]
+                ],
+                'handle' => [
+                    [
+                        'handler' => 'reverse_proxy',
+                        'upstreams' => [
+                            [
+                                'dial' => '127.0.0.1:'.fake()->numberBetween(1025, 61000)
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+        $rt->addRule($rule_dummy);
+        $this->assertTrue($rt->ruleExists($rule_dummy));
+
+        $ssh->exec('curl -s localhost:2019/config/');
+
+        $this->assertTrue(str_contains($ssh->getLastLine(), $subdomain));
+        $this->assertTrue(str_contains($ssh->getLastLine(), $subdomain_dummy));
+
+
         // find rule by domain name
-        $rule_str = $rt->findRuleBySubdomainName($subdomain.'.'.config('app.domain'));
+        $rule_str = $rt->findRuleBySubdomainName($subdomain);
+        $this->assertTrue(json_encode(json_decode($rule_str)) === $rule_str);
+
+        $rule_dummy_str = $rt->findRuleBySubdomainName($subdomain_dummy);
+        $this->assertTrue(json_encode(json_decode($rule_dummy_str)) === $rule_dummy_str);
 
         // update rule
         $new_rule_1 = $rule;
