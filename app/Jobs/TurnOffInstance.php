@@ -41,32 +41,25 @@ class TurnOffInstance implements ShouldQueue
         // rt_dw
         $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
 
-        if ($old_rule === false) {
-            logger()->error('DB292006: unable find rule by subdomain', [
-                'instance_id' => $instance->id,
-                'subdomain' => $instance->subdomain,
-            ]);
+        if ($old_rule !== false) {
+            $new_rule =
+                [
+                    'match' => [
+                        [
+                            'host' => [$instance->subdomain.'.'.config('app.domain')]
+                        ]
+                    ],
+                    "handle" => [
+                        [
+                            "handler" => "static_response",
+                            "status_code" => 200,
+                            "body" => "instance is currently off - turn instance on at ".config('app.domain')
+                        ]
+                    ]
+                ];
 
-            throw new Exception('DB292007: unable find rule by subdomain');
+            $rt->updateRule($old_rule, $new_rule);
         }
-
-        $new_rule =
-            [
-                'match' => [
-                    [
-                        'host' => [$instance->subdomain.'.'.config('app.domain')]
-                    ]
-                ],
-                "handle" => [
-                    [
-                        "handler" => "static_response",
-                        "status_code" => 200,
-                        "body" => "instance is currently off - turn instance on at ".config('app.domain')
-                    ]
-                ]
-            ];
-
-        $rt->updateRule($old_rule, $new_rule);
 
         // ct_dw
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($instance->source->name);
