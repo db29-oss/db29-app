@@ -64,15 +64,6 @@ class TurnOnInstance implements ShouldQueue
         // rt_up
         $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
 
-        if ($old_rule === false) {
-            logger()->error('DB292008: unable find rule by subdomain', [
-                'instance_id' => $instance->id,
-                'subdomain' => $instance->subdomain,
-            ]);
-
-            throw new Exception('DB292009: unable find rule by subdomain');
-        }
-
         $new_rule =
             [
                 'match' => [
@@ -92,7 +83,11 @@ class TurnOnInstance implements ShouldQueue
                 ]
             ];
 
-        $rt->updateRule($old_rule, $new_rule);
+        if ($old_rule === false) {
+            $rt->addRule($new_rule);
+        } else {
+            $rt->updateRule($old_rule, $new_rule);
+        }
 
         $constraint = json_decode($instance->plan->constraint, true);
 
