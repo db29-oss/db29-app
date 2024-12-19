@@ -35,7 +35,7 @@ class MachineFactory extends Factory
         $file_put_contents = file_put_contents(storage_path('app/private/'.$uuid.'.pub'), $ssh_publickey);
 
         $max_cpu = rand(4_000, 32_000);
-        $max_disk = rand(2, 10) * 1024 * 1024 * 1024;
+        $max_disk = rand(10, 20) * 1024 * 1024 * 1024;
         $max_memory = rand(2, 10) * 1024 * 1024 * 1024;
 
         return [

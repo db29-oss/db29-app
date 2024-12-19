@@ -61,6 +61,21 @@ class TurnOnInstance implements ShouldQueue
 
         $host_port = parse_url($ssh->getLastLine())['port'];
 
+        while (true) {
+            $ssh->clearOutput();
+
+            try {
+                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' 0.0.0.0:'.$host_port);
+            } catch (Exception) {
+            }
+
+            if ($ssh->getLastLine() === '200') {
+                break;
+            }
+
+            sleep(1);
+        }
+
         // rt_up
         $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
 

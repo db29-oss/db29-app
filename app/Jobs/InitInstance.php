@@ -83,7 +83,7 @@ class InitInstance implements ShouldQueue
         }
 
         if ($machine === null) {
-            throw new Exception('DB292001: machine is null');
+            throw new Exception('DB292001: machine is null - possible out of resources');
         }
 
         if ($machine->trafficRouter === null) {
