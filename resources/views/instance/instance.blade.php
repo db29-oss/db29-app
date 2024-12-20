@@ -52,10 +52,10 @@
       <div class="pb-3">
         <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
           <circle cx="5" cy="5" r="5"
-          @if ($instance->status === 'queue' || $instance->status === 'ct_dw')
-            fill="darkgrey"
-          @elseif ($instance->queue_active)
+          @if ($instance->queue_active)
             fill="coral"
+          @elseif ($instance->status === 'queue' || $instance->status === 'ct_dw')
+            fill="darkgrey"
           @elseif ($instance->status === 'rt_up')
             fill="lime"
           @else
