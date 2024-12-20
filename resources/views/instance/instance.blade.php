@@ -33,13 +33,14 @@
     }, 5000);
   </script>
   @break
-@elseif ($instance->status !== 'rt_up')
+@elseif ($instance->queue_active)
 <!--reload page every 10s if there was instance queue/queue_active-->
   <script>
     setTimeout(() => {
       window.location.reload();
     }, 10_000);
   </script>
+  @break
 @endif
 @endforeach
 
