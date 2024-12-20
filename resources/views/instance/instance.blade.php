@@ -107,7 +107,7 @@
         @if (
           $instance->status === 'rt_up' &&
           auth()->user()->instance_count === 1 &&
-          $instance->queue_active !== true
+          ! $instance->queue_active
         )
         <!--tutorial for new user-->
         <div class="text-gray-400 pointer-events-none select-none pl-28">↑</div>
