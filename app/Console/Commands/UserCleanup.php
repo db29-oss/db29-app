@@ -16,6 +16,10 @@ class UserCleanup extends Command
     {
         $users = User::whereInstanceCount(0)->where('last_logged_in_at', '<', now()->subDays(30))->get();
 
+        if (count($users) === 0) {
+            return;
+        }
+
         $sql_params = [];
         $sql = 'insert into recharge_number_holes (recharge_number) values ';
 
