@@ -13,6 +13,8 @@ class UserCleanupTest extends TestCase
     {
         test_util_migrate_fresh();
 
+        Artisan::call('app:user-cleanup');
+
         User::factory()->count(10)->create();
 
         $this->assertEquals(10, User::count());

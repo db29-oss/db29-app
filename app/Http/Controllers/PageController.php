@@ -325,7 +325,6 @@ class PageController extends Controller
         }
 
         if (! view()->exists('instance.'.$source_name.'.register')) {
-
             return redirect()->route('source');
         }
 
@@ -415,5 +414,10 @@ class PageController extends Controller
         $reg_info['secret_key'] = bin2hex(random_bytes(64));
 
         return $reg_info;
+    }
+
+    protected function filter_input_word_press()
+    {
+        return [];
     }
 }

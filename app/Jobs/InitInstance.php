@@ -155,7 +155,6 @@ class InitInstance implements ShouldQueue
         $host_port = (new $job_class(
             docker_compose: $docker_compose,
             instance: $instance,
-            latest_version_template: $latest_version_template,
             machine: $machine,
             plan: $plan,
             reg_info: $this->reg_info,
@@ -180,7 +179,7 @@ class InitInstance implements ShouldQueue
             $ssh->clearOutput();
 
             try {
-                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' 0.0.0.0:'.$host_port);
+                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
             } catch (Exception) {
             }
 

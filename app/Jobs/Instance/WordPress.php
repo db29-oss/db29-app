@@ -6,7 +6,7 @@ use App\Contracts\InstanceInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class Planka implements InstanceInterface, ShouldQueue
+class WordPress implements InstanceInterface, ShouldQueue
 {
     use Queueable;
 
@@ -21,45 +21,13 @@ class Planka implements InstanceInterface, ShouldQueue
 
     public function setUp()
     {
-        foreach (
-            $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
-        ) {
-            if (str_starts_with($environment, 'BASE_URL=')) {
-                $this->docker_compose['services']['planka']['environment'][$env_idx] =
-                    'BASE_URL=https://'.$this->instance->subdomain.'.'.config('app.domain');
+        $this->docker_compose['services']['wordpress']['container_name'] = $this->instance->id;
 
-                break;
-            }
-        }
-
-        $this->docker_compose['services']['planka']['container_name'] = $this->instance->id;
-
-        $this->docker_compose['services']['planka']['environment'][] =
-            'DEFAULT_ADMIN_EMAIL='.$this->reg_info['email'];
-
-        $this->docker_compose['services']['planka']['environment'][] =
-            'DEFAULT_ADMIN_PASSWORD='.$this->reg_info['password'];
-
-        $this->docker_compose['services']['planka']['environment'][] =
-            'DEFAULT_ADMIN_NAME='.$this->reg_info['name'];
-
-        $this->docker_compose['services']['planka']['environment'][] =
-            'DEFAULT_ADMIN_USERNAME='.$this->reg_info['username'];
-
-        foreach ($this->docker_compose['services']['planka']['ports'] as $dcp_idx => $dcp) {
+        foreach ($this->docker_compose['services']['wordpress']['ports'] as $dcp_idx => $dcp) {
             if (str_contains($dcp, ':')) {
                 $dcp_exp = explode(':', $dcp);
                 $dcp_port = trim(end($dcp_exp));
-                $this->docker_compose['services']['planka']['ports'][$dcp_idx] = $dcp_port;
-                break;
-            }
-        }
-
-        foreach ($this->docker_compose['services']['planka']['environment'] as $dce_idx => $dce) {
-            if (str_starts_with($dce, 'SECRET_KEY=')) {
-                $this->docker_compose['services']['planka']['environment'][$dce_idx] =
-                    'SECRET_KEY='.bin2hex(random_bytes(64));
-
+                $this->docker_compose['services']['wordpress']['ports'][$dcp_idx] = $dcp_port;
                 break;
             }
         }
@@ -189,23 +157,13 @@ class Planka implements InstanceInterface, ShouldQueue
             }
 
             if (array_key_exists('max_cpu', $constraint)) {
-                $apply_limit_commands[] = 'podman update --cpu-shares '.
-                    (int) ($constraint['max_cpu'] * 0.75).' '.$this->instance->id;
-            }
-
-            if (array_key_exists('max_cpu', $constraint)) {
-                $apply_limit_commands[] = 'podman update --cpu-shares '.
-                    (int) ($constraint['max_cpu'] * 0.25).' '.$this->instance->id.'_postgres_1';
+                $apply_limit_commands[] =
+                    'podman update --cpu-shares '.$constraint['max_cpu'].' '.$this->instance->id;
             }
 
             if (array_key_exists('max_memory', $constraint)) {
-                $apply_limit_commands[] = 'podman update --memory '.
-                    (int) ($constraint['max_memory'] * 0.75).' '.$this->instance->id;
-            }
-
-            if (array_key_exists('max_memory', $constraint)) {
-                $apply_limit_commands[] = 'podman update --memory '.
-                    (int) ($constraint['max_memory'] * 0.25).' '.$this->instance->id.'_postgres_1';
+                $apply_limit_commands[] =
+                    'podman update --memory '.$constraint['max_memory'].' '.$this->instance->id;
             }
         }
 

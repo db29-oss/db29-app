@@ -69,7 +69,10 @@ class InstancePageTest extends TestCase
         $response->assertSee('reload page every 5s');
 
         $i = Instance::first();
-        $i->status = 'dns';
+        $i->status = fake()->randomElement([
+            'init', 'dns_up', 'ct_up', 'ct_dw', 'rt_dw', 'dns_dw' // no 'queue', no 'rt_up'
+        ]);
+        $i->queue_active = true;
         $i->save();
 
         $response = $this->get('/instance');
@@ -77,12 +80,14 @@ class InstancePageTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertSee('explain bubble color');
+
         $response->assertSee('reload page every 10s');
 
         $response->assertSee(Instance::first()->name);
 
         $i = Instance::first();
         $i->status = 'rt_up';
+        $i->queue_active = false;
         $i->save();
 
         $response = $this->get('/instance');

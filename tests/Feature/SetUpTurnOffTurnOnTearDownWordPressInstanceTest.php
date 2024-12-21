@@ -12,7 +12,7 @@ use App\Services\SSHEngine;
 use Artisan;
 use Tests\TestCase;
 
-class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
+class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
 {
     public function test_generic(): void
     {
@@ -28,9 +28,9 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
         auth()->login($u);
 
         $s = new Source;
-        $s->name = 'planka';
+        $s->name = 'word_press';
         $s->enabled = true;
-        $s->version_templates = '[{"commit": "617246ec407353cd69c875baff5524b5e0c852dd", "docker_compose": {"services": {"planka": {"depends_on": {"postgres": {"condition": "service_healthy"}}, "environment": ["BASE_URL=http://localhost:3000", "DATABASE_URL=postgresql://postgres@postgres/planka", "SECRET_KEY=notsecretkey"], "image": "ghcr.io/plankanban/planka:latest", "ports": ["3000:1337"], "restart": "on-failure", "volumes": ["user-avatars:/app/public/user-avatars", "project-background-images:/app/public/project-background-images", "attachments:/app/private/attachments"]}, "postgres": {"environment": ["POSTGRES_DB=planka", "POSTGRES_HOST_AUTH_METHOD=trust"], "healthcheck": {"interval": "10s", "retries": 5, "test": ["CMD-SHELL", "pg_isready -U postgres -d planka"], "timeout": "5s"}, "image": "postgres:16-alpine", "restart": "on-failure", "volumes": ["db-data:/var/lib/postgresql/data"]}}, "version": "3", "volumes": {"attachments": null, "db-data": null, "project-background-images": null, "user-avatars": null}}, "tag": "v1.24.2"}]';
+        $s->version_templates = '[{"commit":"6044190b526821ead3b4ff9ead9381ef879865d8","docker_compose":{"version":"3","services":{"wordpress":{"image":"docker.io\/kocoten1992\/wordpress-sqlite:latest","restart":"always","ports":["8080:80"],"volumes":["wordpress:\/var\/www\/html"]}},"volumes":{"wordpress":null}},"tag":"6.7.1"}]';
         $s->save();
 
         $p = Plan::factory()->create(['base' => true, 'source_id' => $s->id]);
@@ -38,7 +38,7 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
         $m = Machine::factory()->create();
         $m->refresh();
 
-        $ssh_port = setup_container('db29_su_tof_ton_td_instance_queue', $m->id);
+        $ssh_port = setup_container('db29_su_tof_ton_td_wordpress_instance', $m->id);
 
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
@@ -61,11 +61,7 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
          */
 
         $response = $this->post('instance/register', [
-            'source' => 'planka',
-            'email' => fake()->email,
-            'name' => str()->random(8),
-            'password' => str()->random(25),
-            'username' => str()->random(11),
+            'source' => 'word_press',
         ]);
 
         $this->assertEquals(1, Instance::count());
@@ -108,6 +104,7 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
             $m->max_memory - $m->remain_memory,
             json_decode($inst->plan->constraint, true)['max_memory']
         );
+
 
         /**
          * TURN OFF
@@ -256,7 +253,7 @@ class SetUpTurnOffTurnOnTearDownInstanceTest extends TestCase
         unset($ssh);
 
         // clean up
-        cleanup_container('db29_su_tof_ton_td_instance_queue', $m->id);
+        cleanup_container('db29_su_tof_ton_td_wordpress_instance', $m->id);
     }
 
     private function isExplicitlyRun(): bool

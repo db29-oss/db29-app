@@ -65,7 +65,7 @@ class TurnOnInstance implements ShouldQueue
             $ssh->clearOutput();
 
             try {
-                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' 0.0.0.0:'.$host_port);
+                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
             } catch (Exception) {
             }
 
