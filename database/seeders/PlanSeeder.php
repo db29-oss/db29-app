@@ -13,10 +13,12 @@ class PlanSeeder extends Seeder
      */
     public function run(): void
     {
-        $source = Source::first();
+        $sources = Source::get();
 
-        Plan::factory()->count(2)->create(['source_id' => $source->id]);
+        foreach ($sources as $source) {
+            Plan::factory()->count(2)->create(['source_id' => $source->id]);
 
-        Plan::factory()->create(['base' => true, 'source_id' => $source->id]);
+            Plan::factory()->create(['base' => true, 'source_id' => $source->id]);
+        }
     }
 }

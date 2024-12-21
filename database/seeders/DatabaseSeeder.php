@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MachineSeeder::class,
             SourceSeeder::class,
+            PlanSeeder::class,
             TrafficRouterSeeder::class,
         ]);
     }
