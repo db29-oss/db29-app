@@ -152,90 +152,28 @@ class InitInstance implements ShouldQueue
             }
         }
 
-        $host_port = (new $job_class(
+        $tr_rule = (new $job_class(
             docker_compose: $docker_compose,
             instance: $instance,
             machine: $machine,
             plan: $plan,
             reg_info: $this->reg_info,
-            ssh: $ssh
+            ssh: $ssh,
+            subdomain: $subdomain,
         ))->setUp();
 
-        $ssh->clearOutput();
-
-        while (true) {
-            $ssh->exec('podman port '.$instance->id);
-
-            if ($ssh->getLastLine() !== null) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $host_port = parse_url($ssh->getLastLine())['port'];
-
-        while (true) {
-            $ssh->clearOutput();
-
-            try {
-                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
-            } catch (Exception) {
-            }
-
-            if ($ssh->getLastLine() === '200') {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        Instance::query()
-            ->whereId($instance->id)
-            ->update([
-                'status' => 'ct_up',
-                'version_template' => [
-                    'docker_compose' => $docker_compose,
-                    'port' => $host_port,
-                    'tag' => $latest_version_template,
-                ]
-            ]);
-
-        $instance->status = 'ct_up';
-        $instance->version_template = [
-            'docker_compose' => $docker_compose,
-            'port' => $host_port,
-            'tag' => $latest_version_template,
-        ];
-
-        // router
-        $rule =
-            [
-                'match' => [
-                    [
-                        'host' => [$subdomain.'.'.config('app.domain')]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'reverse_proxy',
-                        'upstreams' => [
-                            [
-                                'dial' => '127.0.0.1:'.$host_port
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-        app('rt', [$traffic_router, $ssh])->addRule($rule);
+        app('rt', [$traffic_router, $ssh])->addRule($tr_rule);
 
         Instance::query()
             ->whereId($instance->id)
             ->update([
                 'status' => 'rt_up', // router up
                 'queue_active' => false,
-                'turned_on_at' => now()
+                'turned_on_at' => now(),
+                'version_template' => [
+                    'docker_compose' => $docker_compose,
+                    'tag' => $latest_version_template,
+                ]
             ]);
     }
 }

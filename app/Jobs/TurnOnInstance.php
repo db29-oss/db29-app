@@ -42,61 +42,15 @@ class TurnOnInstance implements ShouldQueue
         // ct_up
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($instance->source->name);
 
-        (new $job_class(
+        $new_rule = (new $job_class(
             instance: $instance,
             machine: $machine,
             plan: $plan,
             ssh: $ssh,
         ))->turnOn();
 
-        while (true) {
-            $ssh->exec('podman port '.$instance->id);
-
-            if ($ssh->getLastLine() !== null) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $host_port = parse_url($ssh->getLastLine())['port'];
-
-        while (true) {
-            $ssh->clearOutput();
-
-            try {
-                $ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
-            } catch (Exception) {
-            }
-
-            if ($ssh->getLastLine() === '200') {
-                break;
-            }
-
-            sleep(1);
-        }
-
         // rt_up
         $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
-
-        $new_rule =
-            [
-                'match' => [
-                    [
-                        'host' => [$instance->subdomain.'.'.config('app.domain')]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'reverse_proxy',
-                        'upstreams' => [
-                            [
-                                'dial' => '127.0.0.1:'.$host_port
-                            ]
-                        ]
-                    ]
-                ]
-            ];
 
         if ($old_rule === false) {
             $rt->addRule($new_rule);

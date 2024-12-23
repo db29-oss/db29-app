@@ -21,7 +21,6 @@ class SourceSeeder extends Seeder
         $source = new Source;
         $source->name = 'word_press';
         $source->enabled = true;
-        $source->version_templates = '[{"commit":"6044190b526821ead3b4ff9ead9381ef879865d8","docker_compose":{"version":"3","services":{"wordpress":{"image":"docker.io\/kocoten1992\/wordpress-sqlite:latest","restart":"always","ports":["8080:80"],"volumes":["wordpress:\/var\/www\/html"]}},"volumes":{"wordpress":null}},"tag":"6.7.1"}]';
         $source->save();
     }
 }

@@ -17,51 +17,12 @@ class WordPress implements InstanceInterface, ShouldQueue
         private $plan = null,
         private $reg_info = null,
         private $ssh = null,
+        private $subdomain = null,
     ) {}
 
-    public function setUp()
+    public function setUp(): array
     {
-        $this->docker_compose['services']['wordpress']['container_name'] = $this->instance->id;
-
-        foreach ($this->docker_compose['services']['wordpress']['ports'] as $dcp_idx => $dcp) {
-            if (str_contains($dcp, ':')) {
-                $dcp_exp = explode(':', $dcp);
-                $dcp_port = trim(end($dcp_exp));
-                $this->docker_compose['services']['wordpress']['ports'][$dcp_idx] = $dcp_port;
-                break;
-            }
-        }
-
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
-
-        // change volumes path
-        $mkdir_volume_paths = [];
-
-        foreach ($this->docker_compose['volumes'] as $volume_name => $volume_cf) {
-            $volume_path = $instance_path.$volume_name;
-
-            $this->docker_compose['volumes'][$volume_name] = [
-                'driver' => 'local',
-                'driver_opts' => [
-                    'type' => 'none',
-                    'o' => 'bind',
-                    'device' => $volume_path,
-                ]
-            ];
-
-            $mkdir_volume_paths[] = 'mkdir '.$volume_path;
-        }
-
-        $dump = app('yml')->dump($this->docker_compose, 4);
-
-        $yml_lines = explode("\n", $dump);
-
-        $put_docker_compose_commands = [];
-
-        foreach ($yml_lines as $yml_line) {
-            $put_docker_compose_commands[] =
-                'echo '.escapeshellarg($yml_line).' >> '.$instance_path.'docker-compose.yml';
-        }
 
         $create_instance_path = 'mkdir '.$instance_path;
 
@@ -71,18 +32,129 @@ class WordPress implements InstanceInterface, ShouldQueue
 
         $apply_limit_commands = $this->buildLimitCommands();
 
+        // currently wordpress do not have sqlite in core yet
+        $get_sqlite_version_url =
+            'https://api.github.com/repos/WordPress/sqlite-database-integration/releases/latest';
+
+        $this->ssh->clearOutput();
+
+        $download_sqlite_url =
+            $this->ssh
+                 ->exec('curl '.$get_sqlite_version_url.' | jq -M \'.tarball_url\'')
+                 ->getLastLine();
+
         $this->ssh
-             ->exec(array_merge(
-                 [
-                     $create_instance_path
-                 ],
-                 $mkdir_volume_paths,
-                 $put_docker_compose_commands,
-                 [
-                     'cd '.$instance_path.' && podman-compose up -d',
-                 ],
-                 $apply_limit_commands
-             ));
+             ->exec($create_instance_path)
+             ->exec('cd '.$instance_path.' && curl -L -o latest.zip https://wordpress.org/latest.zip')
+             ->exec('cd '.$instance_path.' && unzip latest.zip')
+             ->exec($apply_limit_commands)
+             ->exec('cd '.$instance_path.'wordpress && cp wp-config-sample.php wp-config.php')
+             ->exec(
+                 'cd '.$instance_path.'wordpress/wp-content/plugins/ && '.
+                 'mkdir sqlite-database-integration'
+             )
+             ->exec(
+                 'cd '.$instance_path.'wordpress/wp-content/plugins/sqlite-database-integration && '.
+                 'curl -L -o sqlite-database-integration.tar.gz '.$download_sqlite_url.' && '.
+                 'tar --strip-components=1 -xf sqlite-database-integration.tar.gz && '.
+                 'cd '.$instance_path.'wordpress/wp-content/ && '.
+                 'cp plugins/sqlite-database-integration/db.copy db.php && '.
+
+                 'sed -i \'s#'.
+                 '{SQLITE_IMPLEMENTATION_FOLDER_PATH}'.
+                 '#'.
+                 '/var/www/html/wp-content/plugins/sqlite-database-integration'.
+                 '#\' '.
+                 $instance_path.'wordpress/wp-content/db.php && '.
+
+                 'sed -i \'s#'.
+                 '{SQLITE_PLUGIN}'.
+                 '#'.
+                 'sqlite-database-integration/load.php'.
+                 '#\' '.
+                 $instance_path.'wordpress/wp-content/db.php && '.
+
+                 'cd '.$instance_path.'wordpress/wp-content/ && '.
+                 'mkdir database && '.
+                 'touch database/.ht.sqlite && '.
+                 'chmod 640 database/.ht.sqlite'
+             )
+             ->exec(
+                 'cd '.$instance_path.' && '.
+                 'podman run -d --name='.$this->instance->id.' '.
+                 '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
+                 'php:fpm-alpine'
+             );
+
+        // traffic rule
+        $this->ssh->clearOutput();
+
+        while (true) {
+            $this->ssh->exec('podman port '.$this->instance->id);
+
+            if ($this->ssh->getLastLine() !== null) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        $host_port = parse_url($this->ssh->getLastLine())['port'];
+
+        while (true) {
+            $this->ssh->clearOutput();
+
+            try {
+                $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
+            } catch (Exception) {
+            }
+
+            if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        $rule =
+            [
+                'match' => [
+                    [
+                        'host' => [$this->subdomain.'.'.config('app.domain')]
+                    ]
+                ],
+                'handle' => [
+                    [
+                        'handler' => 'subroute',
+                        'routes' => [
+                            [
+                                'match' => [
+                                    ['path' => ['*.php']]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'reverse_proxy',
+                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
+                                        'transport' => [
+                                            'protocol' => 'fastcgi',
+                                            'root' => '/var/www/html/',
+                                            'split_path' => ['.php']
+                                        ]
+                                    ]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'file_server',
+                                        'root' => $instance_path.'wordpress'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+        return $rule;
     }
 
     public function tearDown()
@@ -98,7 +170,7 @@ class WordPress implements InstanceInterface, ShouldQueue
              ->exec(array_merge(
                  [
                      'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                     'podman-compose down --volumes',
+                     'podman rm '.$this->instance->id,
                  ],
                  [
                      $rm_instance_dir
@@ -109,21 +181,91 @@ class WordPress implements InstanceInterface, ShouldQueue
     public function turnOff()
     {
         $this->ssh->exec(
-            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && podman-compose down'
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+            'podman stop '.$this->instance->id
         );
     }
 
-    public function turnOn()
+    public function turnOn(): array
     {
+        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+
         $apply_limit_commands = $this->buildLimitCommands();
 
         $this->ssh->exec(array_merge(
              [
                  'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                 'podman-compose up -d',
+                 'podman start '.$this->instance->id,
              ],
              $apply_limit_commands
         ));
+
+        while (true) {
+            $this->ssh->exec('podman port '.$this->instance->id);
+
+            if ($this->ssh->getLastLine() !== null) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        $host_port = parse_url($this->ssh->getLastLine())['port'];
+
+        while (true) {
+            $this->ssh->clearOutput();
+
+            try {
+                $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
+            } catch (Exception) {
+            }
+
+            if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        $rule =
+            [
+                'match' => [
+                    [
+                        'host' => [$this->instance->subdomain.'.'.config('app.domain')]
+                    ]
+                ],
+                'handle' => [
+                    [
+                        'handler' => 'subroute',
+                        'routes' => [
+                            [
+                                'match' => [
+                                    ['path' => ['*.php']]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'reverse_proxy',
+                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
+                                        'transport' => [
+                                            'protocol' => 'fastcgi',
+                                            'root' => '/var/www/html/',
+                                            'split_path' => ['.php']
+                                        ]
+                                    ]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'file_server',
+                                        'root' => $instance_path.'wordpress'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+        return $rule;
     }
 
     public function backUp()

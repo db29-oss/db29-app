@@ -30,7 +30,6 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
         $s = new Source;
         $s->name = 'word_press';
         $s->enabled = true;
-        $s->version_templates = '[{"commit":"6044190b526821ead3b4ff9ead9381ef879865d8","docker_compose":{"version":"3","services":{"wordpress":{"image":"docker.io\/kocoten1992\/wordpress-sqlite:latest","restart":"always","ports":["8080:80"],"volumes":["wordpress:\/var\/www\/html"]}},"volumes":{"wordpress":null}},"tag":"6.7.1"}]';
         $s->save();
 
         $p = Plan::factory()->create(['base' => true, 'source_id' => $s->id]);
