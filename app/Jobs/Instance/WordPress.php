@@ -50,7 +50,7 @@ class WordPress implements InstanceInterface, ShouldQueue
 
         $this->ssh
              ->exec('cd '.$instance_path.' && curl -L -o latest.zip https://wordpress.org/latest.zip')
-             ->exec('cd '.$instance_path.' && unzip latest.zip')
+             ->exec('cd '.$instance_path.' && unzip -o latest.zip')
              ->exec($apply_limit_commands)
              ->exec('cd '.$instance_path.'wordpress && cp wp-config-sample.php wp-config.php')
              ->exec(
