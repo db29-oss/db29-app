@@ -145,7 +145,9 @@ class WordPress implements InstanceInterface, ShouldQueue
                                             'split_path' => ['.php']
                                         ]
                                     ]
-                                ],
+                                ]
+                            ],
+                            [
                                 'handle' => [
                                     [
                                         'handler' => 'file_server',
