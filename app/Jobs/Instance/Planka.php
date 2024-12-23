@@ -103,13 +103,14 @@ class Planka implements InstanceInterface, ShouldQueue
             $create_instance_path = 'btrfs subvolume create '.$instance_path;
         }
 
+        try {
+            $this->ssh->exec($create_instance_path);
+        } catch (Exception) {}
+
         $apply_limit_commands = $this->buildLimitCommands();
 
         $this->ssh
              ->exec(array_merge(
-                 [
-                     $create_instance_path
-                 ],
                  $mkdir_volume_paths,
                  $put_docker_compose_commands,
                  [

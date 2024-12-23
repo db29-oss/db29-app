@@ -3,6 +3,7 @@
 namespace App\Jobs\Instance;
 
 use App\Contracts\InstanceInterface;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -30,6 +31,10 @@ class WordPress implements InstanceInterface, ShouldQueue
             $create_instance_path = 'btrfs subvolume create '.$instance_path;
         }
 
+        try {
+            $this->ssh->exec($create_instance_path);
+        } catch (Exception) {}
+
         $apply_limit_commands = $this->buildLimitCommands();
 
         // currently wordpress do not have sqlite in core yet
@@ -44,7 +49,6 @@ class WordPress implements InstanceInterface, ShouldQueue
                  ->getLastLine();
 
         $this->ssh
-             ->exec($create_instance_path)
              ->exec('cd '.$instance_path.' && curl -L -o latest.zip https://wordpress.org/latest.zip')
              ->exec('cd '.$instance_path.' && unzip latest.zip')
              ->exec($apply_limit_commands)
