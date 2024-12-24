@@ -30,7 +30,9 @@ class TermInstance implements ShouldQueue
         $ssh = app('ssh')->toMachine($machine)->compute();
 
         // rt_dw
-        app('rt', [$traffic_router, $ssh])->deleteRuleBySubdomainName($instance->subdomain);
+        if ($instance->subdomain !== null) {
+            app('rt', [$traffic_router, $ssh])->deleteRuleBySubdomainName($instance->subdomain);
+        }
 
         // dns_dw
         if (app('env') === 'production') {

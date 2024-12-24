@@ -50,7 +50,6 @@ class WordPress implements InstanceInterface, ShouldQueue
         $this->ssh
              ->exec('cd '.$instance_path.' && curl -L -o latest.zip https://wordpress.org/latest.zip')
              ->exec('cd '.$instance_path.' && unzip -o latest.zip')
-             ->exec('cd '.$instance_path.'wordpress && cp wp-config-sample.php wp-config.php')
              ->exec(
                  'cd '.$instance_path.'wordpress/wp-content/plugins/ && '.
                  'mkdir -p sqlite-database-integration'
@@ -130,7 +129,10 @@ class WordPress implements InstanceInterface, ShouldQueue
             [
                 'match' => [
                     [
-                        'host' => [$this->instance->subdomain.'.'.config('app.domain')]
+                        'host' => [
+                            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
+                            config('app.domain')
+                        ]
                     ]
                 ],
                 'handle' => [
@@ -159,8 +161,12 @@ class WordPress implements InstanceInterface, ShouldQueue
                                 ],
                                 'handle' => [
                                     [
-                                        'handler' => 'rewrite',
-                                        'uri' => '/index.php'
+                                        'handler' => 'reverse_proxy',
+                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
+                                        'transport' => [
+                                            'protocol' => 'fastcgi',
+                                            'root' => '/var/www/html/index.php',
+                                        ]
                                     ]
                                 ]
                             ],
@@ -182,7 +188,8 @@ class WordPress implements InstanceInterface, ShouldQueue
 
     public function tearDown()
     {
-        $rm_instance_dir = 'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
+        $rm_instance_dir =
+            'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
 
         if (app('env') === 'production') {
             $rm_instance_dir = 'btrfs subvolume delete '.

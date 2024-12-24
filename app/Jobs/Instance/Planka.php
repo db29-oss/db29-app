@@ -27,7 +27,9 @@ class Planka implements InstanceInterface, ShouldQueue
         ) {
             if (str_starts_with($environment, 'BASE_URL=')) {
                 $this->docker_compose['services']['planka']['environment'][$env_idx] =
-                    'BASE_URL=https://'.$this->instance->subdomain.'.'.config('app.domain');
+                    'BASE_URL=https://'.
+                    ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
+                    config('app.domain');
 
                 break;
             }
@@ -122,49 +124,6 @@ class Planka implements InstanceInterface, ShouldQueue
         return $this->computeTrafficRule();
     }
 
-    public function tearDown()
-    {
-        $rm_instance_dir = 'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
-
-        if (app('env') === 'production') {
-            $rm_instance_dir = 'btrfs subvolume delete '.
-                $this->machine->storage_path.'instance/'.$this->instance->id;
-        }
-
-        $this->ssh
-             ->exec(array_merge(
-                 [
-                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                     'podman-compose down --volumes',
-                 ],
-                 [
-                     $rm_instance_dir
-                 ]
-             ));
-    }
-
-    public function turnOff()
-    {
-        $this->ssh->exec(
-            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && podman-compose down'
-        );
-    }
-
-    public function turnOn(): array
-    {
-        $apply_limit_commands = $this->buildLimitCommands();
-
-        $this->ssh->exec(array_merge(
-             [
-                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                 'podman-compose up -d',
-             ],
-             $apply_limit_commands
-        ));
-
-        return $this->computeTrafficRule();
-    }
-
     public function computeTrafficRule(): array
     {
         $wait_seconds = 0;
@@ -216,7 +175,10 @@ class Planka implements InstanceInterface, ShouldQueue
             [
                 'match' => [
                     [
-                        'host' => [$this->instance->subdomain.'.'.config('app.domain')]
+                        'host' => [
+                            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
+                            config('app.domain')
+                        ]
                     ]
                 ],
                 'handle' => [
@@ -232,6 +194,50 @@ class Planka implements InstanceInterface, ShouldQueue
             ];
 
         return $tr_rule;
+    }
+
+    public function tearDown()
+    {
+        $rm_instance_dir =
+            'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
+
+        if (app('env') === 'production') {
+            $rm_instance_dir = 'btrfs subvolume delete '.
+                $this->machine->storage_path.'instance/'.$this->instance->id;
+        }
+
+        $this->ssh
+             ->exec(array_merge(
+                 [
+                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+                     'podman-compose down --volumes',
+                 ],
+                 [
+                     $rm_instance_dir
+                 ]
+             ));
+    }
+
+    public function turnOff()
+    {
+        $this->ssh->exec(
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && podman-compose down'
+        );
+    }
+
+    public function turnOn(): array
+    {
+        $apply_limit_commands = $this->buildLimitCommands();
+
+        $this->ssh->exec(array_merge(
+             [
+                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+                 'podman-compose up -d',
+             ],
+             $apply_limit_commands
+        ));
+
+        return $this->computeTrafficRule();
     }
 
     public function backUp()

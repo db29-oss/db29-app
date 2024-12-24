@@ -96,10 +96,12 @@ class InitInstance implements ShouldQueue
         $instance->machine = $machine;
 
         // dns
-        $subdomain = $instance->subdomain;
+        $subdomain = $instance->subdomain; // reuse subdomain from previous failed InitInstance
 
         if ($subdomain === null) {
-            $subdomain = str(str()->random(8))->lower()->toString();
+            if (app('env') === 'production') {
+                $subdomain = str(str()->random(8))->lower()->toString();
+            }
         }
 
         $dns_id = $instance->dns_id;

@@ -39,26 +39,30 @@ class TurnOffInstance implements ShouldQueue
         $rt = app('rt', [$traffic_router, $ssh]);
 
         // rt_dw
-        $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
+        if ($instance->subdomain !== null) {
+            $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
 
-        if ($old_rule !== false) {
-            $new_rule =
-                [
-                    'match' => [
-                        [
-                            'host' => [$instance->subdomain.'.'.config('app.domain')]
+            if ($old_rule !== false) {
+                $new_rule =
+                    [
+                        'match' => [
+                            [
+                                'host' => [$instance->subdomain.'.'.config('app.domain')]
+                            ]
+                        ],
+                        "handle" => [
+                            [
+                                "handler" => "static_response",
+                                "status_code" => 200,
+                                "body" =>
+                                    "instance is currently off - ".
+                                    "turn instance on at ".config('app.domain')
+                            ]
                         ]
-                    ],
-                    "handle" => [
-                        [
-                            "handler" => "static_response",
-                            "status_code" => 200,
-                            "body" => "instance is currently off - turn instance on at ".config('app.domain')
-                        ]
-                    ]
-                ];
+                    ];
 
-            $rt->updateRule($old_rule, $new_rule);
+                $rt->updateRule($old_rule, $new_rule);
+            }
         }
 
         // ct_dw

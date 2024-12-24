@@ -50,12 +50,14 @@ class TurnOnInstance implements ShouldQueue
         ))->turnOn();
 
         // rt_up
-        $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
+        if ($instance->subdomain !== null) {
+            $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
 
-        if ($old_rule === false) {
-            $rt->addRule($new_rule);
-        } else {
-            $rt->updateRule($old_rule, $new_rule);
+            if ($old_rule === false) {
+                $rt->addRule($new_rule);
+            } else {
+                $rt->updateRule($old_rule, $new_rule);
+            }
         }
 
         $constraint = json_decode($instance->plan->constraint, true);
