@@ -154,6 +154,17 @@ class WordPress implements InstanceInterface, ShouldQueue
                                 ]
                             ],
                             [
+                                'match' => [
+                                    ['path' => ['/']]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'rewrite',
+                                        'uri' => '/index.php'
+                                    ]
+                                ]
+                            ],
+                            [
                                 'handle' => [
                                     [
                                         'handler' => 'file_server',
