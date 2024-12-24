@@ -18,7 +18,6 @@ class Planka implements InstanceInterface, ShouldQueue
         private $plan = null,
         private $reg_info = null,
         private $ssh = null,
-        private $subdomain = null,
     ) {}
 
     public function setUp(): array
@@ -120,55 +119,7 @@ class Planka implements InstanceInterface, ShouldQueue
              ));
 
         // traffic rule
-        $this->ssh->clearOutput();
-
-        while (true) {
-            $this->ssh->exec('podman port '.$this->instance->id);
-
-            if ($this->ssh->getLastLine() !== null) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $host_port = parse_url($this->ssh->getLastLine())['port'];
-
-        while (true) {
-            $this->ssh->clearOutput();
-
-            try {
-                $this->ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
-            } catch (Exception) {
-            }
-
-            if ($this->ssh->getLastLine() === '200') {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $rule =
-            [
-                'match' => [
-                    [
-                        'host' => [$this->subdomain.'.'.config('app.domain')]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'reverse_proxy',
-                        'upstreams' => [
-                            [
-                                'dial' => '127.0.0.1:'.$host_port
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-        return $rule;
+        return $this->computeTrafficRule();
     }
 
     public function tearDown()
@@ -211,7 +162,16 @@ class Planka implements InstanceInterface, ShouldQueue
              $apply_limit_commands
         ));
 
+        return $this->computeTrafficRule();
+    }
+
+    public function computeTrafficRule(): array
+    {
+        $wait_seconds = 0;
+
         while (true) {
+            $this->ssh->clearOutput();
+
             $this->ssh->exec('podman port '.$this->instance->id);
 
             if ($this->ssh->getLastLine() !== null) {
@@ -219,9 +179,17 @@ class Planka implements InstanceInterface, ShouldQueue
             }
 
             sleep(1);
+
+            $wait_seconds += 1;
+
+            if ($wait_seconds > 30) {
+                throw new Exception('DB292006: podman port wait exceed thresh hold');
+            }
         }
 
         $host_port = parse_url($this->ssh->getLastLine())['port'];
+
+        $wait_seconds = 0;
 
         while (true) {
             $this->ssh->clearOutput();
@@ -236,6 +204,12 @@ class Planka implements InstanceInterface, ShouldQueue
             }
 
             sleep(1);
+
+            $wait_seconds += 1;
+
+            if ($wait_seconds > 30) {
+                throw new Exception('DB292007: curl check wait http exceed thresh hold');
+            }
         }
 
         $tr_rule =

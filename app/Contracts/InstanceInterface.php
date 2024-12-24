@@ -5,6 +5,7 @@ namespace App\Contracts;
 interface InstanceInterface
 {
     public function setUp();
+    public function computeTrafficRule();
     public function tearDown();
     public function turnOff();
     public function turnOn();

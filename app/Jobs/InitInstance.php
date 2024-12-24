@@ -159,7 +159,6 @@ class InitInstance implements ShouldQueue
             plan: $plan,
             reg_info: $this->reg_info,
             ssh: $ssh,
-            subdomain: $subdomain,
         ))->setUp();
 
         app('rt', [$traffic_router, $ssh])->addRule($tr_rule);

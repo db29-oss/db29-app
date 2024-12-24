@@ -18,7 +18,6 @@ class WordPress implements InstanceInterface, ShouldQueue
         private $plan = null,
         private $reg_info = null,
         private $ssh = null,
-        private $subdomain = null,
     ) {}
 
     public function setUp(): array
@@ -91,9 +90,14 @@ class WordPress implements InstanceInterface, ShouldQueue
              ->exec($apply_limit_commands);
 
         // traffic rule
-        $this->ssh->clearOutput();
+        return $this->computeTrafficRule();
+    }
 
+    public function computeTrafficRule()
+    {
         while (true) {
+            $this->ssh->clearOutput();
+
             $this->ssh->exec('podman port '.$this->instance->id);
 
             if ($this->ssh->getLastLine() !== null) {
@@ -120,11 +124,13 @@ class WordPress implements InstanceInterface, ShouldQueue
             sleep(1);
         }
 
-        $rule =
+        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+
+        $tr_rule =
             [
                 'match' => [
                     [
-                        'host' => [$this->subdomain.'.'.config('app.domain')]
+                        'host' => [$this->instance->subdomain.'.'.config('app.domain')]
                     ]
                 ],
                 'handle' => [
@@ -160,7 +166,7 @@ class WordPress implements InstanceInterface, ShouldQueue
                 ]
             ];
 
-        return $rule;
+        return $tr_rule;
     }
 
     public function tearDown()
@@ -206,72 +212,7 @@ class WordPress implements InstanceInterface, ShouldQueue
              $apply_limit_commands
         ));
 
-        while (true) {
-            $this->ssh->exec('podman port '.$this->instance->id);
-
-            if ($this->ssh->getLastLine() !== null) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $host_port = parse_url($this->ssh->getLastLine())['port'];
-
-        while (true) {
-            $this->ssh->clearOutput();
-
-            try {
-                $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
-            } catch (Exception) {
-            }
-
-            if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $rule =
-            [
-                'match' => [
-                    [
-                        'host' => [$this->instance->subdomain.'.'.config('app.domain')]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'subroute',
-                        'routes' => [
-                            [
-                                'match' => [
-                                    ['path' => ['*.php']]
-                                ],
-                                'handle' => [
-                                    [
-                                        'handler' => 'reverse_proxy',
-                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
-                                        'transport' => [
-                                            'protocol' => 'fastcgi',
-                                            'root' => '/var/www/html/',
-                                            'split_path' => ['.php']
-                                        ]
-                                    ]
-                                ],
-                                'handle' => [
-                                    [
-                                        'handler' => 'file_server',
-                                        'root' => $instance_path.'wordpress'
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-        return $rule;
+        return $this->computeTrafficRule();
     }
 
     public function backUp()
