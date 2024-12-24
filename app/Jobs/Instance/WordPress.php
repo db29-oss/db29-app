@@ -54,7 +54,7 @@ class WordPress implements InstanceInterface, ShouldQueue
              ->exec('cd '.$instance_path.'wordpress && cp wp-config-sample.php wp-config.php')
              ->exec(
                  'cd '.$instance_path.'wordpress/wp-content/plugins/ && '.
-                 'mkdir sqlite-database-integration'
+                 'mkdir -p sqlite-database-integration'
              )
              ->exec(
                  'cd '.$instance_path.'wordpress/wp-content/plugins/sqlite-database-integration && '.
