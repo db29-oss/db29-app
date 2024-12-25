@@ -77,7 +77,11 @@ class WordPress implements InstanceInterface, ShouldQueue
 
                  'cd '.$instance_path.'wordpress/wp-content/ && '.
                  'mkdir database && '.
-                 'touch database/.ht.sqlite'
+                 'touch database/.ht.sqlite && '.
+                 'cd '.$instance_path.' && '.
+                 'chown -R 82:82 wordpress && '. // on alpine www-data UID is 82
+                 'find . -type d -exec chmod 755 {} \; && '.
+                 'find . -type f -exec chmod 644 {} \;'
              )
              ->exec(
                  'cd '.$instance_path.' && '.
