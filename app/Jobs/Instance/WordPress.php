@@ -77,8 +77,7 @@ class WordPress implements InstanceInterface, ShouldQueue
 
                  'cd '.$instance_path.'wordpress/wp-content/ && '.
                  'mkdir database && '.
-                 'touch database/.ht.sqlite && '.
-                 'chmod 640 database/.ht.sqlite'
+                 'touch database/.ht.sqlite'
              )
              ->exec(
                  'cd '.$instance_path.' && '.
@@ -167,6 +166,21 @@ class WordPress implements InstanceInterface, ShouldQueue
                                             'protocol' => 'fastcgi',
                                             'root' => '/var/www/html/index.php',
                                         ]
+                                    ]
+                                ]
+                            ],
+                            [
+                                'match' => [
+                                    [
+                                        'path' => [
+                                            '*.ht.sqlite*'
+                                        ]
+                                    ]
+                                ],
+                                'handle' => [
+                                    [
+                                        'handler' => 'static_response',
+                                        'status_code' => 403
                                     ]
                                 ]
                             ],
