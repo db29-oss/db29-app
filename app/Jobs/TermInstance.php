@@ -31,7 +31,7 @@ class TermInstance implements ShouldQueue
 
         // rt_dw
         $ssh->exec('rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile');
-        $rt->reload();
+        app('rt', [$machine->trafficRouter, $ssh])->reload();
 
         // dns_dw
         if (app('env') === 'production') {

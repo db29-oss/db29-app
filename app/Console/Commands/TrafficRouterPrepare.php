@@ -51,6 +51,33 @@ class TrafficRouterPrepare extends Command
                     '/etc/caddy/db29.caddyfile'
                 );
 
+                $caddyfile_content = <<<CADDYFILE
+:80 {
+    root * {$tr->machine->storage_path}www/
+
+    handle /.well-known/acme-challenge/* {
+        file_server
+    }
+
+    handle /ping {
+        respond "{$tr->machine->id}" 200
+    }
+
+    handle {
+        @http_requests {
+            not path "/.well-known/acme-challenge/*"
+        }
+        redir https://{http.request.host}{http.request.uri} 301
+    }
+}
+CADDYFILE;
+
+                $caddyfile_content_lines = explode(PHP_EOL, $caddyfile_content);
+
+                foreach ($caddyfile_content_lines as $line) {
+                    $ssh->exec('echo '.escapeshellarg($line).' >> /etc/caddy/db29.caddyfile');
+                }
+
                 $ssh->exec('cat /lib/systemd/system/caddy.service');
 
                 foreach ($ssh->getOutput() as $line) {
@@ -83,6 +110,7 @@ class TrafficRouterPrepare extends Command
                         'touch /etc/systemd/system/caddy.service.d/override.conf',
                         'touch '.$caddyfile_path,
                         'mkdir -p /var/lib/caddy/.config/caddy',
+                        'rm -f /var/lib/caddy/.config/caddy/autosave.json',
                         'touch /var/lib/caddy/.config/caddy/autosave.json',
                     ],
                     $commands,
