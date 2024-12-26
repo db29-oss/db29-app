@@ -56,95 +56,18 @@ class TrafficRouterPrepareTest extends TestCase
 
         $this->assertEquals(true, TrafficRouter::first()->prepared);
 
-        // test traffic router will
-        // populate some special route
-        // for machine traffic router
-        // add some random route to caddy first
-        $random_routes =
-            [
-                [
-                    'match' => [
-                        [
-                            'host' => ['random.org']
-                        ]
-                    ],
-                    'handle' => [
-                        [
-                            'handler' => 'reverse_proxy',
-                            'upstreams' => [
-                                [
-                                    'dial' => '127.0.0.1:8000'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ];
 
-        // ensure config do not exists
-        $output = [];
-
-        exec(
-            'podman exec db29_traffic_router_prepare '.
-            'curl -s localhost:2019/config/',
-            $output,
-            $exit_code
-        );
-
-        $this->assertFalse(str_contains($output[0], 'random.org'));
-
-        // apply random config
-        $ssh->clearOutput();
-
-        foreach ($random_routes as $random_route) {
-            $ssh->exec(
-                'curl -s -X POST -H '.escapeshellarg('Content-Type: application/json').' -d '.
-                escapeshellarg(json_encode($random_route)).' '.
-                'localhost:2019/config/apps/http/servers/https/routes/',
-            );
-        }
-
-        // ensure config do exists
-        while (true) {
-            $output = [];
-
-            exec(
-                'podman exec db29_traffic_router_prepare '.
-                'curl -s localhost:2019/config/',
-                $output,
-                $exit_code
-            );
-
-            // take sometime to populate config
-            if (str_contains($output[0], 'random.org')) {
-                break;
-            }
-        }
-        
         // after call prepare route
         // that random route above should still exists
         $tr->fresh();
 
-        $tr->extra_routes =
-            [
-                [
-                    'match' => [
-                        [
-                            'host' => ['db29.ovh']
-                        ]
-                    ],
-                    'handle' => [
-                        [
-                            'handler' => 'reverse_proxy',
-                            'upstreams' => [
-                                [
-                                    'dial' => '127.0.0.1:8000'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ];
+        $domain = config('app.domain');
+
+        $tr->extra_routes = <<<EXTRAROUTES
+{$domain} {
+    reverse_proxy 127.0.0.1:8000
+}
+EXTRAROUTES;
 
         $tr->save();
 
@@ -159,11 +82,8 @@ class TrafficRouterPrepareTest extends TestCase
             $exit_code
         );
 
-        // ensure random route still exists
-        $this->assertTrue(str_contains($output[0], 'random.org'));
-
         // ensure new route exists
-        $this->assertTrue(str_contains($output[0], 'db29.ovh'));
+        $this->assertTrue(str_contains($output[0], $domain));
         $this->assertTrue(str_contains($output[0], 'acme-challenge'));
 
         unset($ssh);

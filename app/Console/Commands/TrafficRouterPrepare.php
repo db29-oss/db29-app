@@ -44,11 +44,10 @@ class TrafficRouterPrepare extends Command
                 // we should improve testing in the future
 
                 $ssh->exec(
-                    'touch /etc/caddy/db29.caddyfile && '.
+                    'touch '.$caddyfile_path.' && '.
                     'mkdir -p /etc/caddy/sites/ && '.
                     'echo '.
-                    escapeshellarg('import /etc/caddy/sites/*.caddyfile').' > '.
-                    '/etc/caddy/db29.caddyfile'
+                    escapeshellarg('import /etc/caddy/sites/*.caddyfile').' > '.$caddyfile_path
                 );
 
                 $caddyfile_content = <<<CADDYFILE
@@ -75,7 +74,16 @@ CADDYFILE;
                 $caddyfile_content_lines = explode(PHP_EOL, $caddyfile_content);
 
                 foreach ($caddyfile_content_lines as $line) {
-                    $ssh->exec('echo '.escapeshellarg($line).' >> /etc/caddy/db29.caddyfile');
+                    $ssh->exec('echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                }
+
+                // extra routes
+                if ($tr->extra_routes !== '') {
+                    $extra_routes_lines = explode(PHP_EOL, $tr->extra_routes);
+
+                    foreach ($extra_routes_lines as $line) {
+                        $ssh->exec('echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                    }
                 }
 
                 $ssh->exec('cat /lib/systemd/system/caddy.service');
@@ -137,7 +145,7 @@ CADDYFILE;
                     }
                 }
 
-                $rt->setup();
+                $rt->reload();
 
                 TrafficRouter::whereId($tr->id)->update(['prepared' => true]);
             });
