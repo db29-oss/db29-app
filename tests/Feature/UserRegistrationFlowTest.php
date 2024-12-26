@@ -67,11 +67,11 @@ class UserRegistrationFlowTest extends TestCase
 
         $recharge_number = $u->recharge_number;
 
-        DB::insert('insert into recharge_number_holes (recharge_number) values ('.$recharge_number.')');
-
-        $this->assertEquals(1, count(DB::select('select * from recharge_number_holes')));
+        $this->assertEquals(0, count(DB::select('select * from recharge_number_holes')));
 
         $u->delete();
+
+        $this->assertEquals(1, count(DB::select('select * from recharge_number_holes')));
 
         $this->assertNull(User::whereRechargeNumber($recharge_number)->first());
 

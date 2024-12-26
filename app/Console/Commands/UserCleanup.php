@@ -14,7 +14,11 @@ class UserCleanup extends Command
 
     public function handle()
     {
-        $users = User::whereInstanceCount(0)->where('last_logged_in_at', '<', now()->subDays(30))->get();
+        $users = User::query()
+            ->whereInstanceCount(0)
+            ->whereSubdomainCount(0)
+            ->where('last_logged_in_at', '<', now()->subDays(30))
+            ->get();
 
         if (count($users) === 0) {
             return;

@@ -79,6 +79,7 @@ class InitInstance implements ShouldQueue
             $machine = Machine::query()
                  ->where('id', $instance->machine_id)
                  ->with('trafficRouter')
+                 ->inRandomOrder() // TODO, should use resource indicator
                  ->first();
         }
 
