@@ -79,6 +79,23 @@ class MachinePrepare extends Command
                     )
                 );
 
+                // bfq io scheduler (able control with ionice)
+                if (app('env') === 'production') {
+                    $ssh->exec(
+                        [
+                            'touch /etc/modules-load.d/bfq.conf',
+                            'echo bfq > /etc/modules-load.d/bfq.conf',
+                            'touch /etc/udev/rules.d/60-scheduler.rules',
+                            'echo '.
+                            escapeshellarg(
+                                'ACTION=="add|change", KERNEL=="sd*[!0-9]|sr*", ATTR{queue/scheduler}="bfq"'
+                            ).' > /etc/udev/rules.d/60-scheduler.rules',
+                            'udevadm control --reload',
+                            'udevadm trigger'
+                        ]
+                    );
+                }
+
                 Machine::whereId($machine->id)->update(['prepared' => true]);
             });
         }
