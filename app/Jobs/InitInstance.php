@@ -155,7 +155,7 @@ class InitInstance implements ShouldQueue
             }
         }
 
-        $tr_rule = (new $job_class(
+        $tr_config = (new $job_class(
             docker_compose: $docker_compose,
             instance: $instance,
             machine: $machine,
@@ -163,8 +163,6 @@ class InitInstance implements ShouldQueue
             reg_info: $this->reg_info,
             ssh: $ssh,
         ))->setUp();
-
-        app('rt', [$traffic_router, $ssh])->addRule($tr_rule);
 
         Instance::query()
             ->whereId($instance->id)
@@ -177,5 +175,19 @@ class InitInstance implements ShouldQueue
                     'tag' => $latest_version_template,
                 ]
             ]);
+
+        $ssh->exec([
+            'mkdir -p /etc/caddy/sites/',
+            'rm -f /etc/caddy/sites/'.$subdomain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$subdomain.'.caddyfile'
+        ]);
+
+        $tr_config_lines = explode(PHP_EOL, $tr_config);
+
+        foreach ($tr_config_lines as $line) {
+            $ssh->exec('echo '.escapeshellarg($line).' >> /etc/caddy/sites/'.$subdomain.'.caddyfile');
+        }
+
+        app('rt', [$machine->trafficRouter, $ssh])->reload();
     }
 }

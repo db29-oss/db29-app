@@ -37,12 +37,10 @@ class TurnOnInstance implements ShouldQueue
 
         $ssh = app('ssh')->toMachine($machine)->compute();
 
-        $rt = app('rt', [$traffic_router, $ssh]);
-
         // ct_up
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($instance->source->name);
 
-        $new_rule = (new $job_class(
+        $tr_config = (new $job_class(
             instance: $instance,
             machine: $machine,
             plan: $plan,
@@ -50,16 +48,6 @@ class TurnOnInstance implements ShouldQueue
         ))->turnOn();
 
         // rt_up
-        if ($instance->subdomain !== null) {
-            $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
-
-            if ($old_rule === false) {
-                $rt->addRule($new_rule);
-            } else {
-                $rt->updateRule($old_rule, $new_rule);
-            }
-        }
-
         $constraint = json_decode($instance->plan->constraint, true);
 
         $now = now();
@@ -83,5 +71,21 @@ class TurnOnInstance implements ShouldQueue
             'commit;';
 
         app('db')->unprepared($sql);
+
+        $ssh->exec([
+            'mkdir -p /etc/caddy/sites/',
+            'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+        ]);
+
+        $tr_config_lines = explode(PHP_EOL, $tr_config);
+
+        foreach ($tr_config_lines as $line) {
+            $ssh->exec(
+                'echo '.escapeshellarg($line).' >> /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+            );
+        }
+
+        app('rt', [$machine->trafficRouter, $ssh])->reload();
     }
 }

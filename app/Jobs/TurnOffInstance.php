@@ -40,29 +40,28 @@ class TurnOffInstance implements ShouldQueue
 
         // rt_dw
         if ($instance->subdomain !== null) {
-            $old_rule = $rt->findRuleBySubdomainName($instance->subdomain);
+            $main_site = config('app.domain');
 
-            if ($old_rule !== false) {
-                $new_rule =
-                    [
-                        'match' => [
-                            [
-                                'host' => [$instance->subdomain.'.'.config('app.domain')]
-                            ]
-                        ],
-                        "handle" => [
-                            [
-                                "handler" => "static_response",
-                                "status_code" => 200,
-                                "body" =>
-                                    "instance is currently off - ".
-                                    "turn instance on at ".config('app.domain')
-                            ]
-                        ]
-                    ];
+            $domain = config('app.domain');
 
-                $rt->updateRule($old_rule, $new_rule);
+            $subdomain = $instance->subdomain;
+
+            if ($instance->subdomain) {
+                $domain = $instance->subdomain.'.'.config('app.domain');
             }
+
+            $tr_config = '<<<CONFIG
+$domain {
+    respond "instance is currently off - turn instance on at $main_site" 200
+}
+CONFIG';
+
+            $ssh->exec(
+                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile && '.
+                'echo '.escapeshellarg($tr_config).' > /etc/caddy/sites/'.$subdomain
+            );
+
+            $rt->reload();
         }
 
         // ct_dw

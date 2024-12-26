@@ -20,7 +20,7 @@ class Planka implements InstanceInterface, ShouldQueue
         private $ssh = null,
     ) {}
 
-    public function setUp(): array
+    public function setUp(): string
     {
         foreach (
             $this->docker_compose['services']['planka']['environment'] as $env_idx => $environment
@@ -121,10 +121,10 @@ class Planka implements InstanceInterface, ShouldQueue
              ));
 
         // traffic rule
-        return $this->computeTrafficRule();
+        return $this->buildTrafficRule();
     }
 
-    public function computeTrafficRule(): array
+    public function buildTrafficRule(): string
     {
         $wait_seconds = 0;
 
@@ -171,29 +171,19 @@ class Planka implements InstanceInterface, ShouldQueue
             }
         }
 
-        $tr_rule =
-            [
-                'match' => [
-                    [
-                        'host' => [
-                            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
-                            config('app.domain')
-                        ]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'reverse_proxy',
-                        'upstreams' => [
-                            [
-                                'dial' => '127.0.0.1:'.$host_port
-                            ]
-                        ]
-                    ]
-                ]
-            ];
+        $domain = config('app.domain');
 
-        return $tr_rule;
+        if ($this->instance->subdomain) {
+            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        }
+
+        $tr_config = <<<CONFIG
+{$domain} {
+    reverse_proxy 127.0.0.1:{$host_port}
+}
+CONFIG;
+
+        return $tr_config;
     }
 
     public function tearDown()
@@ -225,7 +215,7 @@ class Planka implements InstanceInterface, ShouldQueue
         );
     }
 
-    public function turnOn(): array
+    public function turnOn(): string
     {
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -237,7 +227,7 @@ class Planka implements InstanceInterface, ShouldQueue
              $apply_limit_commands
         ));
 
-        return $this->computeTrafficRule();
+        return $this->buildTrafficRule();
     }
 
     public function backUp()

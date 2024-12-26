@@ -27,6 +27,13 @@ class Router
         }
     }
 
+    public function reload()
+    {
+        $this->ssh->exec(
+            '/usr/bin/caddy reload --config /etc/caddy/db29.caddyfile --adapter caddyfile --force'
+        );
+    }
+
     public function lock(?Closure $callback = null)
     {
         if (! isset($this->lock)) {
@@ -48,209 +55,6 @@ class Router
         return $this->ssh->getLastLine();
     }
 
-    public function findRuleBySubdomainName(
-        string $subdomain_name,
-    ): string|false {
-        $o_f_rule_str = $this->fetchRules();
-
-        $strpos = strpos($o_f_rule_str, '"'.$subdomain_name.'.');
-
-        if ($strpos === false) {
-            return false;
-        }
-
-        $e_idx = $strpos + 1; // double quote
-        $e_count = 0;
-
-        while ($e_idx < strlen($o_f_rule_str)) {
-            $e_idx += 1;
-
-            if ($o_f_rule_str[$e_idx] === '}') {
-                $e_count += 1;
-
-                if ($e_count === 2) {
-                    break;
-                }
-            }
-        }
-
-        $s_idx = $e_idx;
-        $bracket_count = 1;
-
-        while ($s_idx > 0) {
-            $s_idx -= 1;
-
-            if ($o_f_rule_str[$s_idx] === '}') {
-                $bracket_count += 1;
-            } elseif ($o_f_rule_str[$s_idx] === '{') {
-                $bracket_count -= 1;
-            }
-
-            if ($bracket_count === 0) {
-                break;
-            }
-        }
-
-        return substr($o_f_rule_str, $s_idx, $e_idx - $s_idx + 1);
-    }
-
-    public function updatePortBySubdomainName(
-        string $subdomain_name,
-        int $port,
-    ) {
-        $this->lock();
-
-        $o_rule_str = $this->findRuleBySubdomainName($subdomain_name);
-
-        $preg_replace = preg_replace(
-            '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
-            '${1}'.$port.'"}',
-            $o_rule_str
-        );
-
-        if (is_null($preg_replace)) {
-            $this->unlock();
-            return;
-        }
-
-        $this->updateRule($o_rule_str, $preg_replace);
-
-        $this->unlock();
-    }
-
-    public function batchUpdatePortsBySubdomainNames(
-        array $subdomain_names,
-        array $ports,
-    ) {
-        $this->lock();
-
-        $o_f_rule_str = $this->fetchRules();
-
-        $subdomain_names_count = count($subdomain_names);
-        $ports_count = count($ports);
-
-        if ($subdomain_names_count !== $ports_count) {
-            $this->unlock();
-            throw new Exception('DB291996: elements of domain_names and ports must be the same');
-        }
-
-        $n_f_rule_str = $o_f_rule_str;
-
-        for ($i = 0; $i < count($subdomain_names); $i++) {
-            $strpos = strpos($o_f_rule_str, '"'.$subdomain_names[$i].'.');
-
-            if ($strpos === false) {
-                continue;
-            }
-
-            $s_idx = $strpos + 1; // double quote
-            $e_idx = $strpos + 1; // double quote
-            $s_count = 0;
-            $e_count = 0;
-
-            while ($s_idx > 0) {
-                $s_idx -= 1;
-
-                if ($o_f_rule_str[$s_idx] === '{') {
-                    $s_count += 1;
-
-                    if ($s_count === 4) {
-                        break;
-                    }
-                }
-            }
-
-            while ($e_idx < strlen($o_f_rule_str)) {
-                $e_idx += 1;
-
-                if ($o_f_rule_str[$e_idx] === '}') {
-                    $e_count += 1;
-
-                    if ($e_count === 2) {
-                        break;
-                    }
-                }
-            }
-
-            $substr = substr($n_f_rule_str, $s_idx, $e_idx - $s_idx + 1);
-
-            $preg_replace = preg_replace(
-                '/({"dial":"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:)\d+"}/',
-                '${1}'.$ports[$i].'"}',
-                $substr
-            );
-
-            if (is_null($preg_replace)) {
-                continue;
-            }
-
-            $n_f_rule_str = str_replace(
-                substr($n_f_rule_str, $s_idx, $e_idx - $s_idx + 1),
-                $preg_replace,
-                $n_f_rule_str
-            );
-        }
-
-        $command =
-            'curl -s -X PATCH -H \'Content-Type: application/json\' -d '.
-            "'".$n_f_rule_str."'"." ".
-            "localhost:2019/config/apps/http/servers/https/routes/";
-
-        $this->ssh->exec($command);
-
-        $this->unlock();
-    }
-
-    public function addRule(array $rule)
-    {
-        ksort($rule);
-
-        $o_f_rule_str = $this->fetchRules();
-
-        $json_rule = json_encode($rule);
-
-        if (str_contains($o_f_rule_str, $json_rule)) {
-            return;
-        }
-
-        $command =
-            'curl -s -X POST -H '.
-            escapeshellarg('Content-Type: application/json').' -d '.
-            escapeshellarg(json_encode($rule)).' '.
-            "localhost:2019/config/apps/http/servers/https/routes/";
-
-        $this->ssh->exec($command);
-    }
-
-    public function updateRule(array|string $old_rule, array|string $rule)
-    {
-        $this->lock();
-
-        $o_f_rule_str = $this->fetchRules();
-
-        if (is_array($old_rule)) {
-            ksort($old_rule);
-            $old_rule = json_encode($old_rule);
-        }
-
-        if (is_array($rule)) {
-            ksort($rule);
-            $rule = json_encode($rule);
-        }
-
-        $n_f_rule_str = str_replace($old_rule, $rule, $o_f_rule_str);
-
-        $command =
-            'curl -s -X PATCH -H '.
-            '\'Content-Type: application/json\' -d '.
-            '\''.$n_f_rule_str.'\' '.
-            "localhost:2019/config/apps/http/servers/https/routes/";
-
-        $this->ssh->exec($command);
-
-        $this->unlock();
-    }
-
     public function ruleExists(array|string $rule): bool
     {
         if (is_array($rule)) {
@@ -263,132 +67,24 @@ class Router
         return str_contains($o_f_rule_str, $rule);
     }
 
-    public function wipecf() // wipe config
-    {
-        $this->lock();
-
-        $this->ssh->exec('curl -s -X DELETE localhost:2019/config/');
-
-        $this->unlock();
-    }
-
-    public function deleteHttpsRules()
-    {
-        $this->lock();
-
-        $this->ssh->exec('curl -s -X DELETE localhost:2019/config/apps/http/servers/https/routes/');
-
-        $https_route = [
-            "listen" => [
-                ":443"
-            ],
-            "routes" => []
-        ];
-
-        $this->ssh->exec(
-            'curl -s -X PATCH -H '.
-            '\'Content-Type: application/json\' -d '.
-            '\''.json_encode($https_route).'\' '.
-            'localhost:2019/config/apps/http/servers/https'
-        );
-
-        $this->unlock();
-    }
-
-    public function deleteRule(array|string $rule)
-    {
-        $this->lock();
-
-        $o_f_rule_str = $this->fetchRules();
-
-        if (is_array($rule)) {
-            ksort($rule);
-            $rule = json_encode($rule);
-        }
-
-        $strpos = strpos($o_f_rule_str, $rule);
-
-        if ($strpos === false) {
-            $this->unlock();
-            return;
-        }
-
-        if ($o_f_rule_str[$strpos - 1] === ',') {
-            $strpos = $strpos - 1;
-            $rule = ','.$rule;
-        } elseif ($o_f_rule_str[$strpos + strlen($rule)] === ',') {
-            $rule = $rule.',';
-        }
-
-        $n_f_rule_str = str_replace($rule, '', $o_f_rule_str);
-
-        $command =
-            'curl -s -X PATCH -H '.
-            '\'Content-Type: application/json\' -d '.
-            '\''.$n_f_rule_str.'\' '.
-            "localhost:2019/config/apps/http/servers/https/routes/";
-
-        $this->ssh->exec($command);
-
-        $this->unlock();
-    }
-
-    public function deleteRuleBySubdomainName(string $subdomain_name)
-    {
-        $this->lock();
-
-        $o_f_rule_str = $this->fetchRules();
-
-        $strpos = strpos($o_f_rule_str, '"'.$subdomain_name.'.');
-
-        if ($strpos === false) {
-            $this->unlock();
-            return false;
-        }
-
-        $s_idx = $strpos + 1; // double quote
-        $e_idx = $strpos + 1; // double quote
-        $s_count = 0;
-        $e_count = 0;
-
-        while ($s_idx > 0) {
-            $s_idx -= 1;
-
-            if ($o_f_rule_str[$s_idx] === '{') {
-                $s_count += 1;
-
-                if ($s_count === 4) {
-                    break;
-                }
-            }
-        }
-
-        while ($e_idx < strlen($o_f_rule_str)) {
-            $e_idx += 1;
-
-            if ($o_f_rule_str[$e_idx] === '}') {
-                $e_count += 1;
-
-                if ($e_count === 2) {
-                    break;
-                }
-            }
-        }
-
-        $this->deleteRule(substr($o_f_rule_str, $s_idx, $e_idx - $s_idx + 1));
-
-        $this->unlock();
-    }
-
     public function setup()
     {
         $this->lock(function () {
             $ssh = $this->ssh;
 
             // setup apps
-            $this->ssh->exec('curl -s localhost:2019/config/');
+            while (true) {
+                try {
+                    $this->ssh->exec('curl -s localhost:2019/config/');
+                } catch (Exception) {
+                    sleep(1);
+                    continue;
+                }
 
-            if ($ssh->getLastLine() === 'null') {
+                break;
+            }
+
+            if ($ssh->getLastLine() === 'null' || $ssh->getLastLine() === '{}') {
                 $ssh->exec(
                     'curl -s -X POST '.
                     '-H '.escapeshellarg('Content-Type: application/json').' -d '.

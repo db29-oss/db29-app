@@ -20,7 +20,7 @@ class WordPress implements InstanceInterface, ShouldQueue
         private $ssh = null,
     ) {}
 
-    public function setUp(): array
+    public function setUp(): string
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
@@ -95,10 +95,10 @@ class WordPress implements InstanceInterface, ShouldQueue
              ->exec($apply_limit_commands);
 
         // traffic rule
-        return $this->computeTrafficRule();
+        return $this->buildTrafficRule();
     }
 
-    public function computeTrafficRule()
+    public function buildTrafficRule(): string
     {
         while (true) {
             $this->ssh->clearOutput();
@@ -131,80 +131,30 @@ class WordPress implements InstanceInterface, ShouldQueue
 
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
-        $tr_rule =
-            [
-                'match' => [
-                    [
-                        'host' => [
-                            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
-                            config('app.domain')
-                        ]
-                    ]
-                ],
-                'handle' => [
-                    [
-                        'handler' => 'subroute',
-                        'routes' => [
-                            [
-                                'match' => [
-                                    ['path' => ['*.php']]
-                                ],
-                                'handle' => [
-                                    [
-                                        'handler' => 'reverse_proxy',
-                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
-                                        'transport' => [
-                                            'protocol' => 'fastcgi',
-                                            'root' => '/var/www/html/',
-                                            'split_path' => ['.php']
-                                        ]
-                                    ]
-                                ]
-                            ],
-                            [
-                                'match' => [
-                                    ['path' => ['/']]
-                                ],
-                                'handle' => [
-                                    [
-                                        'handler' => 'reverse_proxy',
-                                        'upstreams' => [['dial' => '127.0.0.1:'.$host_port]],
-                                        'transport' => [
-                                            'protocol' => 'fastcgi',
-                                            'root' => '/var/www/html/index.php',
-                                        ]
-                                    ]
-                                ]
-                            ],
-                            [
-                                'match' => [
-                                    [
-                                        'path' => [
-                                            '*.ht.sqlite*'
-                                        ]
-                                    ]
-                                ],
-                                'handle' => [
-                                    [
-                                        'handler' => 'static_response',
-                                        'status_code' => 403
-                                    ]
-                                ]
-                            ],
-                            [
-                                'handle' => [
-                                    [
-                                        'handler' => 'file_server',
-                                        'root' => $instance_path.'wordpress'
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ];
+        $domain = config('app.domain');
 
-        return $tr_rule;
+        if ($this->instance->subdomain) {
+            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        }
+
+        $tr_config = <<<CONFIG
+{$domain} {
+	root * /var/www/html/
+	encode gzip
+	file_server
+	php_fastcgi 127.0.0.1:9000
+
+	@disallowed {
+		path /xmlrpc.php
+		path *.sqlite
+		path /wp-content/uploads/*.php
+	}
+
+	rewrite @disallowed '/index.php'
+}
+CONFIG;
+
+        return $tr_config;
     }
 
     public function tearDown()
@@ -237,7 +187,7 @@ class WordPress implements InstanceInterface, ShouldQueue
         );
     }
 
-    public function turnOn(): array
+    public function turnOn(): string
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
@@ -251,7 +201,7 @@ class WordPress implements InstanceInterface, ShouldQueue
              $apply_limit_commands
         ));
 
-        return $this->computeTrafficRule();
+        return $this->buildTrafficRule();
     }
 
     public function backUp()

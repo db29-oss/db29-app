@@ -35,11 +35,69 @@ class TrafficRouterPrepare extends Command
             $rt = app('rt', [$tr, $ssh]);
 
             $rt->lock(function () use ($rt, $ssh, $tr) {
+                $caddyfile_path = '/etc/caddy/db29.caddyfile';
+
                 $ssh->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
 
                 // on testing container env some systemd config cannot be run
                 // all config applied below was test using a real machine
                 // we should improve testing in the future
+
+                $ssh->exec(
+                    'touch /etc/caddy/db29.caddyfile && '.
+                    'mkdir -p /etc/caddy/sites/ && '.
+                    'echo '.
+                    escapeshellarg('import /etc/caddy/sites/*.caddyfile').' > '.
+                    '/etc/caddy/db29.caddyfile'
+                );
+
+                $ssh->exec('cat /lib/systemd/system/caddy.service');
+
+                foreach ($ssh->getOutput() as $line) {
+                    if (str_starts_with($line, 'ExecStart=')) {
+                        break;
+                    }
+                }
+
+                $commands = [];
+
+                $override_content_lines =
+                    [
+                        "[Service]",
+                        "ExecStart=", // reset mechanism of systemd
+                        "ExecStart=/usr/bin/caddy run --config {$caddyfile_path} --adapter caddyfile",
+                        "ExecReload=", // reset mechanism of systemd
+                        "ExecReload=/usr/bin/caddy reload --config {$caddyfile_path} --adapter caddyfile --force",
+                    ];
+
+                foreach ($override_content_lines as $override_content_line) {
+                    $commands[] = 'echo '.
+                        escapeshellarg($override_content_line).' >> '.
+                        '/etc/systemd/system/caddy.service.d/override.conf';
+                }
+
+                $ssh->exec(array_merge(
+                    [
+                        'mkdir -p /etc/systemd/system/caddy.service.d/',
+                        'rm -rf /etc/systemd/system/caddy.service.d/override.conf',
+                        'touch /etc/systemd/system/caddy.service.d/override.conf',
+                        'touch '.$caddyfile_path,
+                        'mkdir -p /var/lib/caddy/.config/caddy',
+                        'touch /var/lib/caddy/.config/caddy/autosave.json',
+                    ],
+                    $commands,
+                ));
+
+                if (app('env') === 'production') {
+                    $ssh->exec(
+                        [
+                            'systemctl enable caddy',
+                            'systemctl daemon-reload',
+                            'systemctl stop caddy',
+                            'systemctl start caddy',
+                        ]
+                    );
+                }
 
                 if (app('env') === 'testing') {
                     $ssh->clearOutput();
@@ -47,49 +105,8 @@ class TrafficRouterPrepare extends Command
                     $ssh->exec('ps aux | grep caddy');
 
                     if (count($ssh->getOutput()) < 2) { // grep process and bash process
-                        $ssh->exec('caddy start');
+                        $ssh->exec('/usr/bin/caddy start --config '.$caddyfile_path.' --adapter caddyfile');
                     }
-                }
-
-                if (app('env') === 'production') {
-                    $ssh->exec('cat /lib/systemd/system/caddy.service');
-
-                    foreach ($ssh->getOutput() as $line) {
-                        if (str_starts_with($line, 'ExecStart=')) {
-                            break;
-                        }
-                    }
-
-                    $commands = [];
-
-                    $override_content_lines =
-                        [
-                            "[Service]",
-                            "ExecStart=", // reset mechanism of systemd
-                            "ExecStart=/usr/bin/caddy run" // run without preconfig
-                        ];
-
-                    foreach ($override_content_lines as $override_content_line) {
-                        $commands[] = 'echo '.
-                            escapeshellarg($override_content_line).' >> '.
-                            '/etc/systemd/system/caddy.service.d/override.conf';
-                    }
-
-                    $ssh->exec(array_merge(
-                        [
-                            'mkdir -p /etc/systemd/system/caddy.service.d/',
-                            'rm -rf /etc/systemd/system/caddy.service.d/override.conf',
-                            'touch /etc/systemd/system/caddy.service.d/override.conf',
-                        ],
-                        $commands,
-                        [
-                            'systemctl enable caddy',
-                            'systemctl daemon-reload',
-                            'systemctl stop caddy',
-                            'rm -rf /var/lib/caddy/.config/caddy/autosave.json',
-                            'systemctl start caddy',
-                        ]
-                    ));
                 }
 
                 $rt->setup();

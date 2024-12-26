@@ -52,11 +52,12 @@ class SetUpTurnOffTurnOnTearDownPlankaInstanceTest extends TestCase
         $tr->machine_id = $m->id;
         $tr->save();
 
-        Artisan::call('app:machine-prepare');
+        $this->artisan('app:machine-prepare');
 
-        Artisan::call('app:traffic-router-prepare');
+        $this->artisan('app:traffic-router-prepare');
 
         $this->assertEquals(0, Instance::count());
+
 
         /**
          * SET UP
@@ -109,6 +110,7 @@ class SetUpTurnOffTurnOnTearDownPlankaInstanceTest extends TestCase
             $m->max_memory - $m->remain_memory,
             json_decode($inst->plan->constraint, true)['max_memory']
         );
+
 
         /**
          * TURN OFF
