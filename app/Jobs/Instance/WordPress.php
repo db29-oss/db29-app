@@ -75,6 +75,9 @@ class WordPress implements InstanceInterface, ShouldQueue
                  '#\' '.
                  $instance_path.'wordpress/wp-content/db.php && '.
 
+                 'cd '.$instance_path.'wordpress/ && '.
+                 'cp wp-config-sample.php wp-config.php && '.
+
                  'cd '.$instance_path.'wordpress/wp-content/ && '.
                  'mkdir database && '.
                  'touch database/.ht.sqlite && '.
