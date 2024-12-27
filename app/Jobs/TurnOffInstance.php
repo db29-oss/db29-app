@@ -50,16 +50,25 @@ class TurnOffInstance implements ShouldQueue
                 $domain = $instance->subdomain.'.'.config('app.domain');
             }
 
-            $tr_config = '<<<CONFIG
-$domain {
+            $tr_config = <<<CONFIG
+{$domain} {
     respond "instance is currently off - turn instance on at $main_site" 200
 }
-CONFIG';
+CONFIG;
+            $ssh->exec([
+                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile',
+                'rm /etc/caddy/sites/'.$subdomain.'.caddyfile',
+                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile',
+            ]);
 
-            $ssh->exec(
-                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile && '.
-                'echo '.escapeshellarg($tr_config).' > /etc/caddy/sites/'.$subdomain
-            );
+            $tr_config_lines = explode(PHP_EOL, $tr_config);
+
+            foreach ($tr_config_lines as $line) {
+                $ssh->exec(
+                    'echo '.escapeshellarg($line).' >> '.
+                    '/etc/caddy/sites/'.$subdomain.'.caddyfile'
+                );
+            }
 
             $rt->reload();
         }
