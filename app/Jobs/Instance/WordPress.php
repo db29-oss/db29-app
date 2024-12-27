@@ -137,12 +137,18 @@ class WordPress implements InstanceInterface, ShouldQueue
             $domain = $this->instance->subdomain.'.'.config('app.domain');
         }
 
+        $root_dir = $instance_path.'wordpress/';
+
         $tr_config = <<<CONFIG
 {$domain} {
-	root * /var/www/html/
+	root * {$root_dir}
+
 	encode gzip
 	file_server
-	php_fastcgi 127.0.0.1:9000
+
+    php_fastcgi 127.0.0.1:{$host_port} {
+        root /var/www/html/
+    }
 
 	@disallowed {
 		path /xmlrpc.php
