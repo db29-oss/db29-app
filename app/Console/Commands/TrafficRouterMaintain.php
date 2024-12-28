@@ -36,11 +36,15 @@ class TrafficRouterMaintain extends Command
             try {
                 $ssh->exec('echo testing_connection');
             } catch (Exception) {
-                $this->call('app:machine-ipaddress-update --machine_id='.$machines[$rs_idx]->id);
+                $this->call('app:machine-ipaddress-update', [
+                    '--machine_id' => $machines[$rs_idx]->id
+                ]);
                 continue;
             }
 
-            $this->call('app:traffic-router-rebuild --tr_id='.$machines[$rs_idx]->trafficRouter->id);
+            $this->call('app:traffic-router-rebuild', [
+                '--tr_id' => $machines[$rs_idx]->trafficRouter->id
+            ]);
         }
     }
 }
