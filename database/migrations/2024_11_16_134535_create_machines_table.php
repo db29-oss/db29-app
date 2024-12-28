@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('machines', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->id();
             $table->string('ip_address');
             $table->integer('ssh_port');
             $table->string('storage_path')->default('/opt/');

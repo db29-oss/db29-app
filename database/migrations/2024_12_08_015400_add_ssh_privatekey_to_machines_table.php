@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('machines', function (Blueprint $table) {
-            $table->string('ssh_privatekey')->nullable();
+            $table->text('ssh_privatekey')->nullable();
         });
     }
 

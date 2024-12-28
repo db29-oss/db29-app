@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('plans', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->id();
             $table->bigInteger('price')->default(0); // per day
             $table->boolean('customized')->default(true);
             $table->boolean('base')->default(false);
             $table->float('coefficient')->default(1);
-            $table->uuid('source_id');
+            $table->integer('source_id');
             $table->timestamps();
         });
 
         Schema::table('instances', function (Blueprint $table) {
-            $table->uuid('plan_id');
+            $table->integer('plan_id');
         });
     }
 

@@ -6,6 +6,7 @@ use App\Models\Instance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TurnOffInstance implements ShouldQueue
 {
@@ -93,29 +94,47 @@ CONFIG;
 
         $constraint = json_decode($instance->plan->constraint, true);
 
-        $sql = 'begin; '.
-
-            'update users set '.
-            'credit = credit - '.$pay_amount.', '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$instance->user->id.'\'; '.
-
-            'update machines set '.
-            'remain_cpu = remain_cpu + '.$constraint['max_cpu'].', '.
-            'remain_memory = remain_memory + '.$constraint['max_memory'].', '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$machine->id.'\'; '.
-
+        $sql_params = [];
+        $sql = 'with '.
+            'update_user as ('.
+                'update users set '.
+                'credit = credit - ?, '. # $pay_amount
+                'updated_at = ? '. # $now
+                'where id = ? '. # $instance->user->id
+                'returning id'.
+            '), '.
+            'update_machine as ('.
+                'update machines set '.
+                'remain_cpu = remain_cpu + ?, '. # $constraint['max_cpu']
+                'remain_memory = remain_memory + ?, '. # $constraint['max_memory']
+                'updated_at = ? '. # $now
+                'where id = ? '. # $machine->id
+                'returning id'.
+            ') '.
             'update instances set '.
-            'status = \'ct_dw\', '. # 'ct_dw'
-            'queue_active = false, '. # false
-            'paid_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
-            'turned_off_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
-            'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
-            'where id = \''.$instance->id.'\'; '. # $instance->id
+            'status = ?, '. # 'ct_dw'
+            'queue_active = ?, '. # false
+            'paid_at = ?, '. # $now
+            'turned_off_at = ?, '. # $now
+            'updated_at = ? '. # $now
+            'where id = ?'; # $instance->id
 
-            'commit;';
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $now;
+        $sql_params[] = $instance->user->id;
 
-        app('db')->unprepared($sql);
+        $sql_params[] = $constraint['max_cpu'];
+        $sql_params[] = $constraint['max_memory'];
+        $sql_params[] = $now;
+        $sql_params[] = $machine->id;
+
+        $sql_params[] = 'ct_dw';
+        $sql_params[] = false;
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+        $sql_params[] = $instance->id;
+
+        DB::select($sql, $sql_params);
     }
 }

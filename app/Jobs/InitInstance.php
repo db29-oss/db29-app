@@ -46,33 +46,47 @@ class InitInstance implements ShouldQueue
 
         // init
         if (! $machine) {
-            $sql = 'begin; '.
-
-                'create temp table select_machine as '.
-                'select * from machines '.
-                'where enabled = true '.
-                'and user_id is null '.
-                'and remain_cpu > '.$constraint['max_cpu'].' '.
-                'and remain_disk > '.$constraint['max_disk'].' '.
-                'and remain_memory > '.$constraint['max_memory'].' '.
-                'limit 1; '.
-
-                'update machines set '.
-                'remain_cpu = remain_cpu - '.$constraint['max_cpu'].', '.
-                'remain_disk = remain_disk - '.$constraint['max_disk'].', '.
-                'remain_memory = remain_memory - '.$constraint['max_memory'].', '.
-                'updated_at = \''.$now->toDateTimeString().'\' '.
-                'where id = (select id from select_machine); '.
-
+            $sql_params = [];
+            $sql = 'with '.
+                'select_machine as ('.
+                    'select * from machines '.
+                    'where enabled = ? '. # true
+                    'and user_id is null '.
+                    'and remain_cpu > ? '. # $constraint['max_cpu']
+                    'and remain_disk > ? '. # $constraint['max_disk']
+                    'and remain_memory > ? '. # $constraint['max_memory']
+                    'limit 1'.
+                '), '.
+                'update_machine as ('.
+                    'update machines set '.
+                    'remain_cpu = remain_cpu - ?, '. # $constraint['max_cpu']
+                    'remain_disk = remain_disk - ?, '. # $constraint['max_disk']
+                    'remain_memory = remain_memory - ?, '. # $constraint['max_memory']
+                    'updated_at = ? '. # $now
+                    'where id = (select id from select_machine) '.
+                    'returning id'.
+                ') '.
                 'update instances set '.
-                'status = \'init\', '.
+                'status = ?, '. # 'init'
                 'machine_id = (select id from select_machine), '.
-                'updated_at = \''.$now->toDateTimeString().'\' '.
-                'where id = \''.$instance->id.'\'; '.
+                'updated_at = ? '. # $now
+                'where id = ?'; # $instance->id
 
-                'commit;';
+            $sql_params[] = true;
+            $sql_params[] = $constraint['max_cpu'];
+            $sql_params[] = $constraint['max_disk'];
+            $sql_params[] = $constraint['max_memory'];
 
-            DB::unprepared($sql);
+            $sql_params[] = $constraint['max_cpu'];
+            $sql_params[] = $constraint['max_disk'];
+            $sql_params[] = $constraint['max_memory'];
+            $sql_params[] = $now;
+
+            $sql_params[] = 'init';
+            $sql_params[] = $now;
+            $sql_params[] = $instance->id;
+
+            DB::select($sql, $sql_params);
 
             $instance->refresh();
 

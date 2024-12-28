@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('instances', function (Blueprint $table) {
-            $table->uuid('id');
-            $table->uuid('user_id');
-            $table->uuid('source_id');
-            $table->uuid('machine_id')->nullable();
+            $table->id();
+            $table->integer('user_id');
+            $table->integer('source_id');
+            $table->integer('machine_id')->nullable();
             $table->jsonb('version_template')->default('[]');
             $table->timestamps();
         });

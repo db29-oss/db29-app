@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('traffic_routers', function (Blueprint $table) {
-            $table->uuid('id');
-            $table->uuid('machine_id')->nullable();
+            $table->id();
+            $table->integer('machine_id')->nullable();
             $table->boolean('prepared')->default(false);
             $table->timestamps();
         });

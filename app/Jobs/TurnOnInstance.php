@@ -6,6 +6,7 @@ use App\Models\Instance;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 
 class TurnOnInstance implements ShouldQueue
 {
@@ -51,26 +52,35 @@ class TurnOnInstance implements ShouldQueue
         $constraint = json_decode($instance->plan->constraint, true);
 
         $now = now();
-
-        $sql =
-            'begin; '.
-
-            'update instances set '.
-            'status = \'rt_up\', '.
-            'queue_active = false, '.
-            'turned_on_at = \''.$now->toDateTimeString().'\', '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$instance->id.'\'; '.
-
+        $sql_params = [];
+        $sql = 'with '.
+            'update_instance as ('.
+                'update instances set '.
+                'status = ?, '. # 'rt_up'
+                'queue_active = ?, '. # false
+                'turned_on_at = ?, '. # $now
+                'updated_at = ? '. # $now
+                'where id = ? '. # $instance->id
+                'returning id'.
+            ') '.
             'update machines set '.
-            'remain_cpu = remain_cpu - '.$constraint['max_cpu'].', '.
-            'remain_memory = remain_memory - '.$constraint['max_memory'].', '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$machine->id.'\'; '.
+            'remain_cpu = remain_cpu - ?, '. # $constraint['max_cpu']
+            'remain_memory = remain_memory - ?, '. # $constraint['max_memory']
+            'updated_at = ? '. # $now
+            'where id = ?'; # $machine->id
 
-            'commit;';
+        $sql_params[] = 'rt_up';
+        $sql_params[] = false;
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+        $sql_params[] = $instance->id;
 
-        app('db')->unprepared($sql);
+        $sql_params[] = $constraint['max_cpu'];
+        $sql_params[] = $constraint['max_memory'];
+        $sql_params[] = $now;
+        $sql_params[] = $machine->id;
+
+        DB::select($sql, $sql_params);
 
         $ssh->exec([
             'mkdir -p /etc/caddy/sites/',

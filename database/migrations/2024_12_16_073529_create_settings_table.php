@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('settings', function (Blueprint $table) {
+            $table->id();
             $table->string('k')->primary();
-            $table->string('v')->default('');
+            $table->text('v')->default('');
             $table->timestamps();
         });
     }

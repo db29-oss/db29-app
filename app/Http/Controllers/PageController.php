@@ -70,18 +70,16 @@ class PageController extends Controller
         $sql_params = [];
         $sql =
             'insert into users ('.
-                'id, login_id, credit, email, name, username, '.
+                'login_id, credit, email, name, username, '.
                 'recharge_number, last_logged_in_at, created_at, updated_at'.
             ') '.
             'values ('.
-                '?, '. # str()->uuid()
                 '?, '. # str()->random(31)
                 '?, '. # User::FREE_CREDIT
                 '?, '. # $substr.'__@db29.ovh'
                 '?, '. # $substr
                 '?, '; # $substr
 
-        $sql_params[] = str()->uuid();
         $sql_params[] = str()->random(31);
         $sql_params[] = User::FREE_CREDIT;
         $sql_params[] = $substr.'__@db29.ovh';
@@ -353,19 +351,18 @@ class PageController extends Controller
 
         $reg_info = $this->{'filter_input_'.$source_name}();
 
-        $now = now()->toDateTimeString();
-
-        $instance_id = str()->uuid()->toString();
+        $now = now();
 
         $sql_params = [];
-        $sql =
-            'begin; '.
-            'update users set '.
-            'instance_count = instance_count + 1, '.
-            'updated_at = \''.$now.'\' '.
-            'where id = \''.auth()->user()->id.'\'; '.
+        $sql = 'with '.
+            'update_user as ('.
+                'update users set '.
+                'instance_count = instance_count + 1, '.
+                'updated_at = ? '. # $now
+                'where id = ? '. # auth()->user()->id
+                'returning id'.
+            ') '.
             'insert into instances ('.
-                'id, '.
                 'source_id, '.
                 'user_id, '.
                 'plan_id, '.
@@ -373,23 +370,31 @@ class PageController extends Controller
                 'created_at, '.
                 'updated_at'.
             ') values ('.
-                '\''.$instance_id.'\', '. # $instance_id
-                '\''.$source->id.'\', '. # $source->id
-                '\''.auth()->user()->id.'\', '. # auth()->user()->id
-                '\''.$source->plans[0]->id.'\', '. # $source->plans[0]->id
-                'true, '. # true
-                '\''.$now.'\', '. # $now
-                '\''.$now.'\' '. # $now
-            '); '.
-            'commit;';
+                '?, '. # $source->id
+                '?, '. # auth()->user()->id
+                '?, '. # $source->plans[0]->id
+                '?, '. # true
+                '?, '. # $now
+                '?'. # $now
+            ') returning id';
 
-        $db = app('db')->unprepared($sql);
+        $sql_params[] = $now;
+        $sql_params[] = auth()->user()->id;
 
-        if ($db !== true) {
+        $sql_params[] = $source->id;
+        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $source->plans[0]->id;
+        $sql_params[] = true;
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (count($db) === 0) {
             return redirect()->route('source');
         }
 
-        InitInstance::dispatch($instance_id, $reg_info);
+        InitInstance::dispatch($db[0]->id, $reg_info);
 
         return redirect()->route('instance');
     }

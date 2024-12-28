@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Instance;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TakeCredit extends Command
 {
@@ -35,18 +36,29 @@ class TakeCredit extends Command
 
             $pay_amount = (int) ceil($paid_at->diffInDays($now) * $instance->plan->price);
 
-            $sql = 'begin; '.
-                'update users set '.
-                'credit = credit - '.$pay_amount.', '.
-                'updated_at = \''.$now->toDateTimeString().'\' '.
-                'where id = \''.$instance->user->id.'\'; '.
+            $sql_params = [];
+            $sql = 'with '.
+                'update_user as ('.
+                    'update users set '.
+                    'credit = credit - ?, '. # $pay_amount
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $instance->user->id
+                    'returning id'.
+                ') '.
                 'update instances set '.
-                'paid_at = \''.$now->toDateTimeString().'\', '. # $now->toDateTimeString()
-                'updated_at = \''.$now->toDateTimeString().'\' '. # $now->toDateTimeString()
-                'where id = \''.$instance->id.'\'; '. # $instance->id
-                'commit;';
+                'paid_at = ?, '. # $now
+                'updated_at = ? '. # $now
+                'where id = ?'; # $instance->id
 
-            app('db')->unprepared($sql);
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $now;
+            $sql_params[] = $instance->user->id;
+
+            $sql_params[] = $now;
+            $sql_params[] = $now;
+            $sql_params[] = $instance->id;
+
+            DB::select($sql, $sql_params);
         }
     }
 }

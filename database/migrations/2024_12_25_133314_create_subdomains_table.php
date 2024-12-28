@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('subdomains', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->id();
             $table->string('subdomain');
             $table->timestamp('paid_at')->useCurrent();
             $table->timestamps();

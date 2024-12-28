@@ -6,6 +6,7 @@ use App\Models\Instance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TermInstance implements ShouldQueue
 {
@@ -55,24 +56,36 @@ class TermInstance implements ShouldQueue
 
         $constraint = json_decode($instance->plan->constraint, true);
 
-        $sql = 'begin; '.
-
-            'update users set '.
-            'credit = credit - '.$pay_amount.', '.
-            'instance_count = instance_count - 1, '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$instance->user->id.'\'; '.
-
-            'update machines set '.
-            'remain_disk = remain_disk + '.$constraint['max_disk'].', '.
-            'updated_at = \''.$now->toDateTimeString().'\' '.
-            'where id = \''.$machine->id.'\'; '.
-
+        $sql_params = [];
+        $sql = 'with '.
+            'update_user as ('.
+                'update users set '.
+                'credit = credit - ?, '. # $pay_amount
+                'instance_count = instance_count - 1, '.
+                'updated_at = ? '. # $now
+                'where id = ? '. # $instance->user->id
+                'returning id'.
+            '), '.
+            'update_machine as ('.
+                'update machines set '.
+                'remain_disk = remain_disk + ?, '. # $constraint['max_disk']
+                'updated_at = ? '. # $now
+                'where id = ? '. # $machine->id
+                'returning id'.
+            ') '.
             'delete from instances '.
-            'where id = \''.$instance->id.'\'; '.
+            'where id = ?'; # $instance->id
 
-            'commit;';
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $now;
+        $sql_params[] = $instance->user->id;
 
-        app('db')->unprepared($sql);
+        $sql_params[] = $constraint['max_disk'];
+        $sql_params[] = $now;
+        $sql_params[] = $machine->id;
+
+        $sql_params[] = $instance->id;
+
+        DB::select($sql, $sql_params);
     }
 }
