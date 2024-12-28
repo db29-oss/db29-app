@@ -178,18 +178,6 @@ class InitInstance implements ShouldQueue
             ssh: $ssh,
         ))->setUp();
 
-        Instance::query()
-            ->whereId($instance->id)
-            ->update([
-                'status' => 'rt_up', // router up
-                'queue_active' => false,
-                'turned_on_at' => now(),
-                'version_template' => [
-                    'docker_compose' => $docker_compose,
-                    'tag' => $latest_version_template,
-                ]
-            ]);
-
         $ssh->exec([
             'mkdir -p /etc/caddy/sites/',
             'rm -f /etc/caddy/sites/'.$subdomain.'.caddyfile',
@@ -203,5 +191,30 @@ class InitInstance implements ShouldQueue
         }
 
         app('rt', [$machine->trafficRouter, $ssh])->reload();
+
+        if (app('env') === 'production') {
+            // test tls up and running
+            while (true) {
+                exec('curl -vI -L '.$subdomain.'.'.config('app.domain'), $dummy, $exit_code);
+
+                if ($exit_code !== 0) {
+                    sleep(1);
+                }
+
+                break;
+            }
+        }
+
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'status' => 'rt_up', // router up
+                'queue_active' => false,
+                'turned_on_at' => now(),
+                'version_template' => [
+                    'docker_compose' => $docker_compose,
+                    'tag' => $latest_version_template,
+                ]
+            ]);
     }
 }
