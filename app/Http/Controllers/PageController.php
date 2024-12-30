@@ -10,6 +10,7 @@ use App\Models\Instance;
 use App\Models\Setting;
 use App\Models\Source;
 use App\Models\User;
+use App\Services\InstanceInputFilter;
 use Illuminate\Support\Facades\Validator;
 
 class PageController extends Controller
@@ -349,7 +350,11 @@ class PageController extends Controller
             return redirect()->route('source');
         }
 
-        $reg_info = $this->{'filter_input_'.$source_name}();
+        $reg_info = [];
+
+        if (method_exists(InstanceInputFilter::class, $source_name)) {
+            $reg_info = InstanceInputFilter::$source_name();
+        }
 
         $now = now();
 
@@ -397,32 +402,5 @@ class PageController extends Controller
         InitInstance::dispatch($db[0]->id, $reg_info);
 
         return redirect()->route('instance');
-    }
-
-    protected function filter_input_planka()
-    {
-        $validator = validator(request()->all(), [ 
-            'email' => ['required', 'email:rfc'],
-            'password' => ['required', 'alpha_num:ascii'],
-            'name' => ['required', 'alpha_num:ascii'],
-            'username' => ['required', 'alpha_num:ascii'],
-        ]);
-
-        $data = $validator->validated();
-
-        $reg_info = [];
-
-        $reg_info['email'] = request('email');
-        $reg_info['password'] = request('password');
-        $reg_info['name'] = request('name');
-        $reg_info['username'] = request('username');
-        $reg_info['secret_key'] = bin2hex(random_bytes(64));
-
-        return $reg_info;
-    }
-
-    protected function filter_input_word_press()
-    {
-        return [];
     }
 }

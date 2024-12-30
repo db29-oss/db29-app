@@ -26,11 +26,13 @@ class Cloudflare {
 
         $data['ttl'] = 60;
 
-        $ip_address = gethostbyname($hostname);
+        $dns_get_record = dns_get_record($hostname, DNS_A);
 
-        if ($ip_address === false) {
+        if (count($dns_get_record) === 0) {
             throw new Exception('DB291991: unable get host ip address');
         }
+
+        $ip_address = $dns_get_record[0]['ip'];
 
         $data['content'] = $ip_address;
 

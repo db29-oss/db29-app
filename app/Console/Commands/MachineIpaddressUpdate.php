@@ -27,41 +27,45 @@ class MachineIpaddressUpdate extends Command
                 continue;
             }
 
-            $ip_address = gethostbyname($machine->hostname);
+            $dns_get_record = dns_get_record($machine->hostname, DNS_A);
 
-            if ($ip_address !== $machine->ip_address) {
-                $output = [];
-                exec('curl -s '.$ip_address.':80/ping', $output, $exit_code);
+            if (count($dns_get_record) === 0) {
+                continue;
+            }
 
-                if ($exit_code !== 0) {
-                    $ssh_privatekey_path = storage_path('app/private/'.$machine->id);
+            $ip_address = $dns_get_record[0]['ip'];
 
-                    if (! file_exists($ssh_privatekey_path)) {
-                        touch($ssh_privatekey_path);
-                        chmod($ssh_privatekey_path, 0600);
-                        file_put_contents($ssh_privatekey_path, $machine->ssh_privatekey);
-                    }
+            $output = [];
+            exec('curl -s '.$ip_address.':80/ping', $output, $exit_code);
 
-                    $ssh = app('ssh')->from([
-                        'ssh_privatekey_path' => $ssh_privatekey_path
-                    ])->to([
-                        'ssh_address' => $ip_address,
-                        'ssh_port' => $machine->ssh_port,
-                    ]);
+            if ($exit_code !== 0) {
+                $ssh_privatekey_path = storage_path('app/private/'.$machine->id);
 
-                    try {
-                        $ssh->exec('echo testing_connection');
-                    } catch (Exception) {
-                        continue;
-                    }
+                if (! file_exists($ssh_privatekey_path)) {
+                    touch($ssh_privatekey_path);
+                    chmod($ssh_privatekey_path, 0600);
+                    file_put_contents($ssh_privatekey_path, $machine->ssh_privatekey);
                 }
 
-                if ($output[0] === $machine->id) {
-                    Machine::query()->update([
-                        'ip_address' => $ip_address,
-                        'last_ip_address' => $machine->ip_address,
-                    ]);
+                $ssh = app('ssh')->from([
+                    'ssh_privatekey_path' => $ssh_privatekey_path
+                ])->to([
+                    'ssh_address' => $ip_address,
+                    'ssh_port' => $machine->ssh_port,
+                ]);
+
+                try {
+                    $ssh->exec('echo testing_connection');
+                } catch (Exception) {
+                    continue;
                 }
+            }
+
+            if ($output[0] === $machine->id) {
+                Machine::query()->update([
+                    'ip_address' => $ip_address,
+                    'last_ip_address' => $machine->ip_address,
+                ]);
             }
         }
     }
