@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('app:traffic-router-maintain')->onOneServer()->withoutOverlapping(10)->everyMinute();
+Schedule::command('app:machine-ipaddress-update')->onOneServer()->withoutOverlapping(10)->everyMinute();
 
 Schedule::command('app:filesystem-monitor')->onOneServer()->withoutOverlapping(10)->hourly();
 

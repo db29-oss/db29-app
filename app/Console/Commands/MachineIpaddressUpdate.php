@@ -35,6 +35,10 @@ class MachineIpaddressUpdate extends Command
 
             $ip_address = $dns_get_record[0]['ip'];
 
+            if ($ip_address === $machine->ip_address) {
+                continue;
+            }
+
             $output = [];
             exec('curl -s '.$ip_address.':80/ping', $output, $exit_code);
 

@@ -4,6 +4,7 @@ namespace App\Jobs\Instance;
 
 use Aws\Exception\AwsException;
 use Aws\SesV2\SesV2Client;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
