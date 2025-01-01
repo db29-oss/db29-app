@@ -61,6 +61,7 @@ class Discourse implements ShouldQueue
             config('app.domain');
 
         $yml['env']['DISCOURSE_DEVELOPER_EMAILS'] = $this->reg_info['email'];
+        $yml['env']['DISCOURSE_FORCE_HTTPS'] = true;
 
         $yml['volumes'][0]['volume']['host'] = $instance_path.'discourse_docker/shared/standalone';
         $yml['volumes'][1]['volume']['host'] = $instance_path.'discourse_docker/shared/standalone/log/var-log';
