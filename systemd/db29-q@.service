@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=TO_BE_REPLACE
-ExecStart=/usr/bin/php artisan queue:listen --timeout=600
+ExecStart=/usr/bin/php artisan queue:listen --timeout=3600
 Restart=always
 
 [Install]
