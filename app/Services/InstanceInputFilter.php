@@ -6,7 +6,17 @@ class InstanceInputFilter
 {
     public static function discourse()
     {
-        // WTF??
+        $validator = validator(request()->all(), [
+            'email' => ['required', 'email:rfc'],
+        ]);
+
+        $data = $validator->validated();
+
+        $reg_info = [];
+
+        $reg_info['email'] = request('email');
+
+        return $reg_info;
     }
 
     public static function planka()

@@ -11,6 +11,7 @@ use App\Models\Setting;
 use App\Models\Source;
 use App\Models\User;
 use App\Services\InstanceInputFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 
 class PageController extends Controller
@@ -232,6 +233,9 @@ class PageController extends Controller
     {
         $sources = Source::query()
             ->where('enabled', true)
+            ->whereHas('plans', function (Builder $q) {
+                $q->where('base', true);
+            })
             ->with(['plans' => function ($q) {
                 $q->where('base', true);
             }])
@@ -317,7 +321,13 @@ class PageController extends Controller
     {
         $source_name = request('source');
 
-        $source = Source::whereName($source_name)->where('enabled', true)->first('id');
+        $source = Source::query()
+            ->whereName($source_name)
+            ->whereHas('plans', function (Builder $q) {
+                $q->where('base', true);
+            })
+            ->where('enabled', true)
+            ->first('id');
 
         if ($source === null) {
             return redirect()->route('source');
@@ -341,6 +351,9 @@ class PageController extends Controller
 
         $source = Source::whereName($source_name)
             ->where('enabled', true)
+            ->whereHas('plans', function (Builder $q) {
+                $q->where('base', true);
+            })
             ->with(['plans' => function ($query) {
                 $query->where('base', true);
             }])
@@ -372,6 +385,7 @@ class PageController extends Controller
                 'user_id, '.
                 'plan_id, '.
                 'queue_active, '.
+                'extra, '.
                 'created_at, '.
                 'updated_at'.
             ') values ('.
@@ -379,6 +393,7 @@ class PageController extends Controller
                 '?, '. # auth()->user()->id
                 '?, '. # $source->plans[0]->id
                 '?, '. # true
+                '?, '. # json_encode(['reg_info' => $this->reg_info])
                 '?, '. # $now
                 '?'. # $now
             ') returning id';
@@ -390,6 +405,7 @@ class PageController extends Controller
         $sql_params[] = auth()->user()->id;
         $sql_params[] = $source->plans[0]->id;
         $sql_params[] = true;
+        $sql_params[] = json_encode(['reg_info' => $reg_info]);
         $sql_params[] = $now;
         $sql_params[] = $now;
 

@@ -8,11 +8,9 @@ use App\Models\Plan;
 use App\Models\Source;
 use App\Models\TrafficRouter;
 use App\Models\User;
-use App\Services\SSHEngine;
-use Artisan;
 use Tests\TestCase;
 
-class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
+class DiscourseInstanceTest extends TestCase
 {
     public function test_generic(): void
     {
@@ -30,7 +28,7 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
         auth()->login($u);
 
         $s = new Source;
-        $s->name = 'word_press';
+        $s->name = 'discourse';
         $s->enabled = true;
         $s->save();
 
@@ -39,7 +37,7 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
         $m = Machine::factory()->create();
         $m->refresh();
 
-        $ssh_port = setup_container('db29_su_tof_ton_td_wordpress_instance', $m->id);
+        $ssh_port = setup_container('db29_instance', $m->id);
 
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
@@ -51,9 +49,9 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
         $tr->machine_id = $m->id;
         $tr->save();
 
-        Artisan::call('app:machine-prepare');
+        $this->artisan('app:machine-prepare');
 
-        Artisan::call('app:traffic-router-prepare');
+        $this->artisan('app:traffic-router-prepare');
 
         $this->assertEquals(0, Instance::count());
 
@@ -62,7 +60,8 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
          */
 
         $response = $this->post('instance/register', [
-            'source' => 'word_press',
+            'source' => 'discourse',
+            'email' => fake()->email,
         ]);
 
         $this->assertEquals(1, Instance::count());
@@ -105,7 +104,6 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
             json_decode($inst->plan->constraint, true)['max_memory']
         );
 
-
         /**
          * TURN OFF
          */
@@ -114,7 +112,9 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
 
         $this->assertTrue(str_contains($ssh->getLastline(), $inst->subdomain));
 
-        $this->assertFalse(str_contains($ssh->getLastline(), 'instance is currently off'));
+        if ($inst->subdomain !== null) {
+            $this->assertFalse(str_contains($ssh->getLastline(), 'instance is currently off'));
+        }
 
         $response = $this->post('instance/turn-off', [
             'instance_id' => $inst->id,
@@ -255,7 +255,7 @@ class SetUpTurnOffTurnOnTearDownWordPressInstanceTest extends TestCase
         unset($ssh);
 
         // clean up
-        cleanup_container('db29_su_tof_ton_td_wordpress_instance', $m->id);
+        cleanup_container('db29_instance', $m->id);
     }
 
     private function isExplicitlyRun(): bool

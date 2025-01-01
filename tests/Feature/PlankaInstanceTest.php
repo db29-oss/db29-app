@@ -9,10 +9,9 @@ use App\Models\Source;
 use App\Models\TrafficRouter;
 use App\Models\User;
 use App\Services\SSHEngine;
-use Artisan;
 use Tests\TestCase;
 
-class SetUpTurnOffTurnOnTearDownPlankaInstanceTest extends TestCase
+class PlankaInstanceTest extends TestCase
 {
     public function test_generic(): void
     {
@@ -40,7 +39,7 @@ class SetUpTurnOffTurnOnTearDownPlankaInstanceTest extends TestCase
         $m = Machine::factory()->create();
         $m->refresh();
 
-        $ssh_port = setup_container('db29_su_tof_ton_td_planka_instance', $m->id);
+        $ssh_port = setup_container('db29_instance', $m->id);
 
         $m->ip_address = '127.0.0.1';
         $m->ssh_port = $ssh_port;
@@ -263,7 +262,7 @@ class SetUpTurnOffTurnOnTearDownPlankaInstanceTest extends TestCase
         unset($ssh);
 
         // clean up
-        cleanup_container('db29_su_tof_ton_td_planka_instance', $m->id);
+        cleanup_container('db29_instance', $m->id);
     }
 
     private function isExplicitlyRun(): bool

@@ -42,4 +42,9 @@ return [
     "turn_on" => "bật",
     "update" => "cập nhật",
     "wait_a_sec" => "chờ tí",
+    "authenticable" => "cần chứng thực",
+    "discourse_email_explain" => "discourse cần email để gửi email cho các thành viên",
+    "discourse_send_email_on_your_behalf" => "discourse sẽ dùng email đăng ký để gửi email",
+    "discourse_send_verification_link" => "discourse sẽ gửi link xác nhận được phép dùng email và cần bạn đồng ý",
+    "discourse_change_email_later" => "discourse email có thể cập nhật lại sau",
 ];
