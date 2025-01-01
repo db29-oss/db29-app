@@ -17,7 +17,10 @@ class TrafficRouterMaintain extends Command
 
     public function handle()
     {
-        $machines = Machine::whereEnabled(true)->with('trafficRouter')->get(['id', 'ip_address']);
+        $machines = Machine::query()
+            ->whereEnabled(true)
+            ->with('trafficRouter')
+            ->get(['id', 'ip_address', 'ssh_port']);
 
         $responses = Http::pool(function (Pool $pool) use ($machines) {
             foreach ($machines as $machine) {
