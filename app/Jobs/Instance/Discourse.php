@@ -40,7 +40,9 @@ class Discourse implements ShouldQueue
         $this->ssh
              ->exec(
                  'cd '.$instance_path.' && '.
-                 'git clone https://github.com/discourse/discourse_docker.git'
+                 '[ ! -d "discourse_docker" ] && '.
+                 'git clone https://github.com/discourse/discourse_docker.git || '.
+                 'true'
              );
 
         $this->ssh->clearOutput();
