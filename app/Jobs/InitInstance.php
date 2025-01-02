@@ -197,11 +197,12 @@ class InitInstance implements ShouldQueue
             while (true) {
                 exec('curl -vI -L '.$subdomain.'.'.config('app.domain'), $dummy, $exit_code);
 
-                if ($exit_code !== 0) {
-                    sleep(1);
+                if ($exit_code === 0) {
+                    break;
+
                 }
 
-                break;
+                sleep(1);
             }
         }
 
