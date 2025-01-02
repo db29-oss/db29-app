@@ -23,10 +23,16 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
-    'ses' => [
+    'aws' => [ // can create IAM
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'ses' => [
+        'username' => env('AWS_SES_USERNAME'),
+        'password' => env('AWS_SES_PASSWORD'),
+        'smtp' => env('AWS_SES_SMTP', 'us-east-1'),
     ],
 
     'resend' => [

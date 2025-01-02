@@ -74,11 +74,11 @@ class Discourse implements ShouldQueue
 
         if (app('env') === 'production') {
             $client = new SesV2Client([
-                'region' => config('services.ses.region'),
+                'region' => config('services.aws.region'),
                 'version' => 'latest',
                 'credentials' => [
-                    'key'    => config('services.ses.key'),
-                    'secret' => config('services.ses.secret'),
+                    'key'    => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
                 ],
             ]);
 
@@ -95,6 +95,10 @@ class Discourse implements ShouldQueue
                     throw new Exception('DB292010: fail create email identity');
                 }
             }
+
+            $yml['env']['DISCOURSE_SMTP_ADDRESS'] = config('services.ses.smtp');
+            $yml['env']['DISCOURSE_SMTP_USER_NAME'] = config('services.ses.username');
+            $yml['env']['DISCOURSE_SMTP_PASSWORD'] = config('services.ses.password');
         }
 
         $yml_dump = app('yml')->dump($yml, 4);
@@ -182,11 +186,11 @@ CONFIG;
 
         if (app('env') === 'production') {
             $client = new SesV2Client([
-                'region' => config('services.ses.region'),
+                'region' => config('services.aws.region'),
                 'version' => 'latest',
                 'credentials' => [
-                    'key'    => config('services.ses.key'),
-                    'secret' => config('services.ses.secret'),
+                    'key'    => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
                 ],
             ]);
 
