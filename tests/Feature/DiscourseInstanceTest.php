@@ -104,6 +104,7 @@ class DiscourseInstanceTest extends TestCase
             json_decode($inst->plan->constraint, true)['max_memory']
         );
 
+
         /**
          * TURN OFF
          */
@@ -163,6 +164,7 @@ class DiscourseInstanceTest extends TestCase
             $m->max_memory - $m->remain_memory,
         );
 
+
         /**
          * TURN ON
          */
@@ -202,6 +204,7 @@ class DiscourseInstanceTest extends TestCase
             $m->max_memory - $m->remain_memory,
             json_decode($inst->plan->constraint, true)['max_memory']
         );
+
 
         /**
          * TEAR DOWN

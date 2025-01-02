@@ -101,6 +101,13 @@ class Discourse implements ShouldQueue
             $yml['env']['DISCOURSE_SMTP_PASSWORD'] = config('services.ses.password');
         }
 
+        $yml['run'][] =[
+            'exec' =>
+            'rails runner "SiteSetting.notification_email = '.
+            escapeshellarg($this->reg_info['email']).
+            '"'
+        ];
+
         $yml_dump = app('yml')->dump($yml, 4);
 
         $yml_lines = explode(PHP_EOL, $yml_dump);
