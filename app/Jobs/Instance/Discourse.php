@@ -4,36 +4,14 @@ namespace App\Jobs\Instance;
 
 use Aws\Exception\AwsException;
 use Aws\SesV2\SesV2Client;
-use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 
-class Discourse implements ShouldQueue
+class Discourse extends _0Instance_
 {
-    use Queueable;
-
-    public function __construct(
-        private $docker_compose = null,
-        private $instance = null,
-        private $machine = null,
-        private $plan = null,
-        private $reg_info = null,
-        private $ssh = null,
-    ) {}
-
     public function setUp(): string
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
-        $create_instance_path = 'mkdir '.$instance_path;
-
-        if (app('env') === 'production') {
-            $create_instance_path = 'btrfs subvolume create '.$instance_path;
-        }
-
-        try {
-            $this->ssh->exec($create_instance_path);
-        } catch (Exception) {}
+        $this->createInstancePath();
 
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -92,7 +70,7 @@ class Discourse implements ShouldQueue
                         'aws_error_code' => $e->getAwsErrorCode()
                     ]);
 
-                    throw new Exception('DB292010: fail create email identity');
+                    throw new \Exception('DB292010: fail create email identity');
                 }
             }
 
@@ -172,24 +150,14 @@ CONFIG;
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
-        $rm_instance_dir = 'rm -rf '.$instance_path;
+        $this->ssh->exec(
+            'cd '.$instance_path.'discourse_docker && '.
+            'export DOCKER_HOST=127.0.0.1 && '.
+            'export PATH='.$instance_path.':$PATH && '.
+            './launcher destroy '.$this->instance->id.' --skip-prereqs --skip-mac-address'
+        );
 
-        if (app('env') === 'production') {
-            $rm_instance_dir = 'btrfs subvolume delete '.$instance_path;
-        }
-
-        $this->ssh
-             ->exec(array_merge(
-                 [
-                     'cd '.$instance_path.'discourse_docker && '.
-                     'export DOCKER_HOST=127.0.0.1 && '.
-                     'export PATH='.$instance_path.':$PATH && '.
-                     './launcher destroy '.$this->instance->id.' --skip-prereqs --skip-mac-address'
-                 ],
-                 [
-                     $rm_instance_dir
-                 ]
-             ));
+        $this->deleteInstancePath();
 
         if (app('env') === 'production') {
             $client = new SesV2Client([
@@ -211,7 +179,7 @@ CONFIG;
                         'aws_error_code' => $e->getAwsErrorCode()
                     ]);
 
-                    throw new Exception('DB292011: fail delete email identity');
+                    throw new \Exception('DB292011: fail delete email identity');
                 }
             }
         }
@@ -264,11 +232,11 @@ CONFIG;
     {
     }
 
-    private function buildLimitCommands(): array
+    public function buildLimitCommands(): array
     {
         $apply_limit_commands = [];
 
-        if (app('env') === 'production') {
+        if ($this->getFilesystemName() === 'btrfs') {
             $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
             $constraint = json_decode($this->plan->constraint, true);

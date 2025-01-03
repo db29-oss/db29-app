@@ -2,24 +2,8 @@
 
 namespace App\Jobs\Instance;
 
-use App\Contracts\InstanceInterface;
-use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
-
-class Planka implements InstanceInterface, ShouldQueue
+class Planka extends _0Instance_
 {
-    use Queueable;
-
-    public function __construct(
-        private $docker_compose = null,
-        private $instance = null,
-        private $machine = null,
-        private $plan = null,
-        private $reg_info = null,
-        private $ssh = null,
-    ) {}
-
     public function setUp(): string
     {
         foreach (
@@ -98,15 +82,7 @@ class Planka implements InstanceInterface, ShouldQueue
                 'echo '.escapeshellarg($yml_line).' >> '.$instance_path.'docker-compose.yml';
         }
 
-        $create_instance_path = 'mkdir '.$instance_path;
-
-        if (app('env') === 'production') {
-            $create_instance_path = 'btrfs subvolume create '.$instance_path;
-        }
-
-        try {
-            $this->ssh->exec($create_instance_path);
-        } catch (Exception) {}
+        $this->createInstancePath();
 
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -142,7 +118,7 @@ class Planka implements InstanceInterface, ShouldQueue
             $wait_seconds += 1;
 
             if ($wait_seconds > 30) {
-                throw new Exception('DB292006: podman port wait exceed thresh hold');
+                throw new \Exception('DB292006: podman port wait exceed thresh hold');
             }
         }
 
@@ -155,7 +131,7 @@ class Planka implements InstanceInterface, ShouldQueue
 
             try {
                 $this->ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
-            } catch (Exception) {
+            } catch (\Exception) {
             }
 
             if ($this->ssh->getLastLine() === '200') {
@@ -167,7 +143,7 @@ class Planka implements InstanceInterface, ShouldQueue
             $wait_seconds += 1;
 
             if ($wait_seconds > 30) {
-                throw new Exception('DB292007: curl check wait http exceed thresh hold');
+                throw new \Exception('DB292007: curl check wait http exceed thresh hold');
             }
         }
 
@@ -188,24 +164,12 @@ CONFIG;
 
     public function tearDown()
     {
-        $rm_instance_dir =
-            'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
+        $this->ssh->exec(
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+            'podman-compose down --volumes'
+        );
 
-        if (app('env') === 'production') {
-            $rm_instance_dir = 'btrfs subvolume delete '.
-                $this->machine->storage_path.'instance/'.$this->instance->id;
-        }
-
-        $this->ssh
-             ->exec(array_merge(
-                 [
-                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                     'podman-compose down --volumes',
-                 ],
-                 [
-                     $rm_instance_dir
-                 ]
-             ));
+        $this->deleteInstancePath();
     }
 
     public function turnOff()
@@ -246,11 +210,11 @@ CONFIG;
     {
     }
 
-    private function buildLimitCommands(): array
+    public function buildLimitCommands(): array
     {
         $apply_limit_commands = [];
 
-        if (app('env') === 'production') {
+        if ($this->getFilesystemName() === 'btrfs') {
             $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
             $constraint = json_decode($this->plan->constraint, true);

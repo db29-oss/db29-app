@@ -2,37 +2,13 @@
 
 namespace App\Jobs\Instance;
 
-use App\Contracts\InstanceInterface;
-use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
-
-class WordPress implements InstanceInterface, ShouldQueue
+class WordPress extends _0Instance_
 {
-    use Queueable;
-
-    public function __construct(
-        private $docker_compose = null,
-        private $instance = null,
-        private $machine = null,
-        private $plan = null,
-        private $reg_info = null,
-        private $ssh = null,
-    ) {}
-
     public function setUp(): string
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
-        $create_instance_path = 'mkdir '.$instance_path;
-
-        if (app('env') === 'production') {
-            $create_instance_path = 'btrfs subvolume create '.$instance_path;
-        }
-
-        try {
-            $this->ssh->exec($create_instance_path);
-        } catch (Exception) {}
+        $this->createInstancePath();
 
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -119,7 +95,7 @@ class WordPress implements InstanceInterface, ShouldQueue
 
             try {
                 $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
-            } catch (Exception) {
+            } catch (\Exception) {
             }
 
             if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
@@ -165,24 +141,12 @@ CONFIG;
 
     public function tearDown()
     {
-        $rm_instance_dir =
-            'cd '.$this->machine->storage_path.'instance/ && rm -rf '.$this->instance->id;
+        $this->ssh->exec(
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+            'podman rm '.$this->instance->id
+        );
 
-        if (app('env') === 'production') {
-            $rm_instance_dir = 'btrfs subvolume delete '.
-                $this->machine->storage_path.'instance/'.$this->instance->id;
-        }
-
-        $this->ssh
-             ->exec(array_merge(
-                 [
-                     'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                     'podman rm '.$this->instance->id,
-                 ],
-                 [
-                     $rm_instance_dir
-                 ]
-             ));
+        $this->deleteInstancePath();
     }
 
     public function turnOff()
@@ -226,11 +190,11 @@ CONFIG;
     {
     }
 
-    private function buildLimitCommands(): array
+    public function buildLimitCommands(): array
     {
         $apply_limit_commands = [];
 
-        if (app('env') === 'production') {
+        if ($this->getFilesystemName() === 'btrfs') {
             $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
             $constraint = json_decode($this->plan->constraint, true);
