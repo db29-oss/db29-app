@@ -179,7 +179,7 @@ CONFIG;
                         'aws_error_code' => $e->getAwsErrorCode()
                     ]);
 
-                    throw new \Exception('DB292011: fail delete email identity');
+                    throw new \Exception('DB292012: fail delete email identity');
                 }
             }
         }

@@ -186,6 +186,42 @@ CONFIG;
     {
     }
 
+    public function changeUrl()
+    {
+        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+
+        $domain = config('app.domain');
+
+        if ($this->instance->subdomain) {
+            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        }
+
+        $root_dir = $instance_path.'wordpress/';
+
+        $tr_config = <<<CONFIG
+{$domain} {
+	root * {$root_dir}
+
+	encode gzip
+	file_server
+
+    php_fastcgi 127.0.0.1:{$host_port} {
+        root /var/www/html/
+    }
+
+	@disallowed {
+		path /xmlrpc.php
+		path *.sqlite
+		path /wp-content/uploads/*.php
+	}
+
+	rewrite @disallowed '/index.php'
+}
+CONFIG;
+
+        return $tr_config;
+    }
+
     public function upgrade()
     {
     }
