@@ -9,7 +9,7 @@ return [
     "back" => "quay về",
     "balance" => "số dư",
     "bank" => "ngân hàng",
-    "blog" => "bài viết",
+    "blog" => "blog",
     "change_default_config_at" => "Bạn có thể thay đổi thiết lập mặc định tại",
     "click_here" => "bấm vào đây",
     "click_link_above" => "bấm vào link trên",
