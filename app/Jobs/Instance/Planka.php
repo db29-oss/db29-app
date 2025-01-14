@@ -2,6 +2,8 @@
 
 namespace App\Jobs\Instance;
 
+use Exception;
+
 class Planka extends _0Instance_
 {
     public function setUp(): string
@@ -93,8 +95,11 @@ class Planka extends _0Instance_
                  [
                      'cd '.$instance_path.' && podman-compose up -d',
                  ],
-                 $apply_limit_commands
              ));
+
+        try {
+            $this->ssh->exec($apply_limit_commands);
+        } catch (Exception) {}
 
         // traffic rule
         return $this->buildTrafficRule();
@@ -118,7 +123,7 @@ class Planka extends _0Instance_
             $wait_seconds += 1;
 
             if ($wait_seconds > 30) {
-                throw new \Exception('DB292006: podman port wait exceed thresh hold');
+                throw new Exception('DB292006: podman port wait exceed thresh hold');
             }
         }
 
@@ -131,7 +136,7 @@ class Planka extends _0Instance_
 
             try {
                 $this->ssh->exec('curl -o /dev/null -s -w \'%{http_code}\' -L 0.0.0.0:'.$host_port);
-            } catch (\Exception) {
+            } catch (Exception) {
             }
 
             if ($this->ssh->getLastLine() === '200') {
@@ -143,7 +148,7 @@ class Planka extends _0Instance_
             $wait_seconds += 1;
 
             if ($wait_seconds > 30) {
-                throw new \Exception('DB292007: curl check wait http exceed thresh hold');
+                throw new Exception('DB292007: curl check wait http exceed thresh hold');
             }
         }
 
@@ -183,13 +188,14 @@ CONFIG;
     {
         $apply_limit_commands = $this->buildLimitCommands();
 
-        $this->ssh->exec(array_merge(
-             [
-                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                 'podman-compose up -d',
-             ],
-             $apply_limit_commands
-        ));
+        $this->ssh->exec([
+            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
+            'podman-compose up -d',
+        ]);
+
+        try {
+            $this->ssh->exec($apply_limit_commands);
+        } catch (Exception) {}
 
         return $this->buildTrafficRule();
     }

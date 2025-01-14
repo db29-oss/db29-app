@@ -4,6 +4,7 @@ namespace App\Jobs\Instance;
 
 use Aws\Exception\AwsException;
 use Aws\SesV2\SesV2Client;
+use Exception;
 
 class Discourse extends _0Instance_
 {
@@ -70,7 +71,7 @@ class Discourse extends _0Instance_
                         'aws_error_code' => $e->getAwsErrorCode()
                     ]);
 
-                    throw new \Exception('DB292010: fail create email identity');
+                    throw new Exception('DB292010: fail create email identity');
                 }
             }
 
@@ -179,7 +180,7 @@ CONFIG;
                         'aws_error_code' => $e->getAwsErrorCode()
                     ]);
 
-                    throw new \Exception('DB292012: fail delete email identity');
+                    throw new Exception('DB292012: fail delete email identity');
                 }
             }
         }
@@ -203,15 +204,16 @@ CONFIG;
 
         $apply_limit_commands = $this->buildLimitCommands();
 
-        $this->ssh->exec(array_merge(
-             [
-                 'cd '.$instance_path.'discourse_docker && '.
-                 'export DOCKER_HOST=127.0.0.1 && '.
-                 'export PATH='.$instance_path.':$PATH && '.
-                 './launcher start '.$this->instance->id.' --skip-prereqs --skip-mac-address'
-             ],
-             $apply_limit_commands
-        ));
+        $this->ssh->exec([
+            'cd '.$instance_path.'discourse_docker && '.
+             'export DOCKER_HOST=127.0.0.1 && '.
+             'export PATH='.$instance_path.':$PATH && '.
+             './launcher start '.$this->instance->id.' --skip-prereqs --skip-mac-address'
+        ]);
+
+        try {
+            $this->ssh->exec($apply_limit_commands);
+        } catch (Exception) {}
 
         return $this->buildTrafficRule();
     }
@@ -247,6 +249,6 @@ CONFIG;
             }
         }
 
-        return [];
+        return $apply_limit_commands;
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Jobs\Instance;
 
+use Exception;
+
 class WordPress extends _0Instance_
 {
     public function setUp(): string
@@ -67,8 +69,11 @@ class WordPress extends _0Instance_
                  'podman run -d --name='.$this->instance->id.' '.
                  '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
                  'php:fpm-alpine'
-             )
-             ->exec($apply_limit_commands);
+             );
+
+        try {
+            $this->ssh->exec($apply_limit_commands);
+        } catch (Exception) {}
 
         // traffic rule
         return $this->buildTrafficRule();
@@ -95,7 +100,7 @@ class WordPress extends _0Instance_
 
             try {
                 $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
-            } catch (\Exception) {
+            } catch (Exception) {
             }
 
             if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
