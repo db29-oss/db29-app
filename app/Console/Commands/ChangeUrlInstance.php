@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Instance;
 use Illuminate\Console\Command;
+use ReflectionClass;
 
 class ChangeUrlInstance extends Command
 {
@@ -49,7 +51,11 @@ class ChangeUrlInstance extends Command
 
         // update dns
         if (app('env') === 'production') {
-            app('cf')->updateDnsRecord($instance->dns_id, $this->option('subdomain'));
+            app('cf')->updateDnsRecord(
+                $instance->dns_id,
+                $this->option('subdomain'),
+                $instance->machine->hostname
+            );
         }
 
         // update traffic router
