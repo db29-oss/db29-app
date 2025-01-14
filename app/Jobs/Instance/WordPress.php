@@ -63,13 +63,22 @@ class WordPress extends _0Instance_
                  'chown -R 82:82 wordpress && '. // on alpine www-data UID is 82
                  'find . -type d -exec chmod 755 {} \; && '.
                  'find . -type f -exec chmod 644 {} \;'
-             )
-             ->exec(
-                 'cd '.$instance_path.' && '.
-                 'podman run -d --name='.$this->instance->id.' '.
-                 '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
-                 'php:fpm-alpine'
              );
+
+        $this->ssh->clearOutput();
+
+        $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
+
+        if ($this->ssh->getLastLine() === null) {
+            $this->ssh->exec(
+                'cd '.$instance_path.' && '.
+                'podman run -d --name='.$this->instance->id.' '.
+                '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
+                'php:fpm-alpine'
+            );
+        } else {
+            $this->ssh->exec('podman start '.$this->ssh->getLastLine());
+        }
 
         try {
             $this->ssh->exec($apply_limit_commands);
