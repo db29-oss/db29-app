@@ -57,7 +57,7 @@ class WordPress extends _0Instance_
                  'cp wp-config-sample.php wp-config.php && '.
 
                  'cd '.$instance_path.'wordpress/wp-content/ && '.
-                 'mkdir database && '.
+                 'mkdir -p database && '.
                  'touch database/.ht.sqlite && '.
                  'cd '.$instance_path.' && '.
                  'chown -R 82:82 wordpress && '. // on alpine www-data UID is 82
