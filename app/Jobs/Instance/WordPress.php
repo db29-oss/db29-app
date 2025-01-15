@@ -155,10 +155,13 @@ CONFIG;
 
     public function tearDown()
     {
-        $this->ssh->exec(
-            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-            'podman rm '.$this->instance->id
-        );
+        $this->ssh->clearOutput();
+
+        $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
+
+        if ($this->ssh->getLastLine() !== null) {
+            $this->ssh->exec('podman rm '.$this->instance->id);
+        }
 
         $this->deleteInstancePath();
     }
