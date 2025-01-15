@@ -26,6 +26,7 @@ class ChangeUrlInstance extends Command
 
         $instance = Instance::query()
             ->whereId($this->option('instance_id'))
+            ->whereStatus('rt_up')
             ->with(['machine', 'source'])
             ->first();
 

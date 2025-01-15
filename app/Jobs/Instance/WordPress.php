@@ -202,6 +202,35 @@ CONFIG;
 
     public function changeUrl()
     {
+        while (true) {
+            $this->ssh->clearOutput();
+
+            $this->ssh->exec('podman port '.$this->instance->id);
+
+            if ($this->ssh->getLastLine() !== null) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        $host_port = parse_url($this->ssh->getLastLine())['port'];
+
+        while (true) {
+            $this->ssh->clearOutput();
+
+            try {
+                $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
+            } catch (Exception) {
+            }
+
+            if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
+                break;
+            }
+
+            sleep(1);
+        }
+
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
         $domain = config('app.domain');

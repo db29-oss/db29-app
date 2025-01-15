@@ -66,7 +66,9 @@ class _0Instance_ implements ShouldQueue
             $delete_instance_path_command = 'btrfs subvolume delete '.$instance_path;
         }
 
-        $this->ssh->exec($delete_instance_path_command);
+        try {
+            $this->ssh->exec($delete_instance_path_command);
+        } catch (Exception) {}
     }
 
     public function getFilesystemName(): string
