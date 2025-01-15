@@ -69,15 +69,40 @@ class WordPress extends _0Instance_
 
         $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
 
-        if ($this->ssh->getLastLine() === null) {
+        if ($this->ssh->getLastLine() !== null) {
+            $this->ssh->exec('podman start '.$this->ssh->getLastLine());
+        } else {
             $this->ssh->exec(
                 'cd '.$instance_path.' && '.
                 'podman run -d --name='.$this->instance->id.' '.
                 '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
                 'php:fpm-alpine'
             );
-        } else {
-            $this->ssh->exec('podman start '.$this->ssh->getLastLine());
+
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini'
+            );
+
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'sed -i \'s#'.
+                ';opcache.enable=1'.
+                '#'.
+                'opcache.enable=1'.
+                '#\' '.
+                '/usr/local/etc/php/php.ini'
+            );
+
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'sed -i \'s#'.
+                ';zend_extension=opcache'.
+                '#'.
+                'zend_extension=opcache'.
+                '#\' '.
+                '/usr/local/etc/php/php.ini'
+            );
         }
 
         try {
@@ -203,7 +228,7 @@ CONFIG;
     {
     }
 
-    public function changeUrl(string $subdomain)
+    public function changeUrl()
     {
         while (true) {
             $this->ssh->clearOutput();
