@@ -203,7 +203,7 @@ CONFIG;
     {
     }
 
-    public function changeUrl()
+    public function changeUrl(string $subdomain)
     {
         while (true) {
             $this->ssh->clearOutput();

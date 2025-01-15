@@ -59,7 +59,16 @@ class ChangeUrlInstance extends Command
             );
         }
 
+        // remove old traffic router
+        $ssh->exec('rm -rf /etc/caddy/sites/'.$instance->subdomain.'.caddyfile');
+
         // update traffic router
+        Instance::query()
+            ->whereId($instance->id)
+            ->update([
+                'subdomain' => $subdomain,
+            ]);
+
         $tr_config = (new $job_class(
             instance: $instance,
             machine: $machine,
@@ -71,9 +80,6 @@ class ChangeUrlInstance extends Command
         foreach ($tr_config_lines as $line) {
             $ssh->exec('echo '.escapeshellarg($line).' >> /etc/caddy/sites/'.$subdomain.'.caddyfile');
         }
-
-        // remove old traffic router
-        $ssh->exec('rm -rf /etc/caddy/sites/'.$instance->subdomain.'.caddyfile');
 
         app('rt', [$machine->trafficRouter, $ssh])->reload();
 
@@ -90,11 +96,5 @@ class ChangeUrlInstance extends Command
                 sleep(1);
             }
         }
-
-        Instance::query()
-            ->whereId($instance->id)
-            ->update([
-                'subdomain' => $subdomain,
-            ]);
     }
 }
