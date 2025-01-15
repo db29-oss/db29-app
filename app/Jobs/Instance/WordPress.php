@@ -103,6 +103,21 @@ class WordPress extends _0Instance_
                 '#\' '.
                 '/usr/local/etc/php/php.ini'
             );
+
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'sed -i \'/^'.
+                'upload_max_filesize'.
+                '/s/.*/'.
+                'upload_max_filesize = 20M/'.
+                '\' '.
+                '/usr/local/etc/php/php.ini'
+            );
+
+            $this->ssh->exec(
+                'podman stop '.$this->instance->id.' && '.
+                'podman start '.$this->instance->id
+            );
         }
 
         try {
