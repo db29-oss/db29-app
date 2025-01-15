@@ -80,12 +80,6 @@ class Cloudflare {
         if ($exit_code !== 0) {
             throw new Exception('DB292000: curl delete dns record fail');
         }
-
-        $result = json_decode($output[0], true);
-
-        if ($result['success'] !== true) {
-            throw new Exception('DB292017: delete dns record fail');
-        }
     }
 
     public function updateDnsRecord(string $dns_id, string $subdomain, string $hostname)
