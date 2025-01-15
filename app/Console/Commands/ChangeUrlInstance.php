@@ -63,6 +63,7 @@ class ChangeUrlInstance extends Command
         $tr_config = (new $job_class(
             instance: $instance,
             machine: $machine,
+            ssh: $ssh,
         ))->changeUrl();
 
         $tr_config_lines = explode(PHP_EOL, $tr_config);
