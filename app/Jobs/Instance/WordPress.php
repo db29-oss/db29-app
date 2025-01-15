@@ -115,6 +115,24 @@ class WordPress extends _0Instance_
             );
 
             $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'wget https://github.com/mlocati/docker-php-extension-installer/'.
+                'releases/latest/download/install-php-extensions -O /usr/local/bin/install-php-extensions'
+            );
+
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                'chmod +x /usr/local/bin/install-php-extensions'
+            );
+
+            // gd library
+            $this->ssh->exec(
+                'podman exec '.$this->instance->id.' '.
+                '/usr/local/bin/install-php-extensions gd'
+            );
+
+            // restart container
+            $this->ssh->exec(
                 'podman stop '.$this->instance->id.' && '.
                 'podman start '.$this->instance->id
             );
