@@ -72,6 +72,9 @@ class ChangeUrlInstance extends Command
             $ssh->exec('echo '.escapeshellarg($line).' >> /etc/caddy/sites/'.$subdomain.'.caddyfile');
         }
 
+        // remove old traffic router
+        $ssh->exec('rm -rf /etc/caddy/sites/'.$instance->subdomain.'.caddyfile');
+
         app('rt', [$machine->trafficRouter, $ssh])->reload();
 
         if (app('env') === 'production') {
