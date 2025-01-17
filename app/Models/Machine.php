@@ -18,6 +18,6 @@ class Machine extends Model
 
     public function trafficRouter()
     {
-        return $this->hasOne(TrafficRouter::class);
+        return $this->belongsTo(TrafficRouter::class);
     }
 }

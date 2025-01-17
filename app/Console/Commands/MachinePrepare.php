@@ -57,6 +57,7 @@ class MachinePrepare extends Command
                     array_merge(
                         [
                             'DEBIAN_FRONTEND=noninteractive '.
+                            'apt update && '.
                             'apt install curl git jq netcat-openbsd podman podman-compose unzip -y',
                             'mkdir -p '.$machine->storage_path,
                             'touch /etc/containers/registries.conf.d/docker.conf',

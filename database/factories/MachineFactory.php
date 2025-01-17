@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\TrafficRouter;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Crypt\EC;
+use phpseclib3\Crypt\PublicKeyLoader;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Machine>
@@ -52,6 +53,7 @@ class MachineFactory extends Factory
             'remain_disk' => $max_disk,
             'max_memory' => $max_memory,
             'remain_memory' => $max_memory,
+            'traffic_router_id' => TrafficRouter::factory()->create(['machine_id' => $id])->id,
         ];
     }
 }
