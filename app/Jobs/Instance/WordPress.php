@@ -67,11 +67,7 @@ class WordPress extends _0Instance_
 
         $this->ssh->clearOutput();
 
-        $this->ssh->exec('podman ps -a -q --filter "name='.$this->instance->id.'"');
-
-        if ($this->ssh->getLastLine() === null) {
-            $this->runContainer();
-        }
+        $this->runContainer();
 
         $this->ssh->exec('podman start '.$this->ssh->getLastLine());
 
@@ -86,6 +82,14 @@ class WordPress extends _0Instance_
     public function runContainer()
     {
         $instance_path = $this->getPath();
+
+        $this->ssh->clearOutput();
+
+        $this->ssh->exec('podman ps -a -q --filter "name='.$this->instance->id.'"');
+
+        if ($this->ssh->getLastLine() !== null) {
+            return;
+        }
 
         $this->ssh->exec(
             'cd '.$instance_path.' && '.
