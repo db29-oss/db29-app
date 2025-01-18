@@ -60,6 +60,12 @@ class _0Instance_ implements ShouldQueue
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
+        $extra = json_decode($this->instance->extra, true);
+
+        if (array_key_exists('instance_path', $extra)) {
+            $instance_path = $extra['instance_path'];
+        }
+
         $delete_instance_path_command = 'rm -rf '.$instance_path;
 
         if ($this->getFilesystemName() === 'btrfs') {
