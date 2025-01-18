@@ -225,7 +225,7 @@ CONFIG;
         $this->ssh->exec('podman ps -a -q --filter "name='.$this->instance->id.'"');
 
         if ($this->ssh->getLastLine() !== null) {
-            $this->ssh->exec('podman rm '.$this->instance->id);
+            $this->ssh->exec('podman rm -f '.$this->instance->id);
         }
 
         $this->deleteInstancePath();
@@ -233,10 +233,7 @@ CONFIG;
 
     public function turnOff()
     {
-        $this->ssh->exec(
-            'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-            'podman stop '.$this->instance->id
-        );
+        $this->ssh->exec('podman stop '.$this->instance->id);
     }
 
     public function turnOn(): string
@@ -246,11 +243,10 @@ CONFIG;
         $apply_limit_commands = $this->buildLimitCommands();
 
         $this->ssh->exec(array_merge(
-             [
-                 'cd '.$this->machine->storage_path.'instance/'.$this->instance->id.' && '.
-                 'podman start '.$this->instance->id,
-             ],
-             $apply_limit_commands
+            [
+                'podman start '.$this->instance->id
+            ],
+            $apply_limit_commands
         ));
 
         return $this->buildTrafficRule();
