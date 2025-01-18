@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Instance;
+use Exception;
 use Illuminate\Console\Command;
 use ReflectionClass;
 
@@ -135,11 +136,19 @@ class MoveInstancePath extends Command
         $instance->refresh();
 
         if (app('env') === 'production') {
-            (new $job_class(
-                instance: $instance,
-                machine: $machine,
-                ssh: $ssh,
-            ))->runContainer();
+            while (true) {
+                try {
+                    (new $job_class(
+                        instance: $instance,
+                        machine: $machine,
+                        ssh: $ssh,
+                    ))->runContainer();
+                } catch (Exception) {
+                    continue;
+                }
+
+                break;
+            }
         }
     }
 }
