@@ -58,11 +58,7 @@ class WordPress extends _0Instance_
 
                  'cd '.$instance_path.'wordpress/wp-content/ && '.
                  'mkdir -p database && '.
-                 'touch database/.ht.sqlite && '.
-                 'cd '.$instance_path.' && '.
-                 'chown -R 82:82 wordpress && '. // on alpine www-data UID is 82
-                 'find . -type d -exec chmod 755 {} \; && '.
-                 'find . -type f -exec chmod 644 {} \;'
+                 'touch database/.ht.sqlite'
              );
 
         $this->ssh->clearOutput();
@@ -148,6 +144,14 @@ class WordPress extends _0Instance_
         $this->ssh->exec(
             'podman exec '.$this->instance->id.' '.
             '/usr/local/bin/install-php-extensions gd'
+        );
+
+        // set permission
+        $this->ssh->exec(
+            'cd '.$instance_path.' && '.
+            'chown -R 82:82 wordpress && '. // on alpine www-data UID is 82
+            'find . -type d -exec chmod 755 {} \; && '.
+            'find . -type f -exec chmod 644 {} \;'
         );
 
         // restart container
