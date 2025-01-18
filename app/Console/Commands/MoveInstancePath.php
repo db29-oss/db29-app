@@ -132,6 +132,8 @@ class MoveInstancePath extends Command
             return 7;
         }
 
+        $instance->refresh();
+
         if (app('env') === 'production') {
             (new $job_class(
                 instance: $instance,
