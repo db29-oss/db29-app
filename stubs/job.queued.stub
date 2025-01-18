@@ -1,7 +1,0 @@
-<?php
-
-namespace {{ namespace }};
-
-class {{ class }} extends _0Instance_
-{
-}

@@ -24,6 +24,7 @@ class _0Instance_ implements ShouldQueue
     ) {}
 
     public function setUp(): string {}
+    public function runContainer() {}
     public function buildTrafficRule(): string {}
     public function tearDown() {}
     public function turnOff() {}
@@ -33,7 +34,7 @@ class _0Instance_ implements ShouldQueue
     public function downgrade() {}
     public function changeUrl() {}
     public function upgrade() {}
-    public function movePath() {}
+    public function movePath(string $path) {}
     public function buildLimitCommands(): array {}
 
     public function createInstancePath()

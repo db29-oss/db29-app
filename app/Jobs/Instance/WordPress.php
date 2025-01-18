@@ -69,74 +69,11 @@ class WordPress extends _0Instance_
 
         $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
 
-        if ($this->ssh->getLastLine() !== null) {
-            $this->ssh->exec('podman start '.$this->ssh->getLastLine());
-        } else {
-            $this->ssh->exec(
-                'cd '.$instance_path.' && '.
-                'podman run -d --name='.$this->instance->id.' '.
-                '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
-                'php:fpm-alpine'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'sed -i \'s#'.
-                ';opcache.enable=1'.
-                '#'.
-                'opcache.enable=1'.
-                '#\' '.
-                '/usr/local/etc/php/php.ini'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'sed -i \'s#'.
-                ';zend_extension=opcache'.
-                '#'.
-                'zend_extension=opcache'.
-                '#\' '.
-                '/usr/local/etc/php/php.ini'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'sed -i \'/^'.
-                'upload_max_filesize'.
-                '/s/.*/'.
-                'upload_max_filesize = 20M/'.
-                '\' '.
-                '/usr/local/etc/php/php.ini'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'wget https://github.com/mlocati/docker-php-extension-installer/'.
-                'releases/latest/download/install-php-extensions -O /usr/local/bin/install-php-extensions'
-            );
-
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                'chmod +x /usr/local/bin/install-php-extensions'
-            );
-
-            // gd library
-            $this->ssh->exec(
-                'podman exec '.$this->instance->id.' '.
-                '/usr/local/bin/install-php-extensions gd'
-            );
-
-            // restart container
-            $this->ssh->exec(
-                'podman stop '.$this->instance->id.' && '.
-                'podman start '.$this->instance->id
-            );
+        if ($this->ssh->getLastLine() === null) {
+            $this->runContainer();
         }
+
+        $this->ssh->exec('podman start '.$this->ssh->getLastLine());
 
         try {
             $this->ssh->exec($apply_limit_commands);
@@ -144,6 +81,76 @@ class WordPress extends _0Instance_
 
         // traffic rule
         return $this->buildTrafficRule();
+    }
+
+    public function runContainer()
+    {
+        $instance_path = $this->getPath();
+
+        $this->ssh->exec(
+            'cd '.$instance_path.' && '.
+            'podman run -d --name='.$this->instance->id.' '.
+            '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
+            'php:fpm-alpine'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'sed -i \'s#'.
+            ';opcache.enable=1'.
+            '#'.
+            'opcache.enable=1'.
+            '#\' '.
+            '/usr/local/etc/php/php.ini'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'sed -i \'s#'.
+            ';zend_extension=opcache'.
+            '#'.
+            'zend_extension=opcache'.
+            '#\' '.
+            '/usr/local/etc/php/php.ini'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'sed -i \'/^'.
+            'upload_max_filesize'.
+            '/s/.*/'.
+            'upload_max_filesize = 20M/'.
+            '\' '.
+            '/usr/local/etc/php/php.ini'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'wget https://github.com/mlocati/docker-php-extension-installer/'.
+            'releases/latest/download/install-php-extensions -O /usr/local/bin/install-php-extensions'
+        );
+
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            'chmod +x /usr/local/bin/install-php-extensions'
+        );
+
+        // gd library
+        $this->ssh->exec(
+            'podman exec '.$this->instance->id.' '.
+            '/usr/local/bin/install-php-extensions gd'
+        );
+
+        // restart container
+        $this->ssh->exec(
+            'podman stop '.$this->instance->id.' && '.
+            'podman start '.$this->instance->id
+        );
     }
 
     public function buildTrafficRule(): string
@@ -328,6 +335,11 @@ CONFIG;
 
     public function upgrade()
     {
+    }
+
+    public function movePath(string $path)
+    {
+        $this->ssh->exec('rsync -r '.$this->getPath().'* '.$path);
     }
 
     public function buildLimitCommands(): array
