@@ -10,7 +10,7 @@ class Discourse extends _0Instance_
 {
     public function setUp(): string
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $this->createInstancePath();
 
@@ -136,7 +136,7 @@ class Discourse extends _0Instance_
             $domain = $this->instance->subdomain.'.'.config('app.domain');
         }
 
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $tr_config = <<<CONFIG
 {$domain} {
@@ -149,7 +149,7 @@ CONFIG;
 
     public function tearDown()
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $this->ssh->exec(
             'cd '.$instance_path.'discourse_docker && '.
@@ -188,7 +188,7 @@ CONFIG;
 
     public function turnOff()
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $this->ssh->exec(
             'cd '.$instance_path.'discourse_docker && '.
@@ -200,7 +200,7 @@ CONFIG;
 
     public function turnOn(): string
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -239,7 +239,7 @@ CONFIG;
         $apply_limit_commands = [];
 
         if ($this->getFilesystemName() === 'btrfs') {
-            $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+            $instance_path = $this->getPath();
 
             $constraint = json_decode($this->plan->constraint, true);
 

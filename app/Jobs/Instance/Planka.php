@@ -53,7 +53,7 @@ class Planka extends _0Instance_
             }
         }
 
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         // change volumes path
         $mkdir_volume_paths = [];
@@ -221,7 +221,7 @@ CONFIG;
         $apply_limit_commands = [];
 
         if ($this->getFilesystemName() === 'btrfs') {
-            $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+            $instance_path = $this->getPath();
 
             $constraint = json_decode($this->plan->constraint, true);
 

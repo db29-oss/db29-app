@@ -8,7 +8,7 @@ class WordPress extends _0Instance_
 {
     public function setUp(): string
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $this->createInstancePath();
 
@@ -177,7 +177,7 @@ class WordPress extends _0Instance_
             sleep(1);
         }
 
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $domain = config('app.domain');
 
@@ -234,7 +234,7 @@ CONFIG;
 
     public function turnOn(): string
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $apply_limit_commands = $this->buildLimitCommands();
 
@@ -292,7 +292,7 @@ CONFIG;
             sleep(1);
         }
 
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $domain = config('app.domain');
 
@@ -335,7 +335,7 @@ CONFIG;
         $apply_limit_commands = [];
 
         if ($this->getFilesystemName() === 'btrfs') {
-            $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+            $instance_path = $this->getPath();
 
             $constraint = json_decode($this->plan->constraint, true);
 

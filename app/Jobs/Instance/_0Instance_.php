@@ -33,11 +33,12 @@ class _0Instance_ implements ShouldQueue
     public function downgrade() {}
     public function changeUrl() {}
     public function upgrade() {}
+    public function movePath() {}
     public function buildLimitCommands(): array {}
 
     public function createInstancePath()
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $create_instance_path_command = 'mkdir '.$instance_path;
 
@@ -56,7 +57,7 @@ class _0Instance_ implements ShouldQueue
         } catch (Exception) {}
     }
 
-    public function deleteInstancePath()
+    public function getPath()
     {
         $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
 
@@ -65,6 +66,13 @@ class _0Instance_ implements ShouldQueue
         if (array_key_exists('instance_path', $extra)) {
             $instance_path = $extra['instance_path'];
         }
+
+        return $instance_path;
+    }
+
+    public function deleteInstancePath()
+    {
+        $instance_path = $this->getPath();
 
         $delete_instance_path_command = 'rm -rf '.$instance_path;
 
@@ -79,7 +87,7 @@ class _0Instance_ implements ShouldQueue
 
     public function getFilesystemName(): string
     {
-        $instance_path = $this->machine->storage_path.'instance/'.$this->instance->id.'/';
+        $instance_path = $this->getPath();
 
         $detect_filesystem_command = "df -T ".$instance_path." | awk 'NR==2 {print $2}'";
 
