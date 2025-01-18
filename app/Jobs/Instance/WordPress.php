@@ -67,7 +67,7 @@ class WordPress extends _0Instance_
 
         $this->ssh->clearOutput();
 
-        $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
+        $this->ssh->exec('podman ps -a -q --filter "name='.$this->instance->id.'"');
 
         if ($this->ssh->getLastLine() === null) {
             $this->runContainer();
@@ -222,7 +222,7 @@ CONFIG;
     {
         $this->ssh->clearOutput();
 
-        $this->ssh->exec('podman ps -q --filter "name='.$this->instance->id.'"');
+        $this->ssh->exec('podman ps -a -q --filter "name='.$this->instance->id.'"');
 
         if ($this->ssh->getLastLine() !== null) {
             $this->ssh->exec('podman rm '.$this->instance->id);
