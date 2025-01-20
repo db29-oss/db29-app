@@ -37,7 +37,34 @@
   <div class="pb-4">
     <a href="{{ route('prefill') }}">{{ mb_ucfirst(__('trans.prefill')) }}</a>
   </div>
+  <details id="dashboard-machine-details" class="pb-4 select-none">
+    <summary><span class="cursor-pointer">{{ mb_ucfirst(__('trans.server')) }}</span></summary>
+    <div class="pl-4 list-none mt-2">
+      <li class="pb-2"><a href="{{ route('server') }}">{{ __('trans.list') }}</a></li>
+      <li class="pb-2"><a href="{{ route('add-server') }}">{{ __('trans.add') }}</a></li>
+      <li class="pb-2"><a href="{{ route('delete-server') }}">{{ __('trans.delete') }}</a></li>
+      <li class="pb-2"><a href="{{ route('edit-server') }}">{{ __('trans.edit') }}</a></li>
+    </div>
+  </details>
+
   @endif
+
+  <script>
+    const details = document.getElementById("dashboard-machine-details");
+
+    function loadDetailsState() {
+      const isOpen = localStorage.getItem("details-open") === "true";
+      details.open = isOpen;
+    }
+
+    function saveDetailsState() {
+      localStorage.setItem("details-open", details.open);
+    }
+
+    loadDetailsState();
+
+    details.addEventListener("toggle", saveDetailsState);
+  </script>
 
 </div>
 

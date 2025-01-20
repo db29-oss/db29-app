@@ -43,7 +43,7 @@ class _0Instance_ implements ShouldQueue
 
         $create_instance_path_command = 'mkdir '.$instance_path;
 
-        $detect_filesystem_command = "df -T ".$instance_path." | awk 'NR==2 {print $2}'";
+        $detect_filesystem_command = "df -T ".dirname($instance_path)." | awk 'NR==2 {print $2}'";
 
         $this->ssh->clearOutput();
 

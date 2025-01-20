@@ -3,15 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\InitInstance;
+use App\Jobs\PrepareMachine;
+use App\Jobs\PrepareTrafficRouter;
 use App\Jobs\TermInstance;
 use App\Jobs\TurnOffInstance;
 use App\Jobs\TurnOnInstance;
 use App\Models\Instance;
+use App\Models\Machine;
 use App\Models\Setting;
 use App\Models\Source;
+use App\Models\TrafficRouter;
 use App\Models\User;
+use App\Rules\IANAPortNumber;
+use App\Rules\Ipv4OrDomainARecordExists;
+use App\Rules\SSHPrivateKeyRule;
+use App\Rules\ValidPathFormat;
 use App\Services\InstanceInputFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PageController extends Controller
@@ -418,5 +427,81 @@ class PageController extends Controller
         InitInstance::dispatch($db[0]->id, $reg_info);
 
         return redirect()->route('instance');
+    }
+
+    public function server()
+    {
+        $machines = Machine::where('user_id', auth()->user()->id)->get();
+
+        return view('server.server')->with('machines', $machines);
+    }
+
+    public function addServer()
+    {
+        return view('server.add');
+    }
+
+    public function postAddServer()
+    {
+        $validator = validator(request()->all(), [
+            'ssh_address' => ['required', new Ipv4OrDomainARecordExists],
+            'ssh_port' => ['required', new IANAPortNumber],
+            'ssh_privatekey' => ['required', new SSHPrivateKeyRule],
+            'storage_path' => ['nullable', new ValidPathFormat],
+        ]);
+
+        $data['ssh_address'] = request('ssh_address');
+        $data['ssh_port'] = request('ssh_port');
+        $data['ssh_privatekey'] = request('ssh_privatekey');
+        $data['storage_path'] = request('storage_path');
+
+        if (app('env') === 'production') {
+            $data = $validator->validated();
+        }
+
+        DB::transaction(function () use ($data) {
+            $machine = new Machine;
+            $machine->hostname = $data['ssh_address'];
+            $machine->ip_address = fake()->ipv4();
+
+            if (app('env') === 'production') {
+                if (filter_var($data['ssh_address'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    $machine->ip_address = $data['ssh_address'];
+                } else {
+                    $dns_get_record = dns_get_record($data['ssh_address'], DNS_A);
+
+                    $machine->ip_address = $dns_get_record[0]['ip'];
+                }
+            }
+
+            $machine->ssh_port = $data['ssh_port'];
+            $machine->ssh_privatekey = $data['ssh_privatekey'];
+            $machine->storage_path = $data['storage_path'] ?? '/opt/';
+            $machine->save();
+
+            $traffic_router = new TrafficRouter;
+            $traffic_router->machine_id = $machine->id;
+            $traffic_router->save();
+
+            PrepareMachine::dispatch($machine->id);
+
+            PrepareTrafficRouter::dispatch($traffic_router->id);
+        });
+    }
+
+    public function editServer()
+    {
+    }
+
+    public function postEditServer()
+    {
+    }
+
+    public function deleteServer()
+    {
+    }
+
+    public function postDeleteServer()
+    {
     }
 }

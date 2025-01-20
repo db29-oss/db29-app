@@ -12,7 +12,7 @@
   @endif
 
   @foreach ($sources as $source)
-  <div>
+  <div class="mb-2">
     <a>{{ $source->name }}</a>
     -
     <a class="inline-block" href="{{ route('register-instance', ['source' => $source->name]) }}">

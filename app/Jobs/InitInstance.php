@@ -55,6 +55,7 @@ class InitInstance implements ShouldQueue
                     'and remain_cpu > ? '. # $constraint['max_cpu']
                     'and remain_disk > ? '. # $constraint['max_disk']
                     'and remain_memory > ? '. # $constraint['max_memory']
+                    'order by random() '.
                     'limit 1'.
                 '), '.
                 'update_machine as ('.
@@ -93,7 +94,6 @@ class InitInstance implements ShouldQueue
             $machine = Machine::query()
                  ->where('id', $instance->machine_id)
                  ->with('trafficRouter')
-                 ->inRandomOrder() // TODO, should use resource indicator
                  ->first();
         }
 
@@ -106,6 +106,10 @@ class InitInstance implements ShouldQueue
         }
 
         $traffic_router = $machine->trafficRouter;
+
+        if (! $traffic_router->prepared) {
+            throw new Exception('DB292017: trafficRouter not prepared');
+        }
 
         $instance->status = 'init';
         $instance->machine = $machine;

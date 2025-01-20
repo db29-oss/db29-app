@@ -17,10 +17,10 @@ class SourceFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->word . ' ' . fake()->word,
-            'demo_link' => fake()->url,
-            'source_link' => fake()->url,
-            'enabled' => fake()->boolean,
+            'name' => fake()->word() . ' ' . fake()->word(),
+            'demo_link' => fake()->url(),
+            'source_link' => fake()->url(),
+            'enabled' => fake()->boolean(),
         ];
     }
 }

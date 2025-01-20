@@ -20,15 +20,15 @@ class UpdatePrefillTest extends TestCase
         $this->assertNull($u->email);
 
         $response = $this->post('prefill', [
-            'email' => fake()->word
+            'email' => fake()->word()
         ]);
 
         $this->assertNull(User::whereId($u->id)->first()->email);
 
         $response = $this->post('prefill', [
             'email' => fake()->email,
-            'name' => fake()->word,
-            'username' => fake()->word,
+            'name' => fake()->word(),
+            'username' => fake()->word(),
         ]);
 
         $this->assertNotNull(User::whereId($u->id)->first()->email);

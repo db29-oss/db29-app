@@ -28,4 +28,14 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('recharge', [PageController::class, 'recharge'])->name('recharge');
     Route::get('advanced-feature', [PageController::class, 'advancedFeature'])->name('advanced-feature');
     Route::post('fill-instance', [PageController::class, 'fillInstance'])->name('fill-instance');
+
+    Route::prefix('server')->group(function () {
+        Route::get('/', [PageController::class, 'server'])->name('server');
+        Route::get('add', [PageController::class, 'addServer'])->name('add-server');
+        Route::post('add', [PageController::class, 'postAddServer'])->name('post-add-server');
+        Route::get('edit', [PageController::class, 'editServer'])->name('edit-server');
+        Route::post('edit', [PageController::class, 'postEditServer'])->name('post-edit-server');
+        Route::get('delete', [PageController::class, 'deleteServer'])->name('delete-server');
+        Route::post('delete', [PageController::class, 'postDeleteServer'])->name('post-delete-server');
+    });
 });
