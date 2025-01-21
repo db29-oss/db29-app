@@ -34,8 +34,6 @@ class PrepareMachine implements ShouldQueue
             'runroot= "'.$machine->storage_path.'podman/runroot"',
         ];
 
-        $commands = [];
-
         $md5sum_storage_conf = md5(implode(PHP_EOL, $storage_conf_lines));
 
         // podman
@@ -66,12 +64,17 @@ class PrepareMachine implements ShouldQueue
         $ssh->clearOutput();
         $ssh->exec('md5sum /etc/containers/storage.conf');
 
+        $commands = [];
+
         if (explode(' ', $ssh->getLastLine())[0] !== $md5sum_storage_conf) {
             foreach ($storage_conf_lines as $storage_conf_line) {
                 $commands[] = "echo ".
                     escapeshellarg($storage_conf_line)." | sudo tee -a /etc/containers/storage.conf";
             }
         }
+
+        $ssh->exec($commands);
+
 
         // bfq io scheduler (able control with ionice)
         if (app('env') === 'production') {
