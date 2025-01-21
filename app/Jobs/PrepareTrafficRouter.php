@@ -46,14 +46,14 @@ class PrepareTrafficRouter implements ShouldQueue
 
         $caddyfile_content = <<<CADDYFILE
 :80 {
-    root * {$tr->machine->storage_path}www/
+    root * {$traffic_router->machine->storage_path}www/
 
     handle /.well-known/acme-challenge/* {
         file_server
     }
 
     handle /ping {
-        respond "{$tr->machine->id}" 200
+        respond "{$traffic_router->machine->id}" 200
     }
 
     handle {
@@ -72,8 +72,8 @@ CADDYFILE;
         }
 
         // extra routes
-        if ($tr->extra_routes !== '') {
-            $extra_routes_lines = explode(PHP_EOL, $tr->extra_routes);
+        if ($traffic_router->extra_routes !== '') {
+            $extra_routes_lines = explode(PHP_EOL, $traffic_router->extra_routes);
 
             foreach ($extra_routes_lines as $line) {
                 $ssh->exec('echo '.escapeshellarg($line).' | sudo tee -a '.$caddyfile_path);
@@ -141,6 +141,6 @@ CADDYFILE;
 
         $rt->reload();
 
-        TrafficRouter::whereId($tr->id)->update(['prepared' => true]);
+        TrafficRouter::whereId($traffic_router->id)->update(['prepared' => true]);
     }
 }
