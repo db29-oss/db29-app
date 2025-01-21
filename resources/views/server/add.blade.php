@@ -25,7 +25,7 @@
     <br>
 
     <label class="select-none" for="ssh_privatekey">ssh privatekey*</label><br>
-    <input type="text" name="ssh_privatekey" value=""><br>
+    <textarea type="text" name="ssh_privatekey" value=""></textarea><br>
     @error('ssh_privatekey')
     <div style="display: inline; color: red">{{ $message }}</div>
     @enderror
