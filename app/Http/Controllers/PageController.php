@@ -431,7 +431,7 @@ class PageController extends Controller
 
     public function server()
     {
-        $machines = Machine::where('user_id', auth()->user()->id)->get();
+        $machines = Machine::where('user_id', auth()->user()->id)->withCount('instances')->get();
 
         return view('server.server')->with('machines', $machines);
     }
@@ -444,6 +444,7 @@ class PageController extends Controller
     public function postAddServer()
     {
         $validator = validator(request()->all(), [
+            'ssh_username' => ['required'],
             'ssh_address' => ['required', new Ipv4OrDomainARecordExists],
             'ssh_port' => ['required', new IANAPortNumber],
             'ssh_privatekey' => ['required', new SSHPrivateKeyRule],
@@ -463,6 +464,7 @@ class PageController extends Controller
             $machine = new Machine;
             $machine->hostname = $data['ssh_address'];
             $machine->ip_address = fake()->ipv4();
+            $machine->user_id = auth()->user()->id;
 
             if (app('env') === 'production') {
                 if (filter_var($data['ssh_address'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
@@ -487,6 +489,8 @@ class PageController extends Controller
 
             PrepareTrafficRouter::dispatch($traffic_router->id);
         });
+
+        return redirect()->route('server');
     }
 
     public function editServer()
@@ -499,9 +503,30 @@ class PageController extends Controller
 
     public function deleteServer()
     {
-    }
+        $sql_params = [];
+        $sql = 'with '.
+            'select_machine as ('.
+                'select * from machines '.
+                'where id = ? '. # request('machine_id')
+                'and user_id = ? '. # auth()->user()->id
+                'limit 1 '.
+                'for update'.
+            '), '.
+            'select_instance as ('.
+                'select * from instances '.
+                'where machine_id = ? '. # request('machine_id')
+                'limit 1'.
+            ') '.
+            'delete from machines '.
+            'where id = (select id from select_machine) '.
+            'and not exists (select * from select_instance)';
 
-    public function postDeleteServer()
-    {
+        $sql_params[] = request('machine_id');
+        $sql_params[] = auth()->user()->id;
+        $sql_params[] = request('machine_id');
+
+        $db = app('db')->select($sql, $sql_params);
+
+        return redirect()->route('server');
     }
 }

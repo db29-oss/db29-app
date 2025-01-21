@@ -35,6 +35,7 @@ class SSHEngine extends SE {
         ])->to([
             'ssh_address' => $machine->ip_address,
             'ssh_port' => $machine->ssh_port,
+            'ssh_username' => $machine->ssh_username,
         ]);
     }
 }

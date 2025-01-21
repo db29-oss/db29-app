@@ -35,7 +35,6 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('add', [PageController::class, 'postAddServer'])->name('post-add-server');
         Route::get('edit', [PageController::class, 'editServer'])->name('edit-server');
         Route::post('edit', [PageController::class, 'postEditServer'])->name('post-edit-server');
-        Route::get('delete', [PageController::class, 'deleteServer'])->name('delete-server');
-        Route::post('delete', [PageController::class, 'postDeleteServer'])->name('post-delete-server');
+        Route::post('delete', [PageController::class, 'deleteServer'])->name('delete-server');
     });
 });

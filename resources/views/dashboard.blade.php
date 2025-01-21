@@ -49,8 +49,6 @@
     <div class="pl-4 list-none mt-2">
       <li class="pb-2"><a href="{{ route('server') }}">{{ __('trans.list') }}</a></li>
       <li class="pb-2"><a href="{{ route('add-server') }}">{{ __('trans.add') }}</a></li>
-      <li class="pb-2"><a href="{{ route('delete-server') }}">{{ __('trans.delete') }}</a></li>
-      <li class="pb-2"><a href="{{ route('edit-server') }}">{{ __('trans.edit') }}</a></li>
     </div>
   </details>
 
