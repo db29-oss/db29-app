@@ -5,6 +5,11 @@
   @foreach ($machines as $machine)
   <div class="inline-block">
   {{ $machine->hostname }}
+  @if ($machine->instances_count > 0)
+  <span class="text-gray-400 pointer-events-none select-none">
+    ({{ $machine->instances_count.' '.__('trans.instance') }})
+  </span>
+  @endif
   </div>
   <button class="cursor-pointer">
     <a class="no-underline text-inherit" href="{{ route('edit-server', ['machine_id' => $machine->id]) }}">

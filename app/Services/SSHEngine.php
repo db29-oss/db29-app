@@ -10,7 +10,10 @@ class SSHEngine extends SE {
     {
         $ssh_privatekey_path = storage_path('app/private/'.$machine->id);
 
-        if (! file_exists($ssh_privatekey_path)) {
+        if (
+            ! file_exists($ssh_privatekey_path) ||
+            hash_file('sha512', $ssh_privatekey_path) !== hash('sha512', $machine->ssh_privatekey)
+        ) {
             $touch = touch($ssh_privatekey_path);
 
             if (! $touch) {
