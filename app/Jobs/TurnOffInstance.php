@@ -66,8 +66,8 @@ CONFIG;
 
             foreach ($tr_config_lines as $line) {
                 $ssh->exec(
-                    'echo '.escapeshellarg($line).' >> '.
-                    '/etc/caddy/sites/'.$subdomain.'.caddyfile'
+                    'echo '.escapeshellarg($line).' | '.
+                    'sudo tee -a /etc/caddy/sites/'.$subdomain.'.caddyfile'
                 );
             }
 

@@ -45,7 +45,7 @@ class MachinePrepare extends Command
 
                 $commands = [];
 
-                $md5sum_storage_conf = md5(implode("\n", $storage_conf_lines));
+                $md5sum_storage_conf = md5(implode(PHP_EOL, $storage_conf_lines));
 
                 // podman
                 $ssh->exec(
@@ -78,7 +78,7 @@ class MachinePrepare extends Command
                 if (explode(' ', $ssh->getLastLine())[0] !== $md5sum_storage_conf) {
                     foreach ($storage_conf_lines as $storage_conf_line) {
                         $commands[] = "echo ".
-                            escapeshellarg($storage_conf_line)." >> /etc/containers/storage.conf";
+                            escapeshellarg($storage_conf_line)." | sudo tee -a /etc/containers/storage.conf";
                     }
                 }
 

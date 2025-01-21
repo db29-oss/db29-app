@@ -100,9 +100,8 @@ class Discourse extends _0Instance_
         foreach ($yml_lines as $yml_line) {
             $this->ssh
                  ->exec(
-                     'echo '.escapeshellarg($yml_line).' '.
-                     '>> '.
-                     $instance_path.'discourse_docker/containers/'.$this->instance->id.'.yml'
+                     'echo '.escapeshellarg($yml_line).' | '.
+                     'sudo tee -a '.$instance_path.'discourse_docker/containers/'.$this->instance->id.'.yml'
                  );
         }
 
@@ -111,8 +110,8 @@ class Discourse extends _0Instance_
                  'cd '.$instance_path.' && '.
                  'rm -rf docker && '.
                  'touch docker && chmod +x docker && '.
-                 'echo '.escapeshellarg('#!/bin/bash').' >> docker && '.
-                 'echo '.escapeshellarg('/usr/bin/podman "$@"').' >> docker'
+                 'echo '.escapeshellarg('#!/bin/bash').' | sudo tee -a docker && '.
+                 'echo '.escapeshellarg('/usr/bin/podman "$@"').' | sudo tee -a docker'
              );
 
         $this->ssh->clearOutput();

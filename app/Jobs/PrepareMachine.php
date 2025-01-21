@@ -36,7 +36,7 @@ class PrepareMachine implements ShouldQueue
 
         $commands = [];
 
-        $md5sum_storage_conf = md5(implode("\n", $storage_conf_lines));
+        $md5sum_storage_conf = md5(implode(PHP_EOL, $storage_conf_lines));
 
         // podman
         $ssh->exec(
