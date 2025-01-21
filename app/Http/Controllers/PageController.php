@@ -20,6 +20,7 @@ use App\Rules\SSHPrivateKeyRule;
 use App\Rules\ValidPathFormat;
 use App\Services\InstanceInputFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -487,9 +488,10 @@ class PageController extends Controller
             $traffic_router->machine_id = $machine->id;
             $traffic_router->save();
 
-            PrepareMachine::dispatch($machine->id);
-
-            PrepareTrafficRouter::dispatch($traffic_router->id);
+            Bus::chain([
+                new PrepareMachine($machine->id),
+                new PrepareTrafficRouter($traffic_router->id)
+            ])->dispatch();
         });
 
         return redirect()->route('server');

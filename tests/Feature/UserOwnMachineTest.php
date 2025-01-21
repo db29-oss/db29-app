@@ -35,7 +35,7 @@ class UserOwnMachineTest extends TestCase
             'storage_path' => rand(0, 1) ? null : '/'.str()->random(40).'/',
         ]);
 
-        $this->assertEquals(2, DB::table('jobs')->count());
+        $this->assertEquals(1, DB::table('jobs')->count());
 
         DB::table('jobs')->delete();
     }
