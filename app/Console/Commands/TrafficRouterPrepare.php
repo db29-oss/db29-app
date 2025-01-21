@@ -53,8 +53,8 @@ class TrafficRouterPrepare extends Command
                 $ssh->exec(
                     'sudo touch '.$caddyfile_path.' && '.
                     'sudo mkdir -p /etc/caddy/sites/ && '.
-                    'sudo echo '.
-                    escapeshellarg('import /etc/caddy/sites/*.caddyfile').' > '.$caddyfile_path
+                    'echo '.
+                    escapeshellarg('import /etc/caddy/sites/*.caddyfile').' | sudo tee '.$caddyfile_path
                 );
 
                 $caddyfile_content = <<<CADDYFILE
@@ -81,7 +81,7 @@ CADDYFILE;
                 $caddyfile_content_lines = explode(PHP_EOL, $caddyfile_content);
 
                 foreach ($caddyfile_content_lines as $line) {
-                    $ssh->exec('sudo echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                    $ssh->exec('echo '.escapeshellarg($line).' | sudo tee -a '.$caddyfile_path);
                 }
 
                 // extra routes
@@ -89,7 +89,7 @@ CADDYFILE;
                     $extra_routes_lines = explode(PHP_EOL, $tr->extra_routes);
 
                     foreach ($extra_routes_lines as $line) {
-                        $ssh->exec('sudo echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                        $ssh->exec('echo '.escapeshellarg($line).' | sudo tee -a '.$caddyfile_path);
                     }
                 }
 
@@ -113,9 +113,9 @@ CADDYFILE;
                     ];
 
                 foreach ($override_content_lines as $override_content_line) {
-                    $commands[] = 'sudo echo '.
-                        escapeshellarg($override_content_line).' >> '.
-                        '/etc/systemd/system/caddy.service.d/override.conf';
+                    $commands[] = 'echo '.
+                        escapeshellarg($override_content_line).' | '.
+                        'sudo tee -a /etc/systemd/system/caddy.service.d/override.conf';
                 }
 
                 $ssh->exec(array_merge(

@@ -55,8 +55,8 @@ class MachinePrepare extends Command
                             'sudo mkdir -p '.$machine->storage_path,
                             'sudo touch /etc/containers/registries.conf.d/docker.conf',
 
-                            'sudo echo '.escapeshellarg('unqualified-search-registries = ["docker.io"]').' > '.
-                            '/etc/containers/registries.conf.d/docker.conf',
+                            'echo '.escapeshellarg('unqualified-search-registries = ["docker.io"]').' | '.
+                            'sudo tee /etc/containers/registries.conf.d/docker.conf',
                             'sudo touch /etc/containers/storage.conf',
                             'sudo mkdir -p '.$machine->storage_path.'podman/graphroot',
                             'sudo mkdir -p '.$machine->storage_path.'podman/runroot',
@@ -88,12 +88,12 @@ class MachinePrepare extends Command
                     $ssh->exec(
                         [
                             'sudo touch /etc/modules-load.d/bfq.conf',
-                            'sudo echo bfq > /etc/modules-load.d/bfq.conf',
+                            'echo bfq | sudo tee /etc/modules-load.d/bfq.conf',
                             'sudo touch /etc/udev/rules.d/60-scheduler.rules',
-                            'sudo echo '.
+                            'echo '.
                             escapeshellarg(
                                 'ACTION=="add|change", KERNEL=="sd*[!0-9]|sr*", ATTR{queue/scheduler}="bfq"'
-                            ).' > /etc/udev/rules.d/60-scheduler.rules',
+                            ).' | sudo tee /etc/udev/rules.d/60-scheduler.rules',
                             'sudo udevadm control --reload',
                             'sudo udevadm trigger'
                         ]
