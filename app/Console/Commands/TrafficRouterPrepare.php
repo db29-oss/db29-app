@@ -32,21 +32,26 @@ class TrafficRouterPrepare extends Command
         foreach ($traffic_routers as $tr) {
             $ssh = app('ssh')->toMachine($tr->machine);
 
+            if ($tr->machine->ssh_username === 'root') {
+                // we may not have sudo util by default
+                $ssh->exec('DEBIAN_FRONTEND=noninteractive apt update && apt install sudo');
+            }
+
             $rt = app('rt', [$tr, $ssh]);
 
             $rt->lock(function () use ($rt, $ssh, $tr) {
                 $caddyfile_path = '/etc/caddy/db29.caddyfile';
 
-                $ssh->exec('DEBIAN_FRONTEND=noninteractive apt install caddy curl -y');
+                $ssh->exec('DEBIAN_FRONTEND=noninteractive sudo apt install caddy curl -y');
 
                 // on testing container env some systemd config cannot be run
                 // all config applied below was test using a real machine
                 // we should improve testing in the future
 
                 $ssh->exec(
-                    'touch '.$caddyfile_path.' && '.
-                    'mkdir -p /etc/caddy/sites/ && '.
-                    'echo '.
+                    'sudo touch '.$caddyfile_path.' && '.
+                    'sudo mkdir -p /etc/caddy/sites/ && '.
+                    'sudo echo '.
                     escapeshellarg('import /etc/caddy/sites/*.caddyfile').' > '.$caddyfile_path
                 );
 
@@ -74,7 +79,7 @@ CADDYFILE;
                 $caddyfile_content_lines = explode(PHP_EOL, $caddyfile_content);
 
                 foreach ($caddyfile_content_lines as $line) {
-                    $ssh->exec('echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                    $ssh->exec('sudo echo '.escapeshellarg($line).' >> '.$caddyfile_path);
                 }
 
                 // extra routes
@@ -82,11 +87,11 @@ CADDYFILE;
                     $extra_routes_lines = explode(PHP_EOL, $tr->extra_routes);
 
                     foreach ($extra_routes_lines as $line) {
-                        $ssh->exec('echo '.escapeshellarg($line).' >> '.$caddyfile_path);
+                        $ssh->exec('sudo echo '.escapeshellarg($line).' >> '.$caddyfile_path);
                     }
                 }
 
-                $ssh->exec('cat /lib/systemd/system/caddy.service');
+                $ssh->exec('sudo cat /lib/systemd/system/caddy.service');
 
                 foreach ($ssh->getOutput() as $line) {
                     if (str_starts_with($line, 'ExecStart=')) {
@@ -106,20 +111,20 @@ CADDYFILE;
                     ];
 
                 foreach ($override_content_lines as $override_content_line) {
-                    $commands[] = 'echo '.
+                    $commands[] = 'sudo echo '.
                         escapeshellarg($override_content_line).' >> '.
                         '/etc/systemd/system/caddy.service.d/override.conf';
                 }
 
                 $ssh->exec(array_merge(
                     [
-                        'mkdir -p /etc/systemd/system/caddy.service.d/',
-                        'rm -rf /etc/systemd/system/caddy.service.d/override.conf',
-                        'touch /etc/systemd/system/caddy.service.d/override.conf',
-                        'touch '.$caddyfile_path,
-                        'mkdir -p /var/lib/caddy/.config/caddy',
-                        'rm -f /var/lib/caddy/.config/caddy/autosave.json',
-                        'touch /var/lib/caddy/.config/caddy/autosave.json',
+                        'sudo mkdir -p /etc/systemd/system/caddy.service.d/',
+                        'sudo rm -rf /etc/systemd/system/caddy.service.d/override.conf',
+                        'sudo touch /etc/systemd/system/caddy.service.d/override.conf',
+                        'sudo touch '.$caddyfile_path,
+                        'sudo mkdir -p /var/lib/caddy/.config/caddy',
+                        'sudo rm -f /var/lib/caddy/.config/caddy/autosave.json',
+                        'sudo touch /var/lib/caddy/.config/caddy/autosave.json',
                     ],
                     $commands,
                 ));
@@ -127,10 +132,10 @@ CADDYFILE;
                 if (app('env') === 'production') {
                     $ssh->exec(
                         [
-                            'systemctl enable caddy',
-                            'systemctl daemon-reload',
-                            'systemctl stop caddy',
-                            'systemctl start caddy',
+                            'sudo systemctl enable caddy',
+                            'sudo systemctl daemon-reload',
+                            'sudo systemctl stop caddy',
+                            'sudo systemctl start caddy',
                         ]
                     );
                 }
@@ -138,10 +143,10 @@ CADDYFILE;
                 if (app('env') === 'testing') {
                     $ssh->clearOutput();
 
-                    $ssh->exec('ps aux | grep caddy');
+                    $ssh->exec('sudo ps aux | grep caddy');
 
                     if (count($ssh->getOutput()) < 2) { // grep process and bash process
-                        $ssh->exec('/usr/bin/caddy start --config '.$caddyfile_path.' --adapter caddyfile');
+                        $ssh->exec('sudo /usr/bin/caddy start --config '.$caddyfile_path.' --adapter caddyfile');
                     }
                 }
 
