@@ -23,6 +23,8 @@ class PrepareTrafficRouter implements ShouldQueue
         if ($traffic_router->machine->ssh_username === 'root') {
             // we may not have sudo util by default
             $ssh->exec('DEBIAN_FRONTEND=noninteractive apt update && apt install sudo');
+        } else {
+            $ssh->exec('DEBIAN_FRONTEND=noninteractive sudo apt update');
         }
 
         $rt = app('rt', [$traffic_router, $ssh]);

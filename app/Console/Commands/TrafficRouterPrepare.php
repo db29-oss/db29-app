@@ -35,6 +35,8 @@ class TrafficRouterPrepare extends Command
             if ($tr->machine->ssh_username === 'root') {
                 // we may not have sudo util by default
                 $ssh->exec('DEBIAN_FRONTEND=noninteractive apt update && apt install sudo');
+            } else {
+                $ssh->exec('DEBIAN_FRONTEND=noninteractive sudo apt update');
             }
 
             $rt = app('rt', [$tr, $ssh]);
