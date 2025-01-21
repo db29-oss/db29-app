@@ -218,6 +218,8 @@ class WordPressInstanceTest extends TestCase
 
         $this->assertEquals(1, Instance::count());
 
+        $this->assertEquals('ct_dw', Instance::first()->status);
+
         $response = $this->post('instance/delete', [
             'instance_id' => $inst->id,
         ]);

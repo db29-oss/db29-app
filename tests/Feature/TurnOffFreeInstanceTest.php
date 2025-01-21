@@ -32,6 +32,6 @@ class TurnOffFreeInstanceTest extends TestCase
 
         $this->assertEquals(9, app('db')->table('jobs')->count());
 
-        test_util_migrate_fresh(); // prevent composer run dev kick in
+        app('db')->table('jobs')->delete();
     }
 }

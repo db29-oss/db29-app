@@ -60,7 +60,16 @@ class TermInstance implements ShouldQueue
         $sql = 'with '.
             'update_user as ('.
                 'update users set '.
-                'credit = credit - ?, '. # $pay_amount
+                'bonus_credit = case '.
+                    'when bonus_credit >= ? '. # $pay_amount
+                    'then bonus_credit - ? '. # $pay_amount
+                    'else 0 '.
+                'end, '.
+                'credit = case '.
+                    'when bonus_credit >= ? '. # $pay_amount
+                    'then credit '.
+                    'else credit - (? - bonus_credit) '. # $pay_amount
+                'end, '.
                 'instance_count = instance_count - 1, '.
                 'updated_at = ? '. # $now
                 'where id = ? '. # $instance->user->id
@@ -76,6 +85,9 @@ class TermInstance implements ShouldQueue
             'delete from instances '.
             'where id = ?'; # $instance->id
 
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $pay_amount;
         $sql_params[] = $pay_amount;
         $sql_params[] = $now;
         $sql_params[] = $instance->user->id;

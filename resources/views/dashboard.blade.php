@@ -1,16 +1,23 @@
 @include('header', ['title' => 'DB29 Dashboard'])
 <div>
-  <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
-  @if (auth()->user()->instance_count !== 0)
-  <div class="mb-2 @if (auth()->user()->credit < 0) text-red-600 @endif">
-    <div class="inline-block">
-    {{ __('trans.balance') }}: {{ formatNumberShort(auth()->user()->credit) }}
+  <div class="mb-2">
+    <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
+    @if (auth()->user()->instance_count !== 0)
+    <div class="@if (auth()->user()->credit < 0) text-red-600 @endif">
+      <div class="inline-block">
+      {{ __('trans.credit') }}: {{ formatNumberShort(auth()->user()->credit) }}
+      </div>
+      <div class="ml-4 inline-block">
+        <a href="{{ route('recharge') }}">{{ __('trans.recharge') }}</a>
+      </div>
     </div>
-    <div class="ml-4 inline-block">
-      <a href="{{ route('recharge') }}">{{ __('trans.recharge') }}</a>
+    @if (auth()->user()->bonus_credit > 0)
+    <div>
+    {{ __('trans.bonus_credit') }}: {{ formatNumberShort(auth()->user()->bonus_credit) }}
     </div>
+    @endif
+    @endif
   </div>
-  @endif
 
   <form method="POST" action="{{ route('post-logout') }}">
     @csrf

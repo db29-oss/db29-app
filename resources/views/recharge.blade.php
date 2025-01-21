@@ -23,7 +23,7 @@
     <div class="text-gray-400 pointer-events-none select-none">
       {{ __('trans.amount_money') }}:
       <div class="text-black">
-        {{ __('trans.minimum_amount_money', ['amount' => formatNumberShort(\App\Models\User::FREE_CREDIT)]) }}
+        {{ __('trans.minimum_amount_money', ['amount' => formatNumberShort(\App\Models\User::SIGN_UP_CREDIT)]) }}
       </div>
     </div>
     <div class="text-gray-400 pointer-events-none select-none">

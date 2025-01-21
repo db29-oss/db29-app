@@ -13,7 +13,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    public const FREE_CREDIT = 50_000;
+    public const SIGN_UP_CREDIT = 50_000;
 
     public function sources()
     {

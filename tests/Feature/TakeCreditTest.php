@@ -32,9 +32,14 @@ class TakeCreditTest extends TestCase
 
         $pay_amount = (int) ceil(Carbon::parse($i->paid_at)->diffInDays($now) * $p->price);
 
-        $this->freezeTime(function () use ($now) {
-            $this->travelTo($now, function () {
+        $bonus_credit = rand(0, 1000);
+
+        $this->freezeTime(function () use ($now, $bonus_credit) {
+            $this->travelTo($now, function () use ($bonus_credit) {
                 $u = User::first();
+
+                $u->bonus_credit = $bonus_credit;
+                $u->save();
 
                 $this->assertEquals(0, $u->credit);
 
@@ -44,6 +49,12 @@ class TakeCreditTest extends TestCase
 
         $u = User::first();
 
-        $this->assertEquals(0, $u->credit + $pay_amount);
+        if ($u->bonus_credit > 0) {
+            $this->assertEquals(0, $u->credit);
+        } else {
+            $this->assertTrue($u->credit <= 0);
+        }
+
+        $this->assertEquals($bonus_credit, $u->credit + $u->bonus_credit + $pay_amount);
     }
 }

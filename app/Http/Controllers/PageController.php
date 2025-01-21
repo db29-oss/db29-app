@@ -81,18 +81,18 @@ class PageController extends Controller
         $sql_params = [];
         $sql =
             'insert into users ('.
-                'login_id, credit, email, name, username, '.
+                'login_id, bonus_credit, email, name, username, '.
                 'recharge_number, last_logged_in_at, created_at, updated_at'.
             ') '.
             'values ('.
                 '?, '. # str()->random(31)
-                '?, '. # User::FREE_CREDIT
+                '?, '. # User::SIGN_UP_CREDIT
                 '?, '. # $substr.'__@db29.ovh'
                 '?, '. # $substr
                 '?, '; # $substr
 
         $sql_params[] = str()->random(31);
-        $sql_params[] = User::FREE_CREDIT;
+        $sql_params[] = User::SIGN_UP_CREDIT;
         $sql_params[] = $substr.'__@db29.ovh';
         $sql_params[] = $substr;
         $sql_params[] = $substr;

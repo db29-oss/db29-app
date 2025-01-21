@@ -98,7 +98,16 @@ CONFIG;
         $sql = 'with '.
             'update_user as ('.
                 'update users set '.
-                'credit = credit - ?, '. # $pay_amount
+                'bonus_credit = case '.
+                    'when bonus_credit >= ? '. # $pay_amount
+                    'then bonus_credit - ? '. # $pay_amount
+                    'else 0 '.
+                'end, '.
+                'credit = case '.
+                    'when bonus_credit >= ? '. # $pay_amount
+                    'then credit '.
+                    'else credit - (? - bonus_credit) '. # $pay_amount
+                'end, '.
                 'updated_at = ? '. # $now
                 'where id = ? '. # $instance->user->id
                 'returning id'.
@@ -119,6 +128,9 @@ CONFIG;
             'updated_at = ? '. # $now
             'where id = ?'; # $instance->id
 
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $pay_amount;
+        $sql_params[] = $pay_amount;
         $sql_params[] = $pay_amount;
         $sql_params[] = $now;
         $sql_params[] = $instance->user->id;

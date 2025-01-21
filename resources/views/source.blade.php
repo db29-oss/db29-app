@@ -3,7 +3,7 @@
   @if (
     (! array_key_exists('disable_pricing', $user_setting) || ! $user_setting['disable_pricing']) &&
     $user->instance_count === 0 &&
-    \App\Models\User::FREE_CREDIT === $user->credit
+    \App\Models\User::SIGN_UP_CREDIT === $user->credit
   )
   <!--explain plan-->
   <div class="text-gray-400 pb-4 pointer-events-none select-none">

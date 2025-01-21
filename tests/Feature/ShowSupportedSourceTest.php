@@ -42,7 +42,7 @@ class ShowSupportedSourceTest extends TestCase
         $s->enabled = true;
         $s->save();
 
-        $u->credit = User::FREE_CREDIT;
+        $u->credit = User::SIGN_UP_CREDIT;
         $u->save();
 
         Plan::factory()->for($s)->create(['base' => true]);
