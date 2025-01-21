@@ -479,6 +479,7 @@ class PageController extends Controller
             $machine->ssh_port = $data['ssh_port'];
             $machine->ssh_privatekey =
                 rtrim(str_replace(["\r\n", "\n", "\r"], PHP_EOL, $data['ssh_privatekey']), PHP_EOL).PHP_EOL;
+            $machine->ssh_username = request('ssh_username');
             $machine->storage_path = $data['storage_path'] ?? '/opt/';
             $machine->save();
 
