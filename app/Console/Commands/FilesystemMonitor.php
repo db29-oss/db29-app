@@ -13,7 +13,7 @@ class FilesystemMonitor extends Command
 
     public function handle()
     {
-        $machines = Machine::get();
+        $machines = Machine::whereNull('user_id')->get();
 
         foreach ($machines as $machine) {
             $ssh = app('ssh')->toMachine($machine);

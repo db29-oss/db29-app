@@ -19,6 +19,7 @@ use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\SSHPrivateKeyRule;
 use App\Rules\ValidPathFormat;
 use App\Services\InstanceInputFilter;
+use App\Services\InstanceInputSeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -352,7 +353,15 @@ class PageController extends Controller
             ->where('source_id', $source->id)
             ->count();
 
-        return view('instance.'.$source_name.'.register')->with('i_s_count', $i_s_count);
+        $input_seeder = [];
+
+        if (method_exists(InstanceInputSeeder::class, $source_name)) {
+            $input_seeder = InstanceInputSeeder::$source_name();
+        }
+
+        return view('instance.'.$source_name.'.register')
+            ->with('i_s_count', $i_s_count)
+            ->with('input_seeder', $input_seeder);
     }
 
     public function postRegisterInstance()

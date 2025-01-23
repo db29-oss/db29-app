@@ -22,5 +22,10 @@ class SourceSeeder extends Seeder
         $source->name = 'word_press';
         $source->enabled = true;
         $source->save();
+
+        $source = new Source;
+        $source->name = 'discourse';
+        $source->enabled = true;
+        $source->save();
     }
 }

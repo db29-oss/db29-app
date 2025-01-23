@@ -2,19 +2,44 @@
 
 namespace App\Services;
 
+use App\Rules\DKIMValidation;
+use Illuminate\Support\Facades\DB;
+
 class InstanceInputFilter
 {
     public static function discourse()
     {
         $validator = validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
+            'system_email' => ['nullable', 'email:rfc'],
         ]);
 
-        $data = $validator->validated();
+        $validator->validated();
 
         $reg_info = [];
 
         $reg_info['email'] = request('email');
+
+        if (request('system_email')) {
+            $reg_info['system_email'] = request('system_email');
+
+            $now = now();
+            $sql_params = [];
+            $sql = 'select * from tmp '.
+                'where user_id = ? '. # auth()->user()->id
+                'and k = ?'; # 'discourse_dkim'
+
+            $sql_params[] = auth()->user()->id;
+            $sql_params[] = 'discourse_dkim';
+
+            $db = DB::select($sql, $sql_params);
+
+            $json_decode = json_decode($db[0]->v, true);
+
+            $reg_info['dkim_privatekey'] = $json_decode['dkim_privatekey'];
+            $reg_info['dkim_publickey'] = $json_decode['dkim_publickey'];
+            $reg_info['dkim_selector'] = $json_decode['dkim_selector'];
+        }
 
         return $reg_info;
     }
@@ -28,7 +53,7 @@ class InstanceInputFilter
             'username' => ['required', 'alpha_num:ascii'],
         ]);
 
-        $data = $validator->validated();
+        $validator->validated();
 
         $reg_info = [];
 
