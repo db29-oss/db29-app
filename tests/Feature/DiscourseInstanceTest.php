@@ -60,8 +60,9 @@ class DiscourseInstanceTest extends TestCase
          */
 
         $response = $this->post('instance/register', [
-            'source' => 'discourse',
             'email' => fake()->email,
+            'source' => 'discourse',
+            'system_email' => fake()->email,
         ]);
 
         $this->assertEquals(1, Instance::count());

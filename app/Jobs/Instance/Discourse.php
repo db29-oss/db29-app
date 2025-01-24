@@ -62,16 +62,19 @@ class Discourse extends _0Instance_
             ]);
 
             if (array_key_exists('system_email', $this->reg_info)) {
+                $dspk = explode(PHP_EOL, $this->reg_info['dkim_privatekey']);
+                array_pop($dspk);
+                array_pop($dspk);
+                array_shift($dspk);
+                $dspk = implode("", $dspk);
+
                 try {
                     $client->createEmailIdentity([
                         'EmailIdentity' => explode('@', $this->reg_info['system_email'])[1],
                         'SigningAttributes' => [
-                            'DomainSigningAttributesOrigin' => 'EXTERNAL',
-                            'DomainSigningPrivateKey' => $this->reg_info['dkim_privatekey'],
+                            'DomainSigningPrivateKey' => $dspk,
                             'DomainSigningSelector' => $this->reg_info['dkim_selector'],
-                            'NextSigningKeyLength' => 'RSA_2048_BIT',
                         ],
-                        'SigningAttributesOrigin' => 'EXTERNAL',
                     ]);
                 } catch (AwsException $e) {
                     if ($e->getAwsErrorCode() !== 'AlreadyExistsException') {

@@ -34,6 +34,12 @@ class InstanceInputFilter
 
             $db = DB::select($sql, $sql_params);
 
+            if (count($db) === 0) { // testing
+                InstanceInputSeeder::discourse();
+
+                $db = DB::select($sql, $sql_params);
+            }
+
             $json_decode = json_decode($db[0]->v, true);
 
             $reg_info['dkim_privatekey'] = $json_decode['dkim_privatekey'];
