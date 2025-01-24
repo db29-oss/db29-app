@@ -64,20 +64,6 @@ class Discourse extends _0Instance_
             if (array_key_exists('system_email', $this->reg_info)) {
                 try {
                     $client->createEmailIdentity([
-                        'EmailIdentity' => explode('@', $this->reg_info['system_email'])[1]
-                    ]);
-                } catch (AwsException $e) {
-                    if ($e->getAwsErrorCode() !== 'AlreadyExistsException') {
-                        logger()->error('DB292018: fail create email identity', [
-                            'aws_error_code' => $e->getAwsErrorCode()
-                        ]);
-
-                        throw new Exception('DB292019: fail create email identity');
-                    }
-                }
-
-                try {
-                    $client->putEmailIdentityDkimSigningAttributes([
                         'EmailIdentity' => explode('@', $this->reg_info['system_email'])[1],
                         'SigningAttributes' => [
                             'DomainSigningAttributesOrigin' => 'EXTERNAL',
@@ -88,11 +74,13 @@ class Discourse extends _0Instance_
                         'SigningAttributesOrigin' => 'EXTERNAL',
                     ]);
                 } catch (AwsException $e) {
-                    logger()->error('DB292020: fail put email dkim', [
-                        'aws_error_code' => $e->getAwsErrorCode()
-                    ]);
+                    if ($e->getAwsErrorCode() !== 'AlreadyExistsException') {
+                        logger()->error('DB292018: fail create email identity', [
+                            'aws_error_code' => $e->getAwsErrorCode()
+                        ]);
 
-                    throw new Exception('DB292021: fail put email dkim');
+                        throw new Exception('DB292019: fail create email identity');
+                    }
                 }
             } else {
                 try {
