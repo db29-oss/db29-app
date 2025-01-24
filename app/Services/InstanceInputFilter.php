@@ -27,10 +27,10 @@ class InstanceInputFilter
             $sql_params = [];
             $sql = 'select * from tmp '.
                 'where user_id = ? '. # auth()->user()->id
-                'and k = ?'; # 'discourse_dkim'
+                'and k = ?'; # 'discourse'
 
             $sql_params[] = auth()->user()->id;
-            $sql_params[] = 'discourse_dkim';
+            $sql_params[] = 'discourse';
 
             $db = DB::select($sql, $sql_params);
 

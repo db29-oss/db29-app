@@ -398,6 +398,12 @@ class PageController extends Controller
                 'updated_at = ? '. # $now
                 'where id = ? '. # auth()->user()->id
                 'returning id'.
+            '), '.
+            'delete_tmp as ('.
+                'delete from tmp '.
+                'where user_id = ? '. # auth()->user()->id
+                'and k = ? '. # $source_name
+                'returning *'.
             ') '.
             'insert into instances ('.
                 'source_id, '.
@@ -419,6 +425,9 @@ class PageController extends Controller
 
         $sql_params[] = $now;
         $sql_params[] = auth()->user()->id;
+
+        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $source_name;
 
         $sql_params[] = $source->id;
         $sql_params[] = auth()->user()->id;
