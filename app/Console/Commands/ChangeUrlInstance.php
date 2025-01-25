@@ -41,13 +41,6 @@ class ChangeUrlInstance extends Command
 
         $refl_job_class = new ReflectionClass($job_class);
 
-        if ($refl_job_class->hasMethod('changeUrl')) {
-            $method = $refl_job_class->getMethod('changeUrl');
-            if ($method->getDeclaringClass()->getName() === 'App\Jobs\Instance\_0Instance_') {
-                return 6;
-            }
-        }
-
         $ssh = app('ssh')->toMachine($instance->machine)->compute();
 
         // update dns
@@ -73,7 +66,7 @@ class ChangeUrlInstance extends Command
             instance: $instance,
             machine: $machine,
             ssh: $ssh,
-        ))->changeUrl();
+        ))->buildTrafficRule();
 
         $tr_config_lines = explode(PHP_EOL, $tr_config);
 
