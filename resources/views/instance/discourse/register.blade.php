@@ -80,7 +80,7 @@
       <div class="select-none">DMARC record</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
         <div class="select-text" id="dmarc_txt">
-          example.com
+          _dmarc.example.com
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
@@ -112,7 +112,7 @@
 
        document.querySelector('#spf_txt').textContent = "example.com"
 
-       document.querySelector('#dmarc_txt').textContent = "example.com"
+       document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
        return;
      }
@@ -125,7 +125,7 @@
 
        document.querySelector('#spf_txt').textContent = "example.com"
 
-       document.querySelector('#dmarc_txt').textContent = "example.com"
+       document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
        return;
      }
@@ -135,7 +135,7 @@
 
      document.querySelector('#spf_txt').textContent = domain
 
-     document.querySelector('#dmarc_txt').textContent = domain
+     document.querySelector('#dmarc_txt').textContent = "_dmarc." + domain
    }
  </script>
 </div>
