@@ -85,7 +85,7 @@
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
         <div class="select-text">
-          v=DMARC1; p=reject; adkim=s; aspf=s;
+          v=DMARC1; p=reject; adkim=r; aspf=r;
         </div>
       </div><br>
       <br>
