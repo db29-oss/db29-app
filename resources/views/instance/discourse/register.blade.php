@@ -35,7 +35,7 @@
       <div class="my-1">
       {{ __('trans.skip_system_email_if_email_also_system_email') }}
       </div>
-      <div class="my-1 text-gray-400">
+      <div class="my-1">
       {{ __('trans.discourse_send_verification_link') }}
       </div>
     </div>
@@ -51,7 +51,7 @@
       @enderror
       <br>
 
-      <div class="select-none">DKIM record</div>
+      <div class="select-none">DKIM (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
         <div class="select-text" id="dkim_txt">
           {{ $input_seeder['dkim_selector']."._domainkey.example.com" }}
@@ -64,7 +64,7 @@
       </div><br>
       <br>
 
-      <div class="select-none">SPF record</div>
+      <div class="select-none">SPF (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
         <div class="select-text" id="spf_txt">
           example.com
@@ -77,7 +77,7 @@
       </div><br>
       <br>
 
-      <div class="select-none">DMARC record</div>
+      <div class="select-none">DMARC (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
         <div class="select-text" id="dmarc_txt">
           _dmarc.example.com
@@ -89,6 +89,18 @@
         </div>
       </div><br>
       <br>
+
+      <div class="select-none">MX (MX record)</div>
+      <div class="p-1 inline-block text-wrap break-all select-none">
+        <div class="select-text" id="mx_mx">
+          {{ $input_seeder['dkim_selector'] }}.example.com
+        </div>
+      </div><br>
+      <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
+        <div class="select-text">
+          feedback-smtp.ap-northeast-2.amazonses.com
+        </div>
+      </div><br>
     </div>
 
     <br>
@@ -114,6 +126,8 @@
 
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
+       document.querySelector('#mx_mx').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
+
        return;
      }
 
@@ -127,15 +141,18 @@
 
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
+       document.querySelector('#mx_mx').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
+
        return;
      }
 
-     document.querySelector('#dkim_txt').textContent =
-       "{{ $input_seeder['dkim_selector'] }}._domainkey." + domain
+     document.querySelector('#dkim_txt').textContent = "{{ $input_seeder['dkim_selector'] }}._domainkey." + domain
 
      document.querySelector('#spf_txt').textContent = domain
 
      document.querySelector('#dmarc_txt').textContent = "_dmarc." + domain
+
+     document.querySelector('#mx_mx').textContent = "{{ $input_seeder['dkim_selector'] }}." + domain
    }
  </script>
 </div>

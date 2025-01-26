@@ -58,7 +58,6 @@ return [
     "save_login_id" => "LƯU Ý: lưu login_id ở một nơi an toàn",
     "select_source_and_click" => "chọn một mã nguồn bạn muốn sử dụng và bấm",
     "server" => "máy chủ",
-    "server" => "máy chủ",
     "skip_system_email_if_email_also_system_email" => "bỏ qua email hệ thống nếu bạn muốn email cá nhân cũng là email hệ thống",
     "source" => "mã nguồn",
     "source_link" => "mã nguồn",
