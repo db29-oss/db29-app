@@ -272,69 +272,9 @@ CONFIG;
     {
     }
 
-    public function changeUrl()
+    public function changeUrl(): string
     {
-        while (true) {
-            $this->ssh->clearOutput();
-
-            $this->ssh->exec('podman port '.$this->instance->id);
-
-            if ($this->ssh->getLastLine() !== null) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $host_port = parse_url($this->ssh->getLastLine())['port'];
-
-        while (true) {
-            $this->ssh->clearOutput();
-
-            try {
-                $this->ssh->exec('nc -zv 0.0.0.0 '.$host_port);
-            } catch (Exception) {
-            }
-
-            if (str_contains($this->ssh->getLastLine(), 'succeeded')) {
-                break;
-            }
-
-            sleep(1);
-        }
-
-        $instance_path = $this->getPath();
-
-        $domain = config('app.domain');
-
-        if ($this->instance->subdomain) {
-            $domain = $this->instance->subdomain.'.'.config('app.domain');
-        }
-
-        $root_dir = $instance_path.'wordpress/';
-
-        $tr_config = <<<CONFIG
-{$domain} {
-	root * {$root_dir}
-
-	encode gzip
-	file_server
-
-    php_fastcgi 127.0.0.1:{$host_port} {
-        root /var/www/html/
-    }
-
-	@disallowed {
-		path /xmlrpc.php
-		path *.sqlite
-		path /wp-content/uploads/*.php
-	}
-
-	rewrite @disallowed '/index.php'
-}
-CONFIG;
-
-        return $tr_config;
+        return $this->buildTrafficRule();
     }
 
     public function upgrade()

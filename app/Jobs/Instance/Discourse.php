@@ -255,6 +255,49 @@ CONFIG;
     {
     }
 
+    public function changeUrl(): string
+    {
+        $instance_path = $this->getPath();
+
+        $this->ssh->exec('cat '.$instance_path.'discourse_docker/samples/standalone.yml');
+
+        $yml_str = implode(PHP_EOL, $this->ssh->getOutput());
+
+        $yml = app('yml')->parse($yml_str);
+
+        $yml['env']['DISCOURSE_HOSTNAME'] =
+            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
+            config('app.domain');
+
+        $yml_dump = app('yml')->dump($yml, 4);
+
+        $yml_lines = explode(PHP_EOL, $yml_dump);
+
+        $this->ssh
+             ->exec(
+                 'cd '.$instance_path.'discourse_docker/containers && '.
+                 'rm -f '.$this->instance->id.'.yml && touch '.$this->instance->id.'.yml'
+             );
+
+        foreach ($yml_lines as $yml_line) {
+            $this->ssh
+                 ->exec(
+                     'echo '.escapeshellarg($yml_line).' | '.
+                     'sudo tee -a '.$instance_path.'discourse_docker/containers/'.$this->instance->id.'.yml'
+                 );
+        }
+
+        $this->ssh
+             ->exec(
+                 'cd '.$instance_path.'discourse_docker && '.
+                 'export DOCKER_HOST=127.0.0.1 && '.
+                 'export PATH='.$instance_path.':$PATH && '.
+                 './launcher rebuild '.$this->instance->id.' --skip-prereqs --skip-mac-address'
+             );
+
+        return $this->buildTrafficRule();
+    }
+
     public function upgrade()
     {
     }
