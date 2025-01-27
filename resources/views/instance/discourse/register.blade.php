@@ -62,6 +62,9 @@
           {{ "p=".preg_replace('/-----.*?-----|\r?\n/', '', $input_seeder['dkim_publickey']) }}
         </div>
       </div><br>
+      @error('dkim_txt')
+      <div style="display: inline; color: red">{{ $message }}</div>
+      @enderror
       <br>
 
       <div class="select-none">SPF (TXT record)</div>
@@ -75,6 +78,9 @@
           v=spf1 include:amazonses.com ~all
         </div>
       </div><br>
+      @error('spf_txt')
+      <div style="display: inline; color: red">{{ $message }}</div>
+      @enderror
       <br>
 
       <div class="select-none">DMARC (TXT record)</div>
@@ -88,6 +94,9 @@
           v=DMARC1; p=reject; adkim=r; aspf=r;
         </div>
       </div><br>
+      @error('dmarc_txt')
+      <div style="display: inline; color: red">{{ $message }}</div>
+      @enderror
       <br>
 
       <div class="select-none">MX (MX record)</div>
@@ -101,6 +110,10 @@
           feedback-smtp.ap-northeast-2.amazonses.com
         </div>
       </div><br>
+      @error('mx_mx')
+      <div style="display: inline; color: red">{{ $message }}</div>
+      @enderror
+      <br>
     </div>
 
     <br>

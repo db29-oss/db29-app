@@ -101,7 +101,7 @@ class Discourse extends _0Instance_
                 }
             }
 
-            $yml['env']['DISCOURSE_SMTP_ADDRESS'] = config('services.ses.smtp');
+            $yml['env']['DISCOURSE_SMTP_ADDRESS'] = 'email-smtp.'.config('services.ses.smtp').'.amazonaws.com';
             $yml['env']['DISCOURSE_SMTP_USER_NAME'] = config('services.ses.username');
             $yml['env']['DISCOURSE_SMTP_PASSWORD'] = config('services.ses.password');
         }

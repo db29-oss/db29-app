@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
-use App\Rules\DKIMValidation;
+use App\Rules\MxRecordExactValue;
+use App\Rules\TxtRecordExactValue;
+use App\Rules\TxtRecordExists;
 use Illuminate\Support\Facades\DB;
 
 class InstanceInputFilter
@@ -11,7 +13,6 @@ class InstanceInputFilter
     {
         $validator = validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
-            'system_email' => ['nullable', 'email:rfc'],
         ]);
 
         $validator->validated();
@@ -21,6 +22,12 @@ class InstanceInputFilter
         $reg_info['email'] = request('email');
 
         if (request('system_email')) {
+            $validator = validator(request()->all(), [
+                'system_email' => ['email:rfs'],
+            ]);
+
+            $validator->validated();
+
             $reg_info['system_email'] = request('system_email');
 
             $now = now();
@@ -45,6 +52,27 @@ class InstanceInputFilter
             $reg_info['dkim_privatekey'] = $json_decode['dkim_privatekey'];
             $reg_info['dkim_publickey'] = $json_decode['dkim_publickey'];
             $reg_info['dkim_selector'] = $json_decode['dkim_selector'];
+
+            if (app('env') === 'production') {
+                $system_email_domain = explode('@', $reg_info['system_email'])[1];
+
+                $validator = validator(
+                    [
+                        'dkim_txt' => $reg_info['dkim_selector'].'._domainkey.'.$system_email_domain,
+                        'spf_txt' => $system_email_domain,
+                        'dmarc_txt' => '_dmarc.'.$system_email_domain,
+                        'mx_mx' => $reg_info['dkim_selector'].'.'.$system_email_domain,
+                    ],
+                    [
+                        'dkim_txt' => new TxtRecordExactValue($reg_info['dkim_publickey']),
+                        'spf_txt' => new TxtRecordExists,
+                        'dmarc_txt' => new TxtRecordExists,
+                        'mx_mx' => new MxRecordExactValue('feedback-smtp.'.config('services.ses.smtp').'.amazonses.com'),
+                    ]
+                );
+
+                $validator->validated();
+            }
         }
 
         return $reg_info;
