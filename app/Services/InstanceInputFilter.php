@@ -59,7 +59,7 @@ class InstanceInputFilter
                 $validator = validator(
                     [
                         'dkim_txt' => $reg_info['dkim_selector'].'._domainkey.'.$system_email_domain,
-                        'spf_txt' => $system_email_domain,
+                        'spf_txt' => $reg_info['dkim_selector'].'.'.$system_email_domain,
                         'dmarc_txt' => '_dmarc.'.$system_email_domain,
                         'mx_mx' => $reg_info['dkim_selector'].'.'.$system_email_domain,
                     ],

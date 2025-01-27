@@ -71,7 +71,7 @@
       <div class="select-none">SPF (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
         <div class="select-text" id="spf_txt">
-          example.com
+          {{ $input_seeder['dkim_selector'] }}.example.com
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
@@ -136,7 +136,7 @@
        document.querySelector('#dkim_txt').textContent =
          "{{ $input_seeder['dkim_selector'] }}._domainkey.example.com"
 
-       document.querySelector('#spf_txt').textContent = "example.com"
+       document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
 
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
@@ -151,7 +151,7 @@
        document.querySelector('#dkim_txt').textContent =
          "{{ $input_seeder['dkim_selector'] }}._domainkey.example.com"
 
-       document.querySelector('#spf_txt').textContent = "example.com"
+       document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
 
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
@@ -162,7 +162,7 @@
 
      document.querySelector('#dkim_txt').textContent = "{{ $input_seeder['dkim_selector'] }}._domainkey." + domain
 
-     document.querySelector('#spf_txt').textContent = domain
+     document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}." + domain
 
      document.querySelector('#dmarc_txt').textContent = "_dmarc." + domain
 
