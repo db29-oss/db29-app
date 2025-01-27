@@ -32,6 +32,7 @@ class _0Instance_ implements ShouldQueue
     public function backUp() {}
     public function restore() {}
     public function downgrade() {}
+    public function changeUrl() {}
     public function upgrade() {}
     public function movePath(string $path) {}
     public function buildLimitCommands(): array {}
