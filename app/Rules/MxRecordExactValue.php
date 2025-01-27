@@ -14,7 +14,7 @@ class MxRecordExactValue implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $dns_get_record = dns_get_record($value, DNS_TXT);
+        $dns_get_record = dns_get_record($value, DNS_MX);
 
         if ($dns_get_record === false) {
             $fail(__('trans.invalid_mx_hostname'));
