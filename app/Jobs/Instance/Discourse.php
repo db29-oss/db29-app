@@ -259,7 +259,9 @@ CONFIG;
     {
         $instance_path = $this->getPath();
 
-        $this->ssh->exec('cat '.$instance_path.'discourse_docker/samples/standalone.yml');
+        $this->ssh->clearOutput();
+
+        $this->ssh->exec('cat '.$instance_path.'discourse_docker/containers/'.$this->instance->id.'.yml');
 
         $yml_str = implode(PHP_EOL, $this->ssh->getOutput());
 
