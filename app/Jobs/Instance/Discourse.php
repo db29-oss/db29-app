@@ -68,10 +68,12 @@ class Discourse extends _0Instance_
                 array_shift($dspk);
                 $dspk = implode("", $dspk);
 
+                $domain = explode('@', $this->reg_info['system_email'])[1];
+
                 try {
                     $client->createEmailIdentity([
-                        'EmailIdentity' => explode('@', $this->reg_info['system_email'])[1],
-                        'SigningAttributes' => [
+                        'EmailIdentity' => $domain,
+                        'DkimSigningAttributes' => [
                             'DomainSigningPrivateKey' => $dspk,
                             'DomainSigningSelector' => $this->reg_info['dkim_selector'],
                         ],
@@ -84,6 +86,20 @@ class Discourse extends _0Instance_
 
                         throw new Exception('DB292019: fail create email identity');
                     }
+                }
+
+                try {
+                    $client->putEmailIdentityMailFromAttributes([
+                        'EmailIdentity' => $domain,
+                        'BehaviorOnMxFailure' => 'REJECT_MESSAGE',
+                        'MailFromDomain' => $this->reg_info['dkim_selector'].'.'.$domain,
+                    ]);
+                } catch (AwsException $e) {
+                    logger()->error('DB292020: fail put mail from attribute', [
+                        'aws_error_code' => $e->getAwsErrorCode()
+                    ]);
+
+                    throw new Exception('DB292021: fail put mail from attribute');
                 }
             } else {
                 try {
