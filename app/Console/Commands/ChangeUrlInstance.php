@@ -62,6 +62,8 @@ class ChangeUrlInstance extends Command
                 'subdomain' => $subdomain,
             ]);
 
+        $instance->refresh();
+
         $tr_config = (new $job_class(
             instance: $instance,
             machine: $machine,
@@ -79,14 +81,14 @@ class ChangeUrlInstance extends Command
         if (app('env') === 'production') {
             // test tls up and running
             while (true) {
-                exec('curl -vI -L '.$subdomain.'.'.config('app.domain'), $dummy, $exit_code);
+                exec('curl -s -vI -L '.$subdomain.'.'.config('app.domain'), $dummy, $exit_code);
 
                 if ($exit_code === 0) {
                     break;
 
                 }
 
-                sleep(1);
+                sleep(3); // for DNS propagate
             }
         }
     }
