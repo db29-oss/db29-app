@@ -44,7 +44,8 @@
       <label class="select-none" for="system_email">
         {{ __('trans.system_email') }} ({{ __('trans.dns_authenticate') }})
       </label><br>
-      <input oninput="updateTXTDomain(this)" type="text" name="system_email" placeholder="hello@example.com"
+      <input id="system_email_input" oninput="updateTXTDomain(this)"
+             type="text" name="system_email" placeholder="hello@example.com"
              value="{{ old('system_email') }}"><br>
       @error('system_email')
       <div style="display: inline; color: red">{{ $message }}</div>
@@ -167,5 +168,7 @@
 
      document.querySelector('#mx_mx').textContent = "{{ $input_seeder['dkim_selector'] }}." + domain
    }
+
+   document.querySelector('#system_email_input').dispatchEvent(new Event('input'));
  </script>
 </div>
