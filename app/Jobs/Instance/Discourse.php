@@ -211,9 +211,11 @@ CONFIG;
                 ],
             ]);
 
+            $extra = json_decode($this->instance->extra, true);
+
             try {
                 $client->deleteEmailIdentity([
-                    'EmailIdentity' => json_decode($this->instance->extra, true)['reg_info']['email'],
+                    'EmailIdentity' => ($extra['reg_info']['system_email'] ?? $extra['reg_info']['email'])
                 ]);
             } catch (AwsException $e) {
                 if ($e->getAwsErrorCode() !== 'NotFoundException') {
