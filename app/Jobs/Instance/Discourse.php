@@ -48,6 +48,7 @@ class Discourse extends _0Instance_
         $this->ssh->exec('mkdir -p '.$yml['volumes'][1]['volume']['host']);
 
         $yml['env']['DISCOURSE_SMTP_ADDRESS'] = fake()->domainName();
+        $yml['env']['DISCOURSE_SMTP_PORT'] = 587; // some ISP will block port 25
         $yml['env']['DISCOURSE_SMTP_USER_NAME'] = fake()->email();
         $yml['env']['DISCOURSE_SMTP_PASSWORD'] = fake()->password();
 
