@@ -14,13 +14,14 @@ class MachineIpaddressUpdate extends Command
 
     public function handle()
     {
-        $machines = Machine::whereEnabled(true);
+        $machines = Machine::query()
+            ->whereEnabled(true);
 
         if ($this->option('machine_id')) {
             $machines = $machines->whereId($this->option('machine_id'));
         }
 
-        $machines->get();
+        $machines = $machines->get();
 
         foreach ($machines as $machine) {
             if ($machine->hostname === null) {
@@ -65,10 +66,12 @@ class MachineIpaddressUpdate extends Command
                 }
             }
 
-            if ($output[0] === $machine->id) {
+            if ($output[0] === (string) $machine->id) {
                 Machine::query()->update([
                     'ip_address' => $ip_address,
-                    'last_ip_address' => $machine->ip_address,
+                    'last_ip_address' => filter_var(
+                        $machine->ip_address, FILTER_VALIDATE_IP
+                    ) ? $machine->ip_address : null
                 ]);
             }
         }
