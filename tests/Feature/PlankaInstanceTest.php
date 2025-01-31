@@ -13,12 +13,17 @@ use Tests\TestCase;
 
 class PlankaInstanceTest extends TestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+
+        if (! static::isExplicitlyRun()) {
+            static::markTestSkipped('Skipped because it takes too long - can manually run it.');
+        }
+    }
+
     public function test_generic(): void
     {
-        if (! $this->isExplicitlyRun()) {
-            $this->markTestSkipped('Skipped because it takes too long - can manually run it.');
-        }
-
         config()->set('app.domain', '127.0.0.1');
 
         test_util_migrate_fresh();
@@ -265,7 +270,7 @@ class PlankaInstanceTest extends TestCase
         cleanup_container('db29_instance', $m->id);
     }
 
-    private function isExplicitlyRun(): bool
+    private static function isExplicitlyRun(): bool
     {
         $class_arr = explode('\\', __CLASS__);
         $class_name = end($class_arr);

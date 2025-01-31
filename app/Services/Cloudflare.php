@@ -7,6 +7,8 @@ use Exception;
 class Cloudflare {
     private string $domain;
 
+    const MAX_RECORD_BATCH_ACTION = 200; // CF free plan
+
     public function __construct(
         private string $zone_id,
         private string $zone_token,
@@ -26,13 +28,21 @@ class Cloudflare {
 
         $data['ttl'] = 60;
 
-        $dns_get_record = dns_get_record($hostname, DNS_A);
+        $ip_address = null;
 
-        if (count($dns_get_record) === 0) {
-            throw new Exception('DB291991: unable get host ip address');
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            $ip_address = $hostname;
         }
 
-        $ip_address = $dns_get_record[0]['ip'];
+        if ($ip_address === null) {
+            $dns_get_record = dns_get_record($hostname, DNS_A);
+
+            if (count($dns_get_record) === 0) {
+                throw new Exception('DB291991: unable get host ip address');
+            }
+
+            $ip_address = $dns_get_record[0]['ip'];
+        }
 
         $data['content'] = $ip_address;
 
@@ -127,6 +137,72 @@ class Cloudflare {
 
             throw new Exception('DB292016: create new dns record fail');
         }
+    }
+
+    public function batchAction(array $batch_action = []): array {
+        # https://developers.cloudflare.com/dns/manage-dns-records/how-to/batch-record-changes/#example-request
+
+        $count_deletes = 0;
+
+        if (array_key_exists('deletes', $batch_action)) {
+            $count_deletes = count($batch_action['deletes']);
+        }
+
+        $count_patches = 0;
+
+        if (array_key_exists('patches', $batch_action)) {
+            $count_patches = count($batch_action['patches']);
+        }
+
+        $count_puts = 0;
+
+        if (array_key_exists('puts', $batch_action)) {
+            $count_puts = count($batch_action['puts']);
+        }
+
+        $count_posts = 0;
+
+        if (array_key_exists('posts', $batch_action)) {
+            $count_posts = count($batch_action['posts']);
+        }
+
+        if ($count_deletes + $count_patches + $count_posts + $count_puts === 0) {
+            return [
+                'deletes' => null,
+                'patches' => null,
+                'puts' => null,
+                'posts' => null,
+            ];
+        }
+
+        if ($count_deletes + $count_patches + $count_posts + $count_puts > static::MAX_RECORD_BATCH_ACTION) {
+            throw new Exception('DB292022: number of records cannot exceed 200');
+        }
+
+        $command =
+            "curl -s ".
+            "-H \"Content-Type: application/json\" ".
+            "-H \"Authorization: Bearer ".$this->zone_token."\" ".
+            "https://api.cloudflare.com/client/v4/zones/$this->zone_id/dns_records/batch ".
+            "-d '".json_encode($batch_action)."'";
+
+        exec($command, $output, $exit_code);
+
+        if ($exit_code !== 0) {
+            throw new Exception('DB292023: curl batch action fail');
+        }
+
+        $result = json_decode($output[0], true);
+
+        if ($result['success'] !== true) {
+            logger()->error('DB292024: batch action fail', [
+                'response' => $output[0]
+            ]);
+
+            throw new Exception('DB292025: batch action fail');
+        }
+
+        return $result['result'];
     }
 
     public function subdomainExists(string $subdomain): bool
