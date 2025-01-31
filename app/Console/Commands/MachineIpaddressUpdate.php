@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Instance;
 use App\Models\Machine;
 use Exception;
 use Illuminate\Console\Command;
@@ -67,6 +68,25 @@ class MachineIpaddressUpdate extends Command
             }
 
             if ($output[0] === (string) $machine->id) {
+                $instances = Instance::whereMachineId($machine->id)->pluck('dns_id');
+
+                $patches = [];
+
+                foreach ($instances as $instance) {
+                    $patches[] = [
+                        'id' => $instance->dns_id,
+                        'content' => $ip_address
+                    ];
+
+                    if (count($patches) === app('cf')::MAX_RECORD_BATCH_ACTION) {
+                        app('cf')->batchAction(['patches' => $patches]);
+
+                        $patches = [];
+                    }
+                }
+
+                app('cf')->batchAction(['patches' => $patches]);
+
                 Machine::query()->update([
                     'ip_address' => $ip_address,
                     'last_ip_address' => filter_var(
