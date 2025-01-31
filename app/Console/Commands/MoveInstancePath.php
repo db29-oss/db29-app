@@ -74,11 +74,11 @@ class MoveInstancePath extends Command
             }
         }
 
-        if (app('env') === 'production') {
-            $ssh = app('ssh')->toMachine($machine)->compute();
-        }
+        $env_production = app('env') === 'production';
 
-        if (app('env') === 'production') {
+        if ($env_production) {
+            $ssh = app('ssh')->toMachine($machine)->compute();
+
             (new $job_class(
                 instance: $instance,
                 machine: $machine,
@@ -135,7 +135,7 @@ class MoveInstancePath extends Command
 
         $instance->refresh();
 
-        if (app('env') === 'production') {
+        if ($env_production) {
             while (true) {
                 try {
                     (new $job_class(

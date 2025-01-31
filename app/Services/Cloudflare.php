@@ -130,7 +130,6 @@ class Cloudflare {
         if ($result['success'] !== true) {
             logger()->error('DB292015: create new dns record fail', [
                 'hostname' => $hostname,
-                'info' => $info,
                 'output' => $output[0],
                 'subdomain' => $subdomain,
             ]);

@@ -11,7 +11,7 @@ class PrepareMachine implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly string $machine_id
+        private readonly int $machine_id
     ) {}
 
     public function handle(): void

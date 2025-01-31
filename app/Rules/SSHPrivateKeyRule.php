@@ -20,10 +20,6 @@ class SSHPrivateKeyRule implements ValidationRule
     {
         try {
             $private_key = RSA::load($value);
-
-            if ($private_key === null) {
-                $fail(__('trans.invalid_private_key'));
-            }
         } catch (NoKeyLoadedException) {
             try {
                 $private_key = EC::load($value);

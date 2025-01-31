@@ -11,7 +11,7 @@ class PrepareTrafficRouter implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly string $traffic_router_id
+        private readonly int $traffic_router_id
     ) {}
 
     public function handle(): void

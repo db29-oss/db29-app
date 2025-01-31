@@ -10,7 +10,7 @@ use Illuminate\Foundation\Queue\Queueable;
  * THIS IS BASE JOB SO THAT
  * WE COULD BUILD HELPER FOUNDATION
  */
-class _0Instance_ implements ShouldQueue
+abstract class _0Instance_ implements ShouldQueue
 {
     use Queueable;
 
@@ -23,19 +23,19 @@ class _0Instance_ implements ShouldQueue
         protected $ssh = null,
     ) {}
 
-    public function setUp(): string {}
+    public function setUp(): string { return 'unimplemented'; }
     public function runContainer() {}
-    public function buildTrafficRule(): string {}
+    public function buildTrafficRule(): string { return 'unimplemented'; }
     public function tearDown() {}
     public function turnOff() {}
-    public function turnOn(): string {}
+    public function turnOn(): string { return 'unimplemented'; }
     public function backUp() {}
     public function restore() {}
     public function downgrade() {}
-    public function changeUrl(): string {}
+    public function changeUrl(): string { return 'unimplemented'; }
     public function upgrade() {}
     public function movePath(string $path) {}
-    public function buildLimitCommands(): array {}
+    public function buildLimitCommands(): array { return []; }
 
     public function createInstancePath()
     {

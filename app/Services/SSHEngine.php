@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Machine;
+use Exception;
 use K92\SshExec\SSHEngine as SE;
 
 class SSHEngine extends SE {

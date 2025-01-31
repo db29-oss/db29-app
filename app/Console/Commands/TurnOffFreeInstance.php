@@ -20,13 +20,13 @@ class TurnOffFreeInstance extends Command
             "queue_active = ?, ". # true
             "updated_at = ? ". # $now
             "where queue_active = ? ". # false
-            "and paid_at < ? ". # (clone $now)->subDay(1)
+            "and paid_at < ? ". # (clone $now)->subDay()
             "returning id";
 
         $sql_params[] = true;
         $sql_params[] = $now;
         $sql_params[] = false;
-        $sql_params[] = (clone $now)->subDay(1);
+        $sql_params[] = (clone $now)->subDay();
 
         $instances = app('db')->select($sql, $sql_params);
 

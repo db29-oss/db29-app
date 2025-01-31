@@ -7,6 +7,10 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class MxRecordExactValue implements ValidationRule
 {
+    public function __construct(
+        private string $exact_value,
+    ) {}
+
     /**
      * Run the validation rule.
      *
@@ -26,9 +30,7 @@ class MxRecordExactValue implements ValidationRule
             return;
         }
 
-        $mail_public_mx = "feedback-smtp.".config('services.ses.smtp').'.amazonses.com';
-
-        if ($dns_get_record[0]['target'] !== $mail_public_mx) {
+        if ($dns_get_record[0]['target'] !== $this->exact_value) {
             $fail(__('trans.invalid_exact_mail_mx_record'));
         }
     }

@@ -262,18 +262,6 @@ CONFIG;
         return $this->buildTrafficRule();
     }
 
-    public function backUp()
-    {
-    }
-
-    public function restore()
-    {
-    }
-
-    public function downgrade()
-    {
-    }
-
     public function changeUrl(): string
     {
         $instance_path = $this->getPath();
@@ -317,10 +305,6 @@ CONFIG;
              );
 
         return $this->buildTrafficRule();
-    }
-
-    public function upgrade()
-    {
     }
 
     public function buildLimitCommands(): array

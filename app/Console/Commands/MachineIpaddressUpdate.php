@@ -68,7 +68,7 @@ class MachineIpaddressUpdate extends Command
             }
 
             if ($output[0] === (string) $machine->id) {
-                $instances = Instance::whereMachineId($machine->id)->pluck('dns_id');
+                $instances = Instance::whereMachineId($machine->id)->get(['id', 'machine_id', 'dns_id']);
 
                 $patches = [];
 

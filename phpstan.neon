@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+parameters:
+
+    paths:
+        - app/
+
+    # Level 10 is the highest level
+    level: 5
+
+    ignoreErrors:
+        - '#extends @final class#'
+        - '#Access to an undefined property App\\Models\\#'
+        - "#Relation '(machine|plan|plans|source|trafficRouter|user)' is not found in#"
+        - '#Call to an undefined method Illuminate\\Contracts\\Cache\\Repository::lock#'
+
+#
+#    excludePaths:
+#        - ./*/*/FileToBeExcluded.php

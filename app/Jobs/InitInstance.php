@@ -15,7 +15,7 @@ class InitInstance implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly string $instance_id,
+        private readonly int $instance_id,
         private readonly array $reg_info = []
     ) {}
 
