@@ -6,7 +6,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "aws/aws-sdk-php": "^3.336",
         "k92/ssh-exec": "^2.0",
         "laravel/framework": "^11.9",
         "laravel/octane": "^2.5",
