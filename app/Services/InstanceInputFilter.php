@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Rules\Ipv4OrDomainARecordExists;
-use App\Rules\MxRecordExactValue;
 use App\Rules\TxtRecordExactValue;
 use App\Rules\TxtRecordExists;
 use Illuminate\Support\Facades\DB;
@@ -60,11 +59,6 @@ class InstanceInputFilter
                 'spf_txt' => new TxtRecordExists,
                 'dmarc_txt' => new TxtRecordExists,
             ];
-
-            if ($system_email_domain !== config('app.domain')) {
-                $request['smtp_a'] = $reg_info['dkim_selector'].'.'.$system_email_domain;
-                $validation_rule['smtp_a'] = new Ipv4OrDomainARecordExists();
-            }
 
             validator($request, $validation_rule)->validated();
         }

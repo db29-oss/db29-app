@@ -54,8 +54,8 @@
       </div>
     </div><br>
     <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
-      <div class="select-text">
-        v=spf1 include:amazonses.com ~all
+      <div class="select-text" id="spf_txt_val">
+        v=spf1 include:example.com ~all
       </div>
     </div><br>
     @error('spf_txt')
@@ -98,6 +98,8 @@
 
        document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
 
+       document.querySelector('#spf_txt_val').textContent = "v=spf1 include:example.com ~all"
+
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
        return;
@@ -111,6 +113,8 @@
 
        document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}.example.com"
 
+       document.querySelector('#spf_txt_val').textContent = "v=spf1 include:example.com ~all"
+
        document.querySelector('#dmarc_txt').textContent = "_dmarc.example.com"
 
        return;
@@ -119,6 +123,8 @@
      document.querySelector('#dkim_txt').textContent = "{{ $input_seeder['dkim_selector'] }}._domainkey." + domain
 
      document.querySelector('#spf_txt').textContent = "{{ $input_seeder['dkim_selector'] }}." + domain
+
+     document.querySelector('#spf_txt_val').textContent = "v=spf1 include:" + domain + " ~all"
 
      document.querySelector('#dmarc_txt').textContent = "_dmarc." + domain
    }
