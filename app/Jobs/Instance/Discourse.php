@@ -49,7 +49,7 @@ class Discourse extends _0Instance_
         $this->ssh->exec('mkdir -p '.$yml['volumes'][1]['volume']['host']);
 
         $yml['env']['DISCOURSE_SMTP_ADDRESS'] = $this->instance->id.'-postfix';
-        $yml['env']['DISCOURSE_SMTP_PORT'] = 587;
+        $yml['env']['DISCOURSE_SMTP_PORT'] = 25;
 
         $yml['run'][] =[
             'exec' =>
