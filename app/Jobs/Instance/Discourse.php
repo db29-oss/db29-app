@@ -147,6 +147,8 @@ CONFIG;
     {
         $instance_path = $this->getPath();
 
+        $this->ssh->exec('podman rm -f '.$this->instance->id.'-postfix');
+
         $could_destroy = true;
 
         try {
