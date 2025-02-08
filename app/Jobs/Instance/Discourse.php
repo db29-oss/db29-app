@@ -256,7 +256,8 @@ CONFIG;
                  'cd '.$instance_path.'discourse_docker && '.
                  'export DOCKER_HOST=127.0.0.1 && '.
                  'export PATH='.$instance_path.':$PATH && '.
-                 './launcher rebuild '.$this->instance->id.' --skip-prereqs --skip-mac-address'
+                 './launcher rebuild '.$this->instance->id.' '.
+                 '--skip-prereqs --skip-mac-address --docker-args \'--network '.$this->instance->id.'\''
              );
 
         return $this->buildTrafficRule();
