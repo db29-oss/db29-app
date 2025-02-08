@@ -47,12 +47,6 @@ class MachineIpaddressUpdate extends Command
             if ($exit_code !== 0) {
                 $ssh_privatekey_path = storage_path('app/private/'.$machine->id);
 
-                if (! file_exists($ssh_privatekey_path)) {
-                    touch($ssh_privatekey_path);
-                    chmod($ssh_privatekey_path, 0600);
-                    file_put_contents($ssh_privatekey_path, $machine->ssh_privatekey);
-                }
-
                 $ssh = app('ssh')->from([
                     'ssh_privatekey_path' => $ssh_privatekey_path
                 ])->to([
@@ -87,12 +81,14 @@ class MachineIpaddressUpdate extends Command
 
                 app('cf')->batchAction(['patches' => $patches]);
 
-                Machine::query()->update([
-                    'ip_address' => $ip_address,
-                    'last_ip_address' => filter_var(
-                        $machine->ip_address, FILTER_VALIDATE_IP
-                    ) ? $machine->ip_address : null
-                ]);
+                Machine::query()
+                    ->whereId($machine->id)
+                    ->update([
+                        'ip_address' => $ip_address,
+                        'last_ip_address' => filter_var(
+                            $machine->ip_address, FILTER_VALIDATE_IP
+                        ) ? $machine->ip_address : null
+                    ]);
             }
         }
     }
