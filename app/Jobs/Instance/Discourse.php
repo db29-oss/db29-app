@@ -3,6 +3,7 @@
 namespace App\Jobs\Instance;
 
 use Aws\Exception\AwsException;
+use Aws\SesV2\SesV2Client;
 use Exception;
 
 class Discourse extends _0Instance_
@@ -14,8 +15,6 @@ class Discourse extends _0Instance_
         $this->createInstancePath();
 
         $apply_limit_commands = $this->buildLimitCommands();
-
-        $system_email_domain = explode('@', $this->reg_info['system_email'])[1];
 
         $this->ssh
              ->exec(
@@ -48,13 +47,86 @@ class Discourse extends _0Instance_
 
         $this->ssh->exec('mkdir -p '.$yml['volumes'][1]['volume']['host']);
 
-        $yml['env']['DISCOURSE_SMTP_ADDRESS'] = $this->instance->id.'-postfix';
-        $yml['env']['DISCOURSE_SMTP_PORT'] = 25;
+        $yml['env']['DISCOURSE_SMTP_ADDRESS'] = fake()->domainName();
+        $yml['env']['DISCOURSE_SMTP_PORT'] = 587; // some ISP will block port 25
+        $yml['env']['DISCOURSE_SMTP_USER_NAME'] = fake()->email();
+        $yml['env']['DISCOURSE_SMTP_PASSWORD'] = fake()->password();
+
+        if (app('env') === 'production') {
+            $client = new SesV2Client([
+                'region' => config('services.aws.region'),
+                'version' => 'latest',
+                'credentials' => [
+                    'key'    => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
+                ],
+            ]);
+
+            if (array_key_exists('system_email', $this->reg_info)) {
+                $dspk = explode(PHP_EOL, $this->reg_info['dkim_privatekey']);
+                array_pop($dspk);
+                array_pop($dspk);
+                array_shift($dspk);
+                $dspk = implode("", $dspk);
+
+                $domain = explode('@', $this->reg_info['system_email'])[1];
+
+                try {
+                    $client->createEmailIdentity([
+                        'EmailIdentity' => $domain,
+                        'DkimSigningAttributes' => [
+                            'DomainSigningPrivateKey' => $dspk,
+                            'DomainSigningSelector' => $this->reg_info['dkim_selector'],
+                        ],
+                    ]);
+                } catch (AwsException $e) {
+                    if ($e->getAwsErrorCode() !== 'AlreadyExistsException') {
+                        logger()->error('DB292018: fail create email identity', [
+                            'aws_error_code' => $e->getAwsErrorCode()
+                        ]);
+
+                        throw new Exception('DB292019: fail create email identity');
+                    }
+                }
+
+                try {
+                    $client->putEmailIdentityMailFromAttributes([
+                        'EmailIdentity' => $domain,
+                        'BehaviorOnMxFailure' => 'REJECT_MESSAGE',
+                        'MailFromDomain' => $this->reg_info['dkim_selector'].'.'.$domain,
+                    ]);
+                } catch (AwsException $e) {
+                    logger()->error('DB292020: fail put mail from attribute', [
+                        'aws_error_code' => $e->getAwsErrorCode()
+                    ]);
+
+                    throw new Exception('DB292021: fail put mail from attribute');
+                }
+            } else {
+                try {
+                    $client->createEmailIdentity([
+                        'EmailIdentity' => $this->reg_info['email'],
+                    ]);
+                } catch (AwsException $e) {
+                    if ($e->getAwsErrorCode() !== 'AlreadyExistsException') {
+                        logger()->error('DB292009: fail create email identity', [
+                            'aws_error_code' => $e->getAwsErrorCode()
+                        ]);
+
+                        throw new Exception('DB292010: fail create email identity');
+                    }
+                }
+            }
+
+            $yml['env']['DISCOURSE_SMTP_ADDRESS'] = 'email-smtp.'.config('services.ses.smtp').'.amazonaws.com';
+            $yml['env']['DISCOURSE_SMTP_USER_NAME'] = config('services.ses.username');
+            $yml['env']['DISCOURSE_SMTP_PASSWORD'] = config('services.ses.password');
+        }
 
         $yml['run'][] =[
             'exec' =>
             'rails runner "SiteSetting.notification_email = '.
-            escapeshellarg($this->reg_info['system_email']).
+            escapeshellarg($this->reg_info['system_email'] ?? $this->reg_info['email']).
             '"'
         ];
 
@@ -87,38 +159,12 @@ class Discourse extends _0Instance_
 
         $this->ssh->clearOutput();
 
-        $this->ssh->exec('podman network create '.$this->instance->id);
-
-        // postfix
-        $this->ssh->exec('mkdir '.$instance_path.'dkim_privatekeys');
-
-        foreach (explode("\n", $this->reg_info['dkim_privatekey']) as $line) {
-            if ($line === '') {
-                continue;
-            }
-
-            $this->ssh->exec(
-                'echo '.escapeshellarg($line).' | '.
-                'sudo tee -a '.$instance_path.'dkim_privatekeys/'.$this->instance->id);
-        }
-
-        $this->ssh
-             ->exec(
-                 'podman run -d --name '.$this->instance->id.'-postfix --network '.$this->instance->id.' '.
-                 '-e "ALLOWED_SENDER_DOMAINS='.$system_email_domain.'" '.
-                 '-e DKIM_SELECTOR='.$this->reg_info['dkim_selector'].' '.
-                 '-v '.$instance_path.'dkim_privatekeys:/etc/opendkim/keys '.
-                 'boky/postfix'
-             );
-
-        // discourse
         $this->ssh
              ->exec(
                  'cd '.$instance_path.'discourse_docker && '.
                  'export DOCKER_HOST=127.0.0.1 && '.
                  'export PATH='.$instance_path.':$PATH && '.
-                 './launcher rebuild '.$this->instance->id.' '.
-                 '--skip-prereqs --skip-mac-address --docker-args \'--network '.$this->instance->id.'\''
+                 './launcher rebuild '.$this->instance->id.' --skip-prereqs --skip-mac-address'
              );
 
         return $this->buildTrafficRule();
@@ -147,40 +193,41 @@ CONFIG;
     {
         $instance_path = $this->getPath();
 
-        $this->ssh->exec('podman rm -f '.$this->instance->id.'-postfix');
-
-        $could_destroy = true;
-
-        try {
-            $this->ssh->exec('test -d '.$instance_path.'discourse_docker');
-        } catch (Exception) {
-            $could_destroy = false;
-        }
-
-        if ($could_destroy) {
-            $this->ssh->exec(
-                'cd '.$instance_path.'discourse_docker && '.
-                'export DOCKER_HOST=127.0.0.1 && '.
-                'export PATH='.$instance_path.':$PATH && '.
-                './launcher destroy '.$this->instance->id.' --skip-prereqs --skip-mac-address'
-            );
-        }
-
-        $could_delete = true;
-
-        try {
-            $this->ssh->exec('test -d '.$instance_path);
-        } catch (Exception) {
-            $could_delete = false;
-        }
-
-        if ($could_delete) {
-            $this->deleteInstancePath();
-        }
-
         $this->ssh->exec(
-            'podman network ls -q | grep -w '.$this->instance->id.' | xargs -r podman network rm'
+            'cd '.$instance_path.'discourse_docker && '.
+            'export DOCKER_HOST=127.0.0.1 && '.
+            'export PATH='.$instance_path.':$PATH && '.
+            './launcher destroy '.$this->instance->id.' --skip-prereqs --skip-mac-address'
         );
+
+        $this->deleteInstancePath();
+
+        if (app('env') === 'production') {
+            $client = new SesV2Client([
+                'region' => config('services.aws.region'),
+                'version' => 'latest',
+                'credentials' => [
+                    'key'    => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
+                ],
+            ]);
+
+            $extra = json_decode($this->instance->extra, true);
+
+            try {
+                $client->deleteEmailIdentity([
+                    'EmailIdentity' => ($extra['reg_info']['system_email'] ?? $extra['reg_info']['email'])
+                ]);
+            } catch (AwsException $e) {
+                if ($e->getAwsErrorCode() !== 'NotFoundException') {
+                    logger()->error('DB292011: fail delete email identity', [
+                        'aws_error_code' => $e->getAwsErrorCode()
+                    ]);
+
+                    throw new Exception('DB292012: fail delete email identity');
+                }
+            }
+        }
     }
 
     public function turnOff()
@@ -193,8 +240,6 @@ CONFIG;
             'export PATH='.$instance_path.':$PATH && '.
             './launcher stop '.$this->instance->id.' --skip-prereqs --skip-mac-address'
         );
-
-        $this->ssh->exec('podman ps -q -f name='.$this->instance->id.'-postfix | xargs -r podman stop');
     }
 
     public function turnOn(): string
@@ -202,8 +247,6 @@ CONFIG;
         $instance_path = $this->getPath();
 
         $apply_limit_commands = $this->buildLimitCommands();
-
-        $this->ssh->exec('podman start '.$this->instance->id.'-postfix');
 
         $this->ssh->exec([
             'cd '.$instance_path.'discourse_docker && '.
@@ -258,8 +301,7 @@ CONFIG;
                  'cd '.$instance_path.'discourse_docker && '.
                  'export DOCKER_HOST=127.0.0.1 && '.
                  'export PATH='.$instance_path.':$PATH && '.
-                 './launcher rebuild '.$this->instance->id.' '.
-                 '--skip-prereqs --skip-mac-address --docker-args \'--network '.$this->instance->id.'\''
+                 './launcher rebuild '.$this->instance->id.' --skip-prereqs --skip-mac-address'
              );
 
         return $this->buildTrafficRule();

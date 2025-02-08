@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Rules\Ipv4OrDomainARecordExists;
+use App\Rules\MxRecordExactValue;
 use App\Rules\TxtRecordExactValue;
 use App\Rules\TxtRecordExists;
 use Illuminate\Support\Facades\DB;
@@ -11,56 +12,70 @@ class InstanceInputFilter
 {
     public static function discourse()
     {
-        validator(request()->all(), [
+        $validator = validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
-            'system_email' => ['required', 'email:rfs'],
-        ])->validated();
+        ]);
+
+        $validator->validated();
 
         $reg_info = [];
 
         $reg_info['email'] = request('email');
 
-        $reg_info['system_email'] = request('system_email');
+        if (request('system_email')) {
+            $validator = validator(request()->all(), [
+                'system_email' => ['email:rfs'],
+            ]);
 
-        $now = now();
-        $sql_params = [];
-        $sql = 'select * from tmp '.
-            'where user_id = ? '. # auth()->user()->id
-            'and k = ?'; # 'discourse'
+            $validator->validated();
 
-        $sql_params[] = auth()->user()->id;
-        $sql_params[] = 'discourse';
+            $reg_info['system_email'] = request('system_email');
 
-        $db = DB::select($sql, $sql_params);
+            $now = now();
+            $sql_params = [];
+            $sql = 'select * from tmp '.
+                'where user_id = ? '. # auth()->user()->id
+                'and k = ?'; # 'discourse'
 
-        if (count($db) === 0) { // testing
-            InstanceInputSeeder::discourse();
+            $sql_params[] = auth()->user()->id;
+            $sql_params[] = 'discourse';
 
             $db = DB::select($sql, $sql_params);
-        }
 
-        $json_decode = json_decode($db[0]->v, true);
+            if (count($db) === 0) { // testing
+                InstanceInputSeeder::discourse();
 
-        $reg_info['dkim_privatekey'] = $json_decode['dkim_privatekey'];
-        $reg_info['dkim_publickey'] = $json_decode['dkim_publickey'];
-        $reg_info['dkim_selector'] = $json_decode['dkim_selector'];
+                $db = DB::select($sql, $sql_params);
+            }
 
-        if (app('env') === 'production') {
-            $system_email_domain = explode('@', $reg_info['system_email'])[1];
+            $json_decode = json_decode($db[0]->v, true);
 
-            $request = [
-                'dkim_txt' => $reg_info['dkim_selector'].'._domainkey.'.$system_email_domain,
-                'spf_txt' => $reg_info['dkim_selector'].'.'.$system_email_domain,
-                'dmarc_txt' => '_dmarc.'.$system_email_domain,
-            ];
+            $reg_info['dkim_privatekey'] = $json_decode['dkim_privatekey'];
+            $reg_info['dkim_publickey'] = $json_decode['dkim_publickey'];
+            $reg_info['dkim_selector'] = $json_decode['dkim_selector'];
 
-            $validation_rule = [
-                'dkim_txt' => new TxtRecordExactValue($reg_info['dkim_publickey']),
-                'spf_txt' => new TxtRecordExists,
-                'dmarc_txt' => new TxtRecordExists,
-            ];
+            if (app('env') === 'production') {
+                $system_email_domain = explode('@', $reg_info['system_email'])[1];
 
-            validator($request, $validation_rule)->validated();
+                $validator = validator(
+                    [
+                        'dkim_txt' => $reg_info['dkim_selector'].'._domainkey.'.$system_email_domain,
+                        'spf_txt' => $reg_info['dkim_selector'].'.'.$system_email_domain,
+                        'dmarc_txt' => '_dmarc.'.$system_email_domain,
+                        'mx_mx' => $reg_info['dkim_selector'].'.'.$system_email_domain,
+                    ],
+                    [
+                        'dkim_txt' => new TxtRecordExactValue($reg_info['dkim_publickey']),
+                        'spf_txt' => new TxtRecordExists,
+                        'dmarc_txt' => new TxtRecordExists,
+                        'mx_mx' => new MxRecordExactValue(
+                            'feedback-smtp.'.config('services.ses.smtp').'.amazonses.com'
+                        ),
+                    ]
+                );
+
+                $validator->validated();
+            }
         }
 
         return $reg_info;
@@ -68,12 +83,14 @@ class InstanceInputFilter
 
     public static function planka()
     {
-        validator(request()->all(), [ 
+        $validator = validator(request()->all(), [ 
             'email' => ['required', 'email:rfc'],
             'password' => ['required', 'alpha_num:ascii'],
             'name' => ['required', 'alpha_num:ascii'],
             'username' => ['required', 'alpha_num:ascii'],
-        ])->validated();
+        ]);
+
+        $validator->validated();
 
         $reg_info = [];
 

@@ -9,16 +9,6 @@ class Instance extends Model
 {
     use HasFactory;
 
-    public function machine()
-    {
-        return $this->belongsTo(Machine::class);
-    }
-
-    public function plan()
-    {
-        return $this->belongsTo(Plan::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -27,5 +17,15 @@ class Instance extends Model
     public function source()
     {
         return $this->belongsTo(Source::class);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
     }
 }
