@@ -167,7 +167,7 @@ class WordPress extends _0Instance_
         $this->ssh->exec(
             'podman exec '.$this->instance->id.' '.
             'sh -c \''.
-            'echo "*/5 * * * * php -f /var/www/html/wp-cron.php >/dev/null 2>&1" > /etc/periodic/15min/wpcron'.
+            'echo "php -f /var/www/html/wp-cron.php >/dev/null 2>&1" > /etc/periodic/15min/wpcron'.
             '\''
         );
 
