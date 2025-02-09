@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('user_id');
             $table->string('k');
             $table->json('v');
+            $table->unique(['user_id', 'k']);
             $table->timestamps();
         });
 

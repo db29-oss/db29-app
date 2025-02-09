@@ -43,7 +43,7 @@ class InstanceInputSeeder
             'values ('.
                 '?, '. # auth()->user()->id
                 '?, '. # 'discourse'
-                '?, '. # $discourse
+                '?, '. # json_encode($discourse)
                 '?, '. # $now
                 '?'. # $now
             ')';

@@ -25,27 +25,28 @@
     @enderror
     <br>
 
-    <label class="select-none" for="ssh_privatekey">ssh privatekey*</label><br>
-    <div class="text-gray-400 pointer-events-none select-none">
-      {{ __('trans.rsa_or_ed25519') }}
-    </div>
-    <textarea type="text" name="ssh_privatekey">{{ old('ssh_privatekey') }}</textarea><br>
-    @error('ssh_privatekey')
+    <div class="select-none">ssh publickey*</div>
+    <div class="p-1 inline-block bg-gray-100 text-gray-500 text-wrap break-all">
+      <div class="select-all">
+        {{ $ssh_publickey }}
+      </div>
+    </div><br>
+    @error('ssh_publickey')
     <div style="display: inline; color: red">{{ $message }}</div>
     @enderror
     <br>
 
-    <label class="select-none" for="ssh_username">ssh username</label><br>
+    <label class="select-none" for="ssh_username">ssh username*</label><br>
     <div class="text-gray-400 pointer-events-none select-none">
       {{ __('trans.user_must_have_sudo_privileged') }}
     </div>
     <input type="text" name="ssh_username" value="{{ old('ssh_username') ?? 'root' }}"><br>
-    @error('ssh_address')
+    @error('ssh_username')
     <div style="display: inline; color: red">{{ $message }}</div>
     @enderror
     <br>
 
-    <label class="select-none" for="storage_path">storage path</label><br>
+    <label class="select-none" for="storage_path">storage path*</label><br>
     <div class="text-gray-400 pointer-events-none select-none">
       {{ __('trans.path_to_install_software_on') }}
     </div>

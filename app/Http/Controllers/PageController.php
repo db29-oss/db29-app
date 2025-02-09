@@ -16,7 +16,7 @@ use App\Models\TrafficRouter;
 use App\Models\User;
 use App\Rules\IANAPortNumber;
 use App\Rules\Ipv4OrDomainARecordExists;
-use App\Rules\SSHPrivateKeyRule;
+use App\Rules\SSHConnectionWorks;
 use App\Rules\ValidPathFormat;
 use App\Services\InstanceInputFilter;
 use App\Services\InstanceInputSeeder;
@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use phpseclib3\Crypt\EC;
 
 class PageController extends Controller
 {
@@ -123,7 +124,9 @@ class PageController extends Controller
 
     public function dashboard()
     {
-        return view('dashboard');
+        $user_server_count = Machine::whereUserId(auth()->user()->id)->count();
+
+        return view('dashboard')->with('user_server_count', $user_server_count);
     }
 
     public function instance()
@@ -457,49 +460,105 @@ class PageController extends Controller
 
     public function addServer()
     {
-        return view('server.add');
+        $server = [];
+        // we might not use this
+        $server['ssh_privatekey'] = EC::createKey('Ed25519')->toString('OpenSSH', ['comment' => '']);
+
+        $now = now();
+        $sql_params = [];
+        $sql =
+            'insert into tmp (user_id, k, v, created_at, updated_at) '.
+            'values ('.
+                '?, '. # auth()->user()->id
+                '?, '. # 'server'
+                '?, '. # json_encode($server)
+                '?, '. # $now
+                '?'. # $now
+            ') on conflict (user_id, k) do update set '.
+            'updated_at = ? '. # $now
+            'returning *';
+
+        $sql_params[] = auth()->user()->id;
+        $sql_params[] = 'server';
+        $sql_params[] = json_encode($server);
+        $sql_params[] = $now;
+        $sql_params[] = $now;
+
+        $sql_params[] = $now;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        $privatekey = EC::load(json_decode($db[0]->v, true)['ssh_privatekey']);
+
+        $ssh_publickey = $privatekey->getPublicKey()->toString('OpenSSH', ['comment' => '']);
+
+        return view('server.add')->with('ssh_publickey', $ssh_publickey);
     }
 
     public function postAddServer()
     {
-        $validator = validator(request()->all(), [
+        validator(request()->all(), [
             'ssh_username' => ['required'],
             'ssh_address' => ['required', new Ipv4OrDomainARecordExists],
             'ssh_port' => ['required', new IANAPortNumber],
-            'ssh_privatekey' => ['required', new SSHPrivateKeyRule],
             'storage_path' => ['nullable', new ValidPathFormat],
-        ]);
+        ])->validated();
 
-        $data['ssh_address'] = request('ssh_address');
-        $data['ssh_port'] = request('ssh_port');
-        $data['ssh_privatekey'] = request('ssh_privatekey');
-        $data['storage_path'] = request('storage_path');
+        $sql_params = [];
+        $sql = 'select * from tmp '.
+            'where user_id = ? '. # auth()->user()->id
+            'and k = ?'; # 'server'
 
-        if (app('env') === 'production') {
-            $data = $validator->validated();
+        $sql_params[] = auth()->user()->id;
+        $sql_params[] = 'server';
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (count($db) === 0) {
+            return redirect()->route('add-server');
         }
 
-        DB::transaction(function () use ($data) {
+        $privatekey = EC::load(json_decode($db[0]->v, true)['ssh_privatekey']);
+        $ssh_privatekey = $privatekey->toString('OpenSSH', ['comment' => '']);;
+        $ssh_publickey = $privatekey->getPublicKey()->toString('OpenSSH', ['comment' => '']);
+
+        if (app('env') === 'production') {
+            validator(
+                [
+                    'ssh_publickey' => $ssh_publickey
+                ],
+                [
+                    'ssh_publickey' =>
+                    new SSHConnectionWorks(
+                        ssh_address: request('ssh_address'),
+                        ssh_port: request('ssh_port'),
+                        ssh_privatekey: $ssh_privatekey,
+                        ssh_username: request('ssh_username'),
+                    )
+                ]
+            )->validated();
+        }
+
+        DB::transaction(function () use ($ssh_privatekey) {
             $machine = new Machine;
-            $machine->hostname = $data['ssh_address'];
+            $machine->hostname = request('ssh_address');
             $machine->ip_address = fake()->ipv4();
             $machine->user_id = auth()->user()->id;
 
             if (app('env') === 'production') {
-                if (filter_var($data['ssh_address'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    $machine->ip_address = $data['ssh_address'];
+                if (filter_var(request('ssh_address'), FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    $machine->ip_address = request('ssh_address');
                 } else {
-                    $dns_get_record = dns_get_record($data['ssh_address'], DNS_A);
+                    $dns_get_record = dns_get_record(request('ssh_address'), DNS_A);
 
                     $machine->ip_address = $dns_get_record[0]['ip'];
                 }
             }
 
-            $machine->ssh_port = $data['ssh_port'];
-            $machine->ssh_privatekey =
-                rtrim(str_replace(["\r\n", "\n", "\r"], PHP_EOL, $data['ssh_privatekey']), PHP_EOL).PHP_EOL;
+            $machine->ssh_port = request('ssh_port');
+            $machine->ssh_privatekey = $ssh_privatekey;
             $machine->ssh_username = request('ssh_username');
-            $machine->storage_path = $data['storage_path'] ?? '/opt/';
+            $machine->storage_path = request('storage_path') ?? '/opt/';
             $machine->save();
 
             $traffic_router = new TrafficRouter;
@@ -510,6 +569,16 @@ class PageController extends Controller
                 new PrepareMachine($machine->id),
                 new PrepareTrafficRouter($traffic_router->id)
             ])->dispatch();
+
+            DB::select(
+                'delete from tmp '.
+                'where user_id = ? '. # auth()->user()->id
+                'and k = ?', # 'server'
+                [
+                    auth()->user()->id,
+                    'server'
+                ]
+            );
         });
 
         return redirect()->route('server');

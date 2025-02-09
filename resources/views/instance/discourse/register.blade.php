@@ -54,12 +54,12 @@
 
       <div class="select-none">DKIM (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
-        <div class="select-text" id="dkim_txt">
+        <div class="select-all" id="dkim_txt">
           {{ $input_seeder['dkim_selector']."._domainkey.example.com" }}
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 text-wrap break-all">
-        <div class="select-text">
+        <div class="select-all">
           {{ "p=".preg_replace('/-----.*?-----|\r?\n/', '', $input_seeder['dkim_publickey']) }}
         </div>
       </div><br>
@@ -70,12 +70,12 @@
 
       <div class="select-none">SPF (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
-        <div class="select-text" id="spf_txt">
+        <div class="select-all" id="spf_txt">
           {{ $input_seeder['dkim_selector'] }}.example.com
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
-        <div class="select-text">
+        <div class="select-all">
           v=spf1 include:amazonses.com ~all
         </div>
       </div><br>
@@ -86,12 +86,12 @@
 
       <div class="select-none">DMARC (TXT record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
-        <div class="select-text" id="dmarc_txt">
+        <div class="select-all" id="dmarc_txt">
           _dmarc.example.com
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
-        <div class="select-text">
+        <div class="select-all">
           v=DMARC1; p=reject; adkim=r; aspf=r;
         </div>
       </div><br>
@@ -102,12 +102,12 @@
 
       <div class="select-none">MX (MX record)</div>
       <div class="p-1 inline-block text-wrap break-all select-none">
-        <div class="select-text" id="mx_mx">
+        <div class="select-all" id="mx_mx">
           {{ $input_seeder['dkim_selector'] }}.example.com
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
-        <div class="select-text">
+        <div class="select-all">
           feedback-smtp.ap-northeast-2.amazonses.com
         </div>
       </div><br>

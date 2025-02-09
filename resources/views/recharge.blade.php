@@ -15,7 +15,7 @@
       @elseif ($bd_k === 'account_name')
       {{ __('trans.account_name') }}:
       @endif
-      <div class="text-black @if ($bd_k === 'account_number') pointer-events-auto select-text @endif">
+      <div class="text-black @if ($bd_k === 'account_number') pointer-events-auto select-all @endif">
         {{ $bd_v }}
       </div>
     </div>
@@ -28,7 +28,7 @@
     </div>
     <div class="text-gray-400 pointer-events-none select-none">
       {{ __('trans.message') }}:
-      <div class="text-black pointer-events-auto select-text">
+      <div class="text-black pointer-events-auto select-all">
         D9{{ str_pad(auth()->user()->recharge_number, 6, 0, STR_PAD_LEFT) }}
       </div>
     </div>

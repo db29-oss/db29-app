@@ -47,7 +47,10 @@
   <details id="dashboard-machine-details" class="pb-4 select-none">
     <summary><span class="cursor-pointer">{{ mb_ucfirst(__('trans.server')) }}</span></summary>
     <div class="pl-4 list-none mt-2">
-      <li class="pb-2"><a href="{{ route('server') }}">{{ __('trans.list') }}</a></li>
+      <li class="pb-2">
+        <a href="{{ route('server') }}">{{ __('trans.list') }}</a>
+        <span class="text-gray-400 pointer-events-none select-none">({{ $user_server_count }})</span>
+      </li>
       <li class="pb-2"><a href="{{ route('add-server') }}">{{ __('trans.add') }}</a></li>
     </div>
   </details>
