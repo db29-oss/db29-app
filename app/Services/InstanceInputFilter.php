@@ -6,6 +6,7 @@ use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\MxRecordExactValue;
 use App\Rules\TxtRecordExactValue;
 use App\Rules\TxtRecordExists;
+use App\Rules\UnsupportedUserOwnServer;
 use Illuminate\Support\Facades\DB;
 
 class InstanceInputFilter
@@ -14,6 +15,7 @@ class InstanceInputFilter
     {
         validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
+            'hostname' => new UnsupportedUserOwnServer, // not yet support this
         ])->validated();
 
         $reg_info = [];

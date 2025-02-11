@@ -3,6 +3,8 @@
   <form method="POST">
     @csrf
 
+    @include('instance.user_own_server')
+
     <button type="submit">{{ __('trans.register') }}</button>
   </form>
 

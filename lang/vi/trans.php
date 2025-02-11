@@ -72,6 +72,7 @@ return [
     "turn_off" => "tắt",
     "turn_on" => "bật",
     "txt_record_not_found" => "bản ghi TXT không tồn tại",
+    "unsupported_user_own_server" => "mã nguồn chưa hỗ trợ dùng server riêng",
     "update" => "cập nhật",
     "use_your_own_server" => "sử dụng server cá nhân",
     "user_must_have_sudo_privileged" => "user phải có quyền sudo",

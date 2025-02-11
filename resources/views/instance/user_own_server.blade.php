@@ -4,12 +4,18 @@
 
 <div class="border-dashed p-2 py-4 rounded-md">
   <label class="select-none" for="hostnames">{{ __('trans.use_your_own_server') }}</label><br>
-  <input list="hostnames" name="hostname" class="awesomplete" data-minchars="0" data-autofirst="true">
+  <input list="hostnames" name="hostname"
+         class="awesomplete" data-minchars="0"
+         data-autofirst="true" value="{{ old('hostname') }}">
   <datalist id="hostnames">
     @foreach ($hostnames as $hostname)
     <option value="{{ $hostname }}">
     @endforeach
   </datalist>
+  <br>
+  @error('hostname')
+  <div style="display: inline; color: red">{{ $message }}</div>
+  @enderror
 </div><br>
 
 @endif

@@ -3,6 +3,8 @@
   <form method="POST">
     @csrf
 
+    @include('instance.user_own_server')
+
     <label class="select-none" for="email">email</label><br>
     <input type="text" name="email" value="{{ auth()->user()->email }}"><br>
     @error('email')
