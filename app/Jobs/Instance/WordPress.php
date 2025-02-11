@@ -157,12 +157,6 @@ class WordPress extends _0Instance_
             'find . -type f -exec chmod 644 {} \;'
         );
 
-        // restart container
-        $this->ssh->exec(
-            'podman stop '.$this->instance->id.' && '.
-            'podman start '.$this->instance->id
-        );
-
         // wp-cron.php
         $this->ssh->exec(
             'podman exec '.$this->instance->id.' '.
@@ -173,6 +167,32 @@ class WordPress extends _0Instance_
 
         $this->ssh->exec('podman exec '.$this->instance->id.' chmod +x /etc/periodic/15min/wpcron');
 
+        // php-fpm
+        $this->ssh->clearOutput();
+
+        $this->ssh->exec('podman mount '.$this->instance->id);
+
+        $instance_mount_dir = $this->ssh->getLastLine();
+
+        $this->ssh->exec(
+            // access.format that use HTTP_X_FORWARDED_FOR
+            'export FILE="'.$instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf" && '.
+            'grep -qF '.
+            '\'access.format = '.
+            '"%{HTTP_X_FORWARDED_FOR}e - %u %t \"%m %r%Q%q\" %s %f %{milli}d %{kilo}M %C%%"\' '.
+            '"'.$instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf" || '.
+            'sed -i '.
+            '\'/^;access\.format = .*/a '.
+            'access.format = '.
+            '"%{HTTP_X_FORWARDED_FOR}e - %u %t \\"%m %r%Q%q\\" %s %f %{milli}d %{kilo}M %C%%"\' '.
+            '"'.$instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf"'
+        );
+
+        // restart container
+        $this->ssh->exec(
+            'podman stop '.$this->instance->id.' && '.
+            'podman start '.$this->instance->id
+        );
     }
 
     public function buildTrafficRule(): string
