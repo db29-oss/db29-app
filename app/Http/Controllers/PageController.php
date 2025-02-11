@@ -125,9 +125,7 @@ class PageController extends Controller
 
     public function dashboard()
     {
-        $user_server_count = Machine::whereUserId(auth()->user()->id)->count();
-
-        return view('dashboard')->with('user_server_count', $user_server_count);
+        return view('dashboard');
     }
 
     public function instance()
@@ -586,6 +584,8 @@ class PageController extends Controller
             $machine->storage_path = request('storage_path') ?? '/opt/';
             $machine->save();
 
+            User::whereId(auth()->user()->id)->increment('machine_count', 1);
+
             $traffic_router = new TrafficRouter;
             $traffic_router->machine_id = $machine->id;
             $traffic_router->save();
@@ -619,12 +619,22 @@ class PageController extends Controller
 
     public function deleteServer()
     {
+        $user = auth()->user();
+
+        $now = now();
         $sql_params = [];
         $sql = 'with '.
+            'update_user as ('.
+                'update users set '.
+                'machine_count = machine_count - 1, '.
+                'updated_at = ? '. # $now
+                'where id = ? '. # $user->id;
+                'returning id'.
+            '), '.
             'select_machine as ('.
                 'select * from machines '.
                 'where id = ? '. # request('machine_id')
-                'and user_id = ? '. # auth()->user()->id
+                'and user_id = ? '. # $user->id
                 'limit 1 '.
                 'for update'.
             '), '.
@@ -637,8 +647,11 @@ class PageController extends Controller
             'where id = (select id from select_machine) '.
             'and not exists (select * from select_instance)';
 
+        $sql_params[] = $now;
+        $sql_params[] = $user->id;
+
         $sql_params[] = request('machine_id');
-        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $user->id;
         $sql_params[] = request('machine_id');
 
         $db = app('db')->select($sql, $sql_params);

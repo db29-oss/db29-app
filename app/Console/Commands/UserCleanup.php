@@ -17,6 +17,7 @@ class UserCleanup extends Command
         $users = User::query()
             ->whereInstanceCount(0)
             ->whereSubdomainCount(0)
+            ->whereMachineCount(0)
             ->where('last_logged_in_at', '<', now()->subDays(30))
             ->where('credit', '<=', 0)
             ->get();
