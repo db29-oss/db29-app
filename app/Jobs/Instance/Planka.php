@@ -81,7 +81,7 @@ class Planka extends _0Instance_
 
         foreach ($yml_lines as $yml_line) {
             $put_docker_compose_commands[] =
-                'echo '.escapeshellarg($yml_line).' | sudo tee -a '.$instance_path.'docker-compose.yml';
+                'echo '.escapeshellarg($yml_line).' | tee -a '.$instance_path.'docker-compose.yml';
         }
 
         $this->createInstancePath();

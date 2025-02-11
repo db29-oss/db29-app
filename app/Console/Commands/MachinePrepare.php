@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Machine;
 use Illuminate\Console\Command;
+use phpseclib3\Crypt\PublicKeyLoader;
 
 class MachinePrepare extends Command
 {
@@ -27,14 +28,36 @@ class MachinePrepare extends Command
 
         foreach ($machines as $machine) {
             cache()->store('lock')->lock('m_'.$machine->id)->get(function() use ($machine) {
-                $ssh = app('ssh')->toMachine($machine)->compute();
+                $init_ssh = $ssh = app('ssh')->toMachine($machine)->compute();
 
-                if ($machine->ssh_username === 'root') {
-                    // we may not have sudo util by default
-                    $ssh->exec('DEBIAN_FRONTEND=noninteractive apt update && apt install sudo');
-                } else {
-                    $ssh->exec('DEBIAN_FRONTEND=noninteractive sudo apt update');
+                $get_uid_script =
+                    'while read key value _; do '.
+                    '[ "$key" = "Uid:" ] && { echo "$value"; break; }; '.
+                    'done < /proc/self/status';
+
+                $init_ssh->exec($get_uid_script);
+
+                if ($init_ssh->getLastLine() !== "0") { // uid
+                    /** @var \phpseclib3\Crypt\EC\PrivateKey $privatekey */
+                    $privatekey = PublicKeyLoader::load($machine->ssh_privatekey);
+                    $publickey = $privatekey->getPublicKey();
+                    $ssh_publickey = $publickey->toString('OpenSSH', ['comment' => '']);
+
+                    $init_ssh->exec('sudo mkdir -p /root/.ssh');
+                    $init_ssh->exec('sudo touch /root/.ssh/authorized_keys');
+                    $init_ssh->exec(
+                        'echo '.escapeshellarg($ssh_publickey).' | '.
+                        'sudo tee -a /root/.ssh/authorized_keys'
+                    );
+
+                    Machine::whereId($machine->id)->update(['ssh_username' => 'root']);
+
+                    $machine->refresh();
+
+                    $ssh = $init_ssh = app('ssh')->toMachine($machine)->compute();
                 }
+
+                $ssh->exec('DEBIAN_FRONTEND=noninteractive apt update');
 
                 $storage_conf_lines = [
                     '[storage]',
@@ -49,36 +72,36 @@ class MachinePrepare extends Command
                 $ssh->exec(
                     array_merge(
                         [
-                            'sudo apt install curl git jq netcat-openbsd podman podman-compose rsync unzip -y',
-                            'sudo mkdir -p '.$machine->storage_path,
-                            'sudo touch /etc/containers/registries.conf.d/docker.conf',
+                            'apt install curl git jq netcat-openbsd podman podman-compose rsync unzip -y',
+                            'mkdir -p '.$machine->storage_path,
+                            'touch /etc/containers/registries.conf.d/docker.conf',
 
                             'echo '.escapeshellarg('unqualified-search-registries = ["docker.io"]').' | '.
-                            'sudo tee /etc/containers/registries.conf.d/docker.conf',
-                            'sudo touch /etc/containers/storage.conf',
-                            'sudo mkdir -p '.$machine->storage_path.'podman/graphroot',
-                            'sudo mkdir -p '.$machine->storage_path.'podman/runroot',
-                            'sudo rm -f /etc/containers/storage.conf',
-                            'sudo touch /etc/containers/storage.conf',
+                            'tee /etc/containers/registries.conf.d/docker.conf',
+                            'touch /etc/containers/storage.conf',
+                            'mkdir -p '.$machine->storage_path.'podman/graphroot',
+                            'mkdir -p '.$machine->storage_path.'podman/runroot',
+                            'rm -f /etc/containers/storage.conf',
+                            'touch /etc/containers/storage.conf',
                         ],
                         [
                             // instance
-                            'sudo mkdir -p '.$machine->storage_path.'instance',
+                            'mkdir -p '.$machine->storage_path.'instance',
                             // www
-                            'sudo mkdir -p '.$machine->storage_path.'www'
+                            'mkdir -p '.$machine->storage_path.'www'
                         ]
                     )
                 );
 
                 $ssh->clearOutput();
-                $ssh->exec('sudo md5sum /etc/containers/storage.conf');
+                $ssh->exec('md5sum /etc/containers/storage.conf');
 
                 $commands = [];
 
                 if (explode(' ', $ssh->getLastLine())[0] !== $md5sum_storage_conf) {
                     foreach ($storage_conf_lines as $storage_conf_line) {
                         $commands[] = "echo ".
-                            escapeshellarg($storage_conf_line)." | sudo tee -a /etc/containers/storage.conf";
+                            escapeshellarg($storage_conf_line)." | tee -a /etc/containers/storage.conf";
                     }
                 }
 
@@ -89,15 +112,15 @@ class MachinePrepare extends Command
                 if (app('env') === 'production') {
                     $ssh->exec(
                         [
-                            'sudo touch /etc/modules-load.d/bfq.conf',
-                            'echo bfq | sudo tee /etc/modules-load.d/bfq.conf',
-                            'sudo touch /etc/udev/rules.d/60-scheduler.rules',
+                            'touch /etc/modules-load.d/bfq.conf',
+                            'echo bfq | tee /etc/modules-load.d/bfq.conf',
+                            'touch /etc/udev/rules.d/60-scheduler.rules',
                             'echo '.
                             escapeshellarg(
                                 'ACTION=="add|change", KERNEL=="sd*[!0-9]|sr*", ATTR{queue/scheduler}="bfq"'
-                            ).' | sudo tee /etc/udev/rules.d/60-scheduler.rules',
-                            'sudo udevadm control --reload',
-                            'sudo udevadm trigger'
+                            ).' | tee /etc/udev/rules.d/60-scheduler.rules',
+                            'udevadm control --reload',
+                            'udevadm trigger'
                         ]
                     );
                 }

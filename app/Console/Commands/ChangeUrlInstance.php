@@ -80,7 +80,7 @@ class ChangeUrlInstance extends Command
         $tr_config_lines = explode(PHP_EOL, $tr_config);
 
         foreach ($tr_config_lines as $line) {
-            $ssh->exec('echo '.escapeshellarg($line).' | sudo tee -a /etc/caddy/sites/'.$subdomain.'.caddyfile');
+            $ssh->exec('echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$subdomain.'.caddyfile');
         }
 
         app('rt', [$machine->trafficRouter, $ssh])->reload();

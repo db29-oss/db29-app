@@ -103,7 +103,7 @@ class TurnOnInstance implements ShouldQueue
 
         foreach ($tr_config_lines as $line) {
             $ssh->exec(
-                'echo '.escapeshellarg($line).' | sudo tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+                'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
             );
         }
 
