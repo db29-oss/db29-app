@@ -73,6 +73,7 @@ return [
     "turn_on" => "bật",
     "txt_record_not_found" => "bản ghi TXT không tồn tại",
     "update" => "cập nhật",
+    "use_your_own_server" => "sử dụng server cá nhân",
     "user_must_have_sudo_privileged" => "user phải có quyền sudo",
     "valid_path_format" => "path chỉ được sử dụng ký tự a-z A-Z 0-9 _- / . :",
     "wait_a_sec" => "chờ tí",

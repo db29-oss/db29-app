@@ -1,5 +1,3 @@
-@include('header', ['title' => 'DB29 - SOURCE'])
-
 <div>
   <h2>{{ str(request('source'))->upper() }}</h2>
   <form method="POST">

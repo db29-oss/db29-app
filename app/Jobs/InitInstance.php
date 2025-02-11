@@ -47,41 +47,59 @@ class InitInstance implements ShouldQueue
         // init
         if (! $machine) {
             $sql_params = [];
-            $sql = 'with '.
-                'select_machine as ('.
-                    'select * from machines '.
-                    'where enabled = ? '. # true
-                    'and user_id is null '.
-                    'and remain_cpu > ? '. # $constraint['max_cpu']
-                    'and remain_disk > ? '. # $constraint['max_disk']
-                    'and remain_memory > ? '. # $constraint['max_memory']
-                    'order by random() '.
-                    'limit 1'.
-                '), '.
-                'update_machine as ('.
-                    'update machines set '.
-                    'remain_cpu = remain_cpu - ?, '. # $constraint['max_cpu']
-                    'remain_disk = remain_disk - ?, '. # $constraint['max_disk']
-                    'remain_memory = remain_memory - ?, '. # $constraint['max_memory']
-                    'updated_at = ? '. # $now
-                    'where id = (select id from select_machine) '.
-                    'returning id'.
-                ') '.
+            $sql = 'with ';
+
+            if (array_key_exists('machine_id', $this->reg_info)) {
+                $sql .=
+                    'select_machine as ('.
+                        'select * from machines '.
+                        'where id = ? '. # $this->reg_info['machine_id']
+                        'limit 1'.
+                    '), ';
+
+                $sql_params[] = $this->reg_info['machine_id'];
+
+            }
+
+            if (! array_key_exists('machine_id', $this->reg_info)) {
+                $sql .=
+                    'select_machine as ('.
+                        'select * from machines '.
+                        'where enabled = ? '. # true
+                        'and user_id is null '.
+                        'and remain_cpu > ? '. # $constraint['max_cpu']
+                        'and remain_disk > ? '. # $constraint['max_disk']
+                        'and remain_memory > ? '. # $constraint['max_memory']
+                        'order by random() '.
+                        'limit 1'.
+                    '), '.
+                    'update_machine as ('.
+                        'update machines set '.
+                        'remain_cpu = remain_cpu - ?, '. # $constraint['max_cpu']
+                        'remain_disk = remain_disk - ?, '. # $constraint['max_disk']
+                        'remain_memory = remain_memory - ?, '. # $constraint['max_memory']
+                        'updated_at = ? '. # $now
+                        'where id = (select id from select_machine) '.
+                        'returning id'.
+                    ') ';
+
+                $sql_params[] = true;
+                $sql_params[] = $constraint['max_cpu'];
+                $sql_params[] = $constraint['max_disk'];
+                $sql_params[] = $constraint['max_memory'];
+
+                $sql_params[] = $constraint['max_cpu'];
+                $sql_params[] = $constraint['max_disk'];
+                $sql_params[] = $constraint['max_memory'];
+                $sql_params[] = $now;
+            }
+
+            $sql .=
                 'update instances set '.
                 'status = ?, '. # 'init'
                 'machine_id = (select id from select_machine), '.
                 'updated_at = ? '. # $now
                 'where id = ?'; # $instance->id
-
-            $sql_params[] = true;
-            $sql_params[] = $constraint['max_cpu'];
-            $sql_params[] = $constraint['max_disk'];
-            $sql_params[] = $constraint['max_memory'];
-
-            $sql_params[] = $constraint['max_cpu'];
-            $sql_params[] = $constraint['max_disk'];
-            $sql_params[] = $constraint['max_memory'];
-            $sql_params[] = $now;
 
             $sql_params[] = 'init';
             $sql_params[] = $now;

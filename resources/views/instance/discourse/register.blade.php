@@ -1,13 +1,4 @@
-@include('header', ['title' => 'DB29 - SOURCE'])
-
 <div>
-  @if (auth()->user()->email && str()->after(auth()->user()->email, '@') === config('app.domain'))
-  <div class="text-gray-400 pointer-events-none select-none">
-    {{ __('trans.change_default_config_at') }}
-    <a class="pointer-events-auto" href={{ route('prefill') }}>{{ __('trans.prefill') }}</a>
-  </div><br>
-  @endif
-
   <h2>{{ str(request('source'))->upper() }}</h2>
 
   <div class="pb-4 text-gray-400">
@@ -22,9 +13,19 @@
   <form method="POST">
     @csrf
 
+    @include('instance.user_own_server')
+
     <div class="border-dashed p-2 rounded-md">
       <label class="select-none" for="email">{{ __('trans.admin_email') }}</label><br>
-      <input type="text" name="email" placeholder="hello@gmail.com" value="{{ old('email') }}"><br>
+      <input type="text" name="email" placeholder="hello@gmail.com" value=
+      @if (old('email'))
+          "{{ old('email') }}"
+      @elseif (str()->after(auth()->user()->email, '@') !== config('app.domain'))
+          "{{ auth()->user()->email }}"
+      @else
+          ""
+      @endif
+      ><br>
       @error('email')
       <div style="display: inline; color: red">{{ $message }}</div>
       @enderror

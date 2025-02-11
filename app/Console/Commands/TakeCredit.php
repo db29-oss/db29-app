@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Instance;
+use App\Models\Machine;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class TakeCredit extends Command
 
         $instances = Instance::query()
             ->where('queue_active', false) # already calc take credit when turn off/delete
+            ->whereIn('machine_id', Machine::whereNull('user_id')->pluck('id'))
             ->with([
                 'plan',
                 'user'

@@ -25,6 +25,8 @@ class TermInstance implements ShouldQueue
             ->with('machine.trafficRouter')
             ->first();
 
+        $extra = json_decode($instance->extra, true);
+
         $machine = $instance->machine;
         $traffic_router = $instance->machine->trafficRouter;
 
@@ -58,45 +60,66 @@ class TermInstance implements ShouldQueue
 
         $sql_params = [];
         $sql = 'with '.
-            'update_user as ('.
-                'update users set '.
-                'bonus_credit = case '.
-                    'when bonus_credit >= ? '. # $pay_amount
-                    'then bonus_credit - ? '. # $pay_amount
-                    'else 0 '.
-                'end, '.
-                'credit = case '.
-                    'when bonus_credit >= ? '. # $pay_amount
-                    'then credit '.
-                    'else credit - (? - bonus_credit) '. # $pay_amount
-                'end, '.
-                'instance_count = instance_count - 1, '.
-                'updated_at = ? '. # $now
-                'where id = ? '. # $instance->user->id
+            'delete_instance as ('.
+                'delete from instances '.
+                'where id = ? '. # $instance->id
                 'returning id'.
-            '), '.
-            'update_machine as ('.
-                'update machines set '.
-                'remain_disk = remain_disk + ?, '. # $constraint['max_disk']
-                'updated_at = ? '. # $now
-                'where id = ? '. # $machine->id
-                'returning id'.
-            ') '.
-            'delete from instances '.
-            'where id = ?'; # $instance->id
-
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $now;
-        $sql_params[] = $instance->user->id;
-
-        $sql_params[] = $constraint['max_disk'];
-        $sql_params[] = $now;
-        $sql_params[] = $machine->id;
+            ') ';
 
         $sql_params[] = $instance->id;
+
+        if (! array_key_exists('machine_id', $extra['reg_info'])) {
+            $sql .=
+                'update_user as ('.
+                    'update users set '.
+                    'bonus_credit = case '.
+                        'when bonus_credit >= ? '. # $pay_amount
+                        'then bonus_credit - ? '. # $pay_amount
+                        'else 0 '.
+                    'end, '.
+                    'credit = case '.
+                        'when bonus_credit >= ? '. # $pay_amount
+                        'then credit '.
+                        'else credit - (? - bonus_credit) '. # $pay_amount
+                    'end, '.
+                    'instance_count = instance_count - 1, '.
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $instance->user->id
+                    'returning id'.
+                '), '.
+                'update_machine as ('.
+                    'update machines set '.
+                    'remain_disk = remain_disk + ?, '. # $constraint['max_disk']
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $machine->id
+                    'returning id'.
+                ') ';
+
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $now;
+            $sql_params[] = $instance->user->id;
+
+            $sql_params[] = $constraint['max_disk'];
+            $sql_params[] = $now;
+            $sql_params[] = $machine->id;
+        } else {
+            $sql .=
+                'update_user as ('.
+                    'update users set '.
+                    'instance_count = instance_count - 1, '.
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $instance->user->id
+                    'returning id'.
+                ') ';
+
+            $sql_params[] = $now;
+            $sql_params[] = $instance->user->id;
+        }
+
+        $sql .= 'select 1';
 
         DB::select($sql, $sql_params);
     }

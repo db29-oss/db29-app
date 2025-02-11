@@ -12,22 +12,18 @@ class InstanceInputFilter
 {
     public static function discourse()
     {
-        $validator = validator(request()->all(), [
+        validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
-        ]);
-
-        $validator->validated();
+        ])->validated();
 
         $reg_info = [];
 
         $reg_info['email'] = request('email');
 
         if (request('system_email')) {
-            $validator = validator(request()->all(), [
+            validator(request()->all(), [
                 'system_email' => ['email:rfs'],
-            ]);
-
-            $validator->validated();
+            ])->validated();
 
             $reg_info['system_email'] = request('system_email');
 
@@ -57,7 +53,7 @@ class InstanceInputFilter
             if (app('env') === 'production') {
                 $system_email_domain = explode('@', $reg_info['system_email'])[1];
 
-                $validator = validator(
+                validator(
                     [
                         'dkim_txt' => $reg_info['dkim_selector'].'._domainkey.'.$system_email_domain,
                         'spf_txt' => $reg_info['dkim_selector'].'.'.$system_email_domain,
@@ -72,9 +68,7 @@ class InstanceInputFilter
                             'feedback-smtp.'.config('services.ses.smtp').'.amazonses.com'
                         ),
                     ]
-                );
-
-                $validator->validated();
+                )->validated();
             }
         }
 
@@ -83,14 +77,12 @@ class InstanceInputFilter
 
     public static function planka()
     {
-        $validator = validator(request()->all(), [ 
+        validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
             'password' => ['required', 'alpha_num:ascii'],
             'name' => ['required', 'alpha_num:ascii'],
             'username' => ['required', 'alpha_num:ascii'],
-        ]);
-
-        $validator->validated();
+        ])->validated();
 
         $reg_info = [];
 

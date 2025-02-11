@@ -1,13 +1,4 @@
-@include('header', ['title' => 'DB29 - SOURCE'])
-
 <div>
-  @if (str()->after(auth()->user()->email, '@') === config('app.domain'))
-  <div class="text-gray-400 pointer-events-none select-none">
-    {{ __('trans.change_default_config_at') }}
-    <a class="pointer-events-auto" href={{ route('prefill') }}>{{ __('trans.prefill') }}</a>
-  </div><br>
-  @endif
-
   <h2>{{ str(request('source'))->upper() }}</h2>
   <form method="POST">
     @csrf

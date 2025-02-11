@@ -28,6 +28,8 @@ class TurnOffInstance implements ShouldQueue
             ])
             ->first();
 
+        $extra = json_decode($instance->extra, true);
+
         $source = $instance->source;
 
         $job_class = "\\App\\Jobs\\Instance\\".str()->studly($source->name);
@@ -96,49 +98,16 @@ CONFIG;
 
         $sql_params = [];
         $sql = 'with '.
-            'update_user as ('.
-                'update users set '.
-                'bonus_credit = case '.
-                    'when bonus_credit >= ? '. # $pay_amount
-                    'then bonus_credit - ? '. # $pay_amount
-                    'else 0 '.
-                'end, '.
-                'credit = case '.
-                    'when bonus_credit >= ? '. # $pay_amount
-                    'then credit '.
-                    'else credit - (? - bonus_credit) '. # $pay_amount
-                'end, '.
+            'update_instance as ('.
+                'update instances set '.
+                'status = ?, '. # 'ct_dw'
+                'queue_active = ?, '. # false
+                'paid_at = ?, '. # $now
+                'turned_off_at = ?, '. # $now
                 'updated_at = ? '. # $now
-                'where id = ? '. # $instance->user->id
+                'where id = ? '. # $instance->id
                 'returning id'.
-            '), '.
-            'update_machine as ('.
-                'update machines set '.
-                'remain_cpu = remain_cpu + ?, '. # $constraint['max_cpu']
-                'remain_memory = remain_memory + ?, '. # $constraint['max_memory']
-                'updated_at = ? '. # $now
-                'where id = ? '. # $machine->id
-                'returning id'.
-            ') '.
-            'update instances set '.
-            'status = ?, '. # 'ct_dw'
-            'queue_active = ?, '. # false
-            'paid_at = ?, '. # $now
-            'turned_off_at = ?, '. # $now
-            'updated_at = ? '. # $now
-            'where id = ?'; # $instance->id
-
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $pay_amount;
-        $sql_params[] = $now;
-        $sql_params[] = $instance->user->id;
-
-        $sql_params[] = $constraint['max_cpu'];
-        $sql_params[] = $constraint['max_memory'];
-        $sql_params[] = $now;
-        $sql_params[] = $machine->id;
+            ') ';
 
         $sql_params[] = 'ct_dw';
         $sql_params[] = false;
@@ -146,6 +115,48 @@ CONFIG;
         $sql_params[] = $now;
         $sql_params[] = $now;
         $sql_params[] = $instance->id;
+
+        if (! array_key_exists('machine_id', $extra['reg_info'])) {
+            $sql .=
+                'update_user as ('.
+                    'update users set '.
+                    'bonus_credit = case '.
+                        'when bonus_credit >= ? '. # $pay_amount
+                        'then bonus_credit - ? '. # $pay_amount
+                        'else 0 '.
+                    'end, '.
+                    'credit = case '.
+                        'when bonus_credit >= ? '. # $pay_amount
+                        'then credit '.
+                        'else credit - (? - bonus_credit) '. # $pay_amount
+                    'end, '.
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $instance->user->id
+                    'returning id'.
+                '), '.
+                'update_machine as ('.
+                    'update machines set '.
+                    'remain_cpu = remain_cpu + ?, '. # $constraint['max_cpu']
+                    'remain_memory = remain_memory + ?, '. # $constraint['max_memory']
+                    'updated_at = ? '. # $now
+                    'where id = ? '. # $machine->id
+                    'returning id'.
+                ') ';
+
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $pay_amount;
+            $sql_params[] = $now;
+            $sql_params[] = $instance->user->id;
+
+            $sql_params[] = $constraint['max_cpu'];
+            $sql_params[] = $constraint['max_memory'];
+            $sql_params[] = $now;
+            $sql_params[] = $machine->id;
+        }
+
+        $sql .= 'select 1';
 
         DB::select($sql, $sql_params);
     }

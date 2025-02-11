@@ -15,6 +15,7 @@ use App\Models\Source;
 use App\Models\TrafficRouter;
 use App\Models\User;
 use App\Rules\IANAPortNumber;
+use App\Rules\InsufficientCredit;
 use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\SSHConnectionWorks;
 use App\Rules\ValidPathFormat;
@@ -273,33 +274,20 @@ class PageController extends Controller
 
     public function postPrefill()
     {
-        $validator = validator(request()->all(), [ 
+        validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
             'name' => ['required', 'alpha_num:ascii'], // docker-compose env validation complexity
             'username' => ['required', 'alpha_num:ascii'],
-        ]);
-
-        $data = $validator->validated();
+        ])->validated();
 
         $user = auth()->user();
 
-        if ($data['email']) {
-            $user->email = $data['email'];
-        }
+        $user->email = request('email');
+        $user->name = request('name');
+        $user->username = request('username');
+        $user->save();
 
-        if ($data['name']) {
-            $user->name = $data['name'];
-        }
-
-        if ($data['username']) {
-            $user->username = $data['username'];
-        }
-
-        if ($user->isDirty()) {
-            $user->save();
-        }
-
-        return view('dashboard');
+        return redirect()->route('dashboard');
     }
 
     public function recharge()
@@ -362,14 +350,20 @@ class PageController extends Controller
             $input_seeder = InstanceInputSeeder::$source_name();
         }
 
-        return view('instance.'.$source_name.'.register')
+        $hostnames = Machine::whereUserId(auth()->user()->id)->pluck('hostname');
+
+        return view('instance.register')
+            ->with('hostnames', $hostnames)
             ->with('i_s_count', $i_s_count)
-            ->with('input_seeder', $input_seeder);
+            ->with('input_seeder', $input_seeder)
+            ->with('source_name', $source_name);
     }
 
     public function postRegisterInstance()
     {
         $source_name = request('source');
+
+        $user = auth()->user();
 
         $source = Source::whereName($source_name)
             ->where('enabled', true)
@@ -391,12 +385,43 @@ class PageController extends Controller
             $reg_info = InstanceInputFilter::$source_name();
         }
 
+        if (request('hostname')) {
+            $machine = Machine::query()
+                ->whereUserId($user->id)
+                ->whereHostname(request('hostname'))
+                ->first('id');
+
+            if ($machine === null) {
+                return redirect()->route('source');
+            }
+
+            $reg_info['machine_id'] = $machine->id;
+
+            validator(
+                [
+                    'ins_cred' => $user->credit,
+                ],
+                [
+                    'ins_cred' => new InsufficientCredit
+                ]
+            )->validated();
+        }
+
         $now = now();
 
         $sql_params = [];
         $sql = 'with '.
             'update_user as ('.
-                'update users set '.
+                'update users set ';
+
+        if (request('hostname')) {
+            $sql .=
+                'credit = credit - ?, '; # $source->plans[0]->id
+
+            $sql_params[] = $source->plans[0]->id;
+        }
+
+        $sql .=
                 'instance_count = instance_count + 1, '.
                 'updated_at = ? '. # $now
                 'where id = ? '. # auth()->user()->id
@@ -427,13 +452,13 @@ class PageController extends Controller
             ') returning id';
 
         $sql_params[] = $now;
-        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $user->id;
 
-        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $user->id;
         $sql_params[] = $source_name;
 
         $sql_params[] = $source->id;
-        $sql_params[] = auth()->user()->id;
+        $sql_params[] = $user->id;
         $sql_params[] = $source->plans[0]->id;
         $sql_params[] = true;
         $sql_params[] = json_encode(['reg_info' => $reg_info]);
