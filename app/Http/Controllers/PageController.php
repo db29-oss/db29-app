@@ -554,7 +554,6 @@ class PageController extends Controller
             $reg_info['domain'] = request('domain');
         }
 
-
         DB::transaction(function () use ($instance) {
             $now = now();
             $sql_params = [];
@@ -769,16 +768,28 @@ class PageController extends Controller
                 'select * from instances '.
                 'where machine_id = ? '. # request('machine_id')
                 'limit 1'.
+            '), '.
+            'delete_machine as ('.
+                'delete from machines '.
+                'where id = (select id from select_machine) '.
+                'and not exists (select * from select_instance) '.
+                'returning id'.
+            '), '.
+            'delete_traffic_router as ('.
+                'delete from traffic_routers '.
+                'where machine_id = ? '. # request('machine_id')
+                'and exists (select * from delete_machine) '.
+                'returning id'.
             ') '.
-            'delete from machines '.
-            'where id = (select id from select_machine) '.
-            'and not exists (select * from select_instance)';
+            'select 1';
 
         $sql_params[] = $now;
         $sql_params[] = $user->id;
 
         $sql_params[] = request('machine_id');
         $sql_params[] = $user->id;
+        $sql_params[] = request('machine_id');
+
         $sql_params[] = request('machine_id');
 
         $db = app('db')->select($sql, $sql_params);

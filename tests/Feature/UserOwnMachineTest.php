@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\PrepareMachine;
 use App\Models\Instance;
 use App\Models\Machine;
+use App\Models\TrafficRouter;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -29,6 +30,8 @@ class UserOwnMachineTest extends TestCase
 
         $this->assertEquals(0, User::whereId($u->id)->first()->machine_count);
 
+        $tr_count = TrafficRouter::count();
+
         $response = $this->post('server/add', [
             'ssh_username' => fake()->username(),
             'ssh_address' => 'example.com',
@@ -50,6 +53,8 @@ class UserOwnMachineTest extends TestCase
         $response = $this->post('server/delete', [
             'machine_id' => Machine::first()->id
         ]);
+
+        $this->assertEquals($tr_count, TrafficRouter::count());
 
         $this->assertEquals(0, User::whereId($u->id)->first()->machine_count);
     }
