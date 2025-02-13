@@ -150,18 +150,31 @@ class Planka extends _0Instance_
             }
         }
 
-        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
-
         $extra = json_decode($this->instance->extra, true);
 
-        $domain = '';
+        $default_domain = $this->instance->subdomain.'.'.config('app.domain');
+
+        $custom_domain = '';
 
         if (array_key_exists('domain', $extra['reg_info'])) {
-            $domain = $extra['reg_info']['domain'].' ';
+            $custom_domain = $extra['reg_info']['domain'];
         }
 
-        $tr_config = <<<CONFIG
-{$internal_domain}{$domain} {
+        $effect_domain = $custom_domain ? $custom_domain : $default_domain;
+
+        $tr_config = '';
+
+        if ($custom_domain) {
+            $tr_config .= <<<CONFIG
+{$default_domain} {
+    redir https://{$custom_domain}{uri} 301
+}
+
+CONFIG;
+        }
+
+        $tr_config .= <<<CONFIG
+{$effect_domain} {
     reverse_proxy 127.0.0.1:{$host_port}
 }
 CONFIG;

@@ -35,6 +35,7 @@ class Discourse extends _0Instance_
 
         $yml['templates'][] = 'templates/web.socketed.template.yml';
 
+        // no need to check extra reg_info domain (we don't allow user create with custom domain yet)
         $yml['env']['DISCOURSE_HOSTNAME'] = $this->instance->subdomain.'.'.config('app.domain');
 
         $yml['env']['DISCOURSE_DEVELOPER_EMAILS'] = $this->reg_info['email'];
@@ -170,20 +171,33 @@ class Discourse extends _0Instance_
 
     public function buildTrafficRule(): string
     {
-        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
-
         $extra = json_decode($this->instance->extra, true);
 
-        $domain = '';
+        $default_domain = $this->instance->subdomain.'.'.config('app.domain');
+
+        $custom_domain = '';
 
         if (array_key_exists('domain', $extra['reg_info'])) {
-            $domain = $extra['reg_info']['domain'].' ';
+            $custom_domain = $extra['reg_info']['domain'];
         }
+
+        $effect_domain = $custom_domain ? $custom_domain : $default_domain;
 
         $instance_path = $this->getPath();
 
-        $tr_config = <<<CONFIG
-{$internal_domain}{$domain} {
+        $tr_config = '';
+
+        if ($custom_domain) {
+            $tr_config .= <<<CONFIG
+{$default_domain} {
+    redir https://{$custom_domain}{uri} 301
+}
+
+CONFIG;
+        }
+
+        $tr_config .= <<<CONFIG
+{$effect_domain} {
     reverse_proxy unix/{$instance_path}discourse_docker/shared/standalone/nginx.http.sock
 }
 CONFIG;
@@ -276,7 +290,13 @@ CONFIG;
 
         $yml = app('yml')->parse($yml_str);
 
-        $yml['env']['DISCOURSE_HOSTNAME'] = $domain = $this->instance->subdomain.'.'.config('app.domain');
+        $yml['env']['DISCOURSE_HOSTNAME'] = $this->instance->subdomain.'.'.config('app.domain');
+
+        $extra = json_decode($this->instance->extra, true);
+
+        if (array_key_exists('domain', $extra['reg_info'])) {
+            $yml['env']['DISCOURSE_HOSTNAME'] = $extra['reg_info']['domain'];
+        }
 
         $yml_dump = app('yml')->dump($yml, 4);
 

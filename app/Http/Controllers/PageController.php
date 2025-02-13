@@ -505,28 +505,30 @@ class PageController extends Controller
         }
 
         if (request('domain')) {
-            validator(request()->all(), [
-                'domain' => new ValidDomainFormat,
-            ])->validated();
-
-            $tlds_alpha_by_domain_path = storage_path('app/public/').'tlds-alpha-by-domain.txt';
-
-            $top_level_domains = TopLevelDomains::fromPath($tlds_alpha_by_domain_path);
-
-            $result = $top_level_domains->resolve(request('domain'));
-
-            if ($result->subDomain()->toString() === '') {
+            if (app('env') === 'production') {
                 validator(request()->all(), [
-                    'domain' => new ARecordExactValue(
-                        $instance->subdomain.'.'.config('app.domain')
-                    ),
+                    'domain' => new ValidDomainFormat,
                 ])->validated();
-            } else {
-                validator(request()->all(), [
-                    'domain' => new CnameRecordExactValue(
-                        $instance->subdomain.'.'.config('app.domain')
-                    ),
-                ])->validated();
+
+                $tlds_alpha_by_domain_path = storage_path('app/public/').'tlds-alpha-by-domain.txt';
+
+                $top_level_domains = TopLevelDomains::fromPath($tlds_alpha_by_domain_path);
+
+                $result = $top_level_domains->resolve(request('domain'));
+
+                if ($result->subDomain()->toString() === '') {
+                    validator(request()->all(), [
+                        'domain' => new ARecordExactValue(
+                            $instance->subdomain.'.'.config('app.domain')
+                        ),
+                    ])->validated();
+                } else {
+                    validator(request()->all(), [
+                        'domain' => new CnameRecordExactValue(
+                            $instance->subdomain.'.'.config('app.domain')
+                        ),
+                    ])->validated();
+                }
             }
         }
 

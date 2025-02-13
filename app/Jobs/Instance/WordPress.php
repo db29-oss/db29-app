@@ -226,22 +226,35 @@ class WordPress extends _0Instance_
             sleep(1);
         }
 
-        $instance_path = $this->getPath();
-
-        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
-
         $extra = json_decode($this->instance->extra, true);
 
-        $domain = '';
+        $instance_path = $this->getPath();
+
+        $default_domain = $this->instance->subdomain.'.'.config('app.domain');
+
+        $custom_domain = '';
 
         if (array_key_exists('domain', $extra['reg_info'])) {
-            $domain = $extra['reg_info']['domain'].' ';
+            $custom_domain = $extra['reg_info']['domain'];
         }
+
+        $effect_domain = $custom_domain ? $custom_domain : $default_domain;
 
         $root_dir = $instance_path.'wordpress/';
 
-        $tr_config = <<<CONFIG
-{$internal_domain}{$domain}{
+        $tr_config = '';
+
+        if ($custom_domain) {
+            $tr_config .= <<<CONFIG
+{$default_domain} {
+    redir https://{$custom_domain}{uri} 301
+}
+
+CONFIG;
+        }
+
+        $tr_config .= <<<CONFIG
+{$effect_domain} {
 	root * {$root_dir}
 
 	encode gzip
