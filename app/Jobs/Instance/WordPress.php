@@ -228,16 +228,20 @@ class WordPress extends _0Instance_
 
         $instance_path = $this->getPath();
 
-        $domain = config('app.domain');
+        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
 
-        if ($this->instance->subdomain) {
-            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        $extra = json_decode($this->instance->extra, true);
+
+        $domain = '';
+
+        if (array_key_exists('domain', $extra['reg_info'])) {
+            $domain = $extra['reg_info']['domain'].' ';
         }
 
         $root_dir = $instance_path.'wordpress/';
 
         $tr_config = <<<CONFIG
-{$domain} {
+{$internal_domain}{$domain}{
 	root * {$root_dir}
 
 	encode gzip
@@ -306,7 +310,7 @@ CONFIG;
     {
     }
 
-    public function changeUrl(): string
+    public function changeDomain(): string
     {
         return $this->buildTrafficRule();
     }

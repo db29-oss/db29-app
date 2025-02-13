@@ -21,6 +21,8 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('register', [PageController::class, 'registerInstance'])->name('register-instance');
         Route::post('register', [PageController::class, 'postRegisterInstance'])
             ->name('post-register-instance');
+        Route::get('edit', [PageController::class, 'editInstance'])->name('edit-instance');
+        Route::post('edit', [PageController::class, 'postEditInstance'])->name('post-edit-instance');
     });
     Route::get('source', [PageController::class, 'source'])->name('source');
     Route::get('prefill', [PageController::class, 'prefill'])->name('prefill');

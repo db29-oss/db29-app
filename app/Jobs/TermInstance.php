@@ -38,7 +38,9 @@ class TermInstance implements ShouldQueue
 
         // dns_dw
         if (app('env') === 'production') {
-            app('cf')->deleteDnsRecord($instance->dns_id);
+            if ($instance->dns_id) {
+                app('cf')->deleteDnsRecord($instance->dns_id);
+            }
         }
 
         // ct_dw

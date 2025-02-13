@@ -79,6 +79,10 @@
         @if (! $instance->queue_active)
 
         @if ($instance->status === 'ct_dw')
+        <a href="{{ route('edit-instance', ['instance_id' => $instance->id]) }}" class="inline-block">
+          <button class="inline-block">{{ __('trans.edit') }}</button>
+        </a>
+
         <form class="inline" method="POST" action="{{ route('turn-on-instance') }}">
           @csrf
           <input hidden name="instance_id" value="{{ $instance->id }}"/>

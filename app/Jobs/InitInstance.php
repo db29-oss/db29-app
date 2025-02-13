@@ -159,9 +159,9 @@ class InitInstance implements ShouldQueue
         Instance::query()
             ->whereId($instance->id)
             ->update([
-                'subdomain' => $subdomain,
                 'dns_id' => $dns_id,
                 'status' => 'dns',
+                'subdomain' => $subdomain,
             ]);
 
         $instance->subdomain = $subdomain;

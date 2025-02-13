@@ -32,7 +32,7 @@ abstract class _0Instance_ implements ShouldQueue
     public function backUp() {}
     public function restore() {}
     public function downgrade() {}
-    public function changeUrl(): string { return 'unimplemented'; }
+    public function changeDomain(): string { return 'unimplemented'; }
     public function upgrade() {}
     public function movePath(string $path) {}
     public function buildLimitCommands(): array { return []; }

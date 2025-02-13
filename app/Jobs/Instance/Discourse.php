@@ -35,9 +35,7 @@ class Discourse extends _0Instance_
 
         $yml['templates'][] = 'templates/web.socketed.template.yml';
 
-        $yml['env']['DISCOURSE_HOSTNAME'] =
-            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
-            config('app.domain');
+        $yml['env']['DISCOURSE_HOSTNAME'] = $this->instance->subdomain.'.'.config('app.domain');
 
         $yml['env']['DISCOURSE_DEVELOPER_EMAILS'] = $this->reg_info['email'];
         $yml['env']['DISCOURSE_FORCE_HTTPS'] = true;
@@ -69,11 +67,11 @@ class Discourse extends _0Instance_
                 array_shift($dspk);
                 $dspk = implode("", $dspk);
 
-                $domain = explode('@', $this->reg_info['system_email'])[1];
+                $system_email_domain = explode('@', $this->reg_info['system_email'])[1];
 
                 try {
                     $client->createEmailIdentity([
-                        'EmailIdentity' => $domain,
+                        'EmailIdentity' => $system_email_domain,
                         'DkimSigningAttributes' => [
                             'DomainSigningPrivateKey' => $dspk,
                             'DomainSigningSelector' => $this->reg_info['dkim_selector'],
@@ -91,9 +89,9 @@ class Discourse extends _0Instance_
 
                 try {
                     $client->putEmailIdentityMailFromAttributes([
-                        'EmailIdentity' => $domain,
+                        'EmailIdentity' => $system_email_domain,
                         'BehaviorOnMxFailure' => 'REJECT_MESSAGE',
-                        'MailFromDomain' => $this->reg_info['dkim_selector'].'.'.$domain,
+                        'MailFromDomain' => $this->reg_info['dkim_selector'].'.'.$system_email_domain,
                     ]);
                 } catch (AwsException $e) {
                     logger()->error('DB292020: fail put mail from attribute', [
@@ -172,16 +170,20 @@ class Discourse extends _0Instance_
 
     public function buildTrafficRule(): string
     {
-        $domain = config('app.domain');
+        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
 
-        if ($this->instance->subdomain) {
-            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        $extra = json_decode($this->instance->extra, true);
+
+        $domain = '';
+
+        if (array_key_exists('domain', $extra['reg_info'])) {
+            $domain = $extra['reg_info']['domain'].' ';
         }
 
         $instance_path = $this->getPath();
 
         $tr_config = <<<CONFIG
-{$domain} {
+{$internal_domain}{$domain} {
     reverse_proxy unix/{$instance_path}discourse_docker/shared/standalone/nginx.http.sock
 }
 CONFIG;
@@ -262,7 +264,7 @@ CONFIG;
         return $this->buildTrafficRule();
     }
 
-    public function changeUrl(): string
+    public function changeDomain(): string
     {
         $instance_path = $this->getPath();
 
@@ -274,9 +276,7 @@ CONFIG;
 
         $yml = app('yml')->parse($yml_str);
 
-        $yml['env']['DISCOURSE_HOSTNAME'] =
-            ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
-            config('app.domain');
+        $yml['env']['DISCOURSE_HOSTNAME'] = $domain = $this->instance->subdomain.'.'.config('app.domain');
 
         $yml_dump = app('yml')->dump($yml, 4);
 

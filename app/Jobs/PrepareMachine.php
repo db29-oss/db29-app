@@ -98,7 +98,6 @@ class PrepareMachine implements ShouldQueue
 
         $ssh->exec($commands);
 
-
         // bfq io scheduler (able control with ionice)
         if (app('env') === 'production') {
             $ssh->exec(

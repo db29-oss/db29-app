@@ -13,9 +13,7 @@ class Planka extends _0Instance_
         ) {
             if (str_starts_with($environment, 'BASE_URL=')) {
                 $this->docker_compose['services']['planka']['environment'][$env_idx] =
-                    'BASE_URL=https://'.
-                    ($this->instance->subdomain ? $this->instance->subdomain.'.' : '').
-                    config('app.domain');
+                    'BASE_URL=https://'.$this->instance->subdomain.'.'.config('app.domain');
 
                 break;
             }
@@ -152,14 +150,18 @@ class Planka extends _0Instance_
             }
         }
 
-        $domain = config('app.domain');
+        $internal_domain = $this->instance->subdomain.'.'.config('app.domain').' ';
 
-        if ($this->instance->subdomain) {
-            $domain = $this->instance->subdomain.'.'.config('app.domain');
+        $extra = json_decode($this->instance->extra, true);
+
+        $domain = '';
+
+        if (array_key_exists('domain', $extra['reg_info'])) {
+            $domain = $extra['reg_info']['domain'].' ';
         }
 
         $tr_config = <<<CONFIG
-{$domain} {
+{$internal_domain}{$domain} {
     reverse_proxy 127.0.0.1:{$host_port}
 }
 CONFIG;

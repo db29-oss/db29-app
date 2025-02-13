@@ -6,11 +6,11 @@ use App\Models\Instance;
 use Illuminate\Console\Command;
 use ReflectionClass;
 
-class ChangeUrlInstance extends Command
+class ChangeDomainInstance extends Command
 {
-    protected $signature = 'app:change-url-instance {--instance_id=} {--subdomain=}';
+    protected $signature = 'app:change-domain-instance {--instance_id=} {--subdomain=}';
 
-    protected $description = 'Change url instance';
+    protected $description = 'Change domain instance (internal domain only)';
 
     public function handle()
     {
@@ -41,8 +41,8 @@ class ChangeUrlInstance extends Command
 
         $refl_job_class = new ReflectionClass($job_class);
 
-        if ($refl_job_class->hasMethod('changeUrl')) {
-            $method = $refl_job_class->getMethod('changeUrl');
+        if ($refl_job_class->hasMethod('changeDomain')) {
+            $method = $refl_job_class->getMethod('changeDomain');
             if ($method->getDeclaringClass()->getName() === 'App\Jobs\Instance\_0Instance_') {
                 return 6;
             }
@@ -75,7 +75,7 @@ class ChangeUrlInstance extends Command
             instance: $instance,
             machine: $machine,
             ssh: $ssh,
-        ))->changeUrl();
+        ))->changeDomain();
 
         $tr_config_lines = explode(PHP_EOL, $tr_config);
 

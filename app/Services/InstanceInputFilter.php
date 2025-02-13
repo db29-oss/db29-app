@@ -81,8 +81,8 @@ class InstanceInputFilter
     {
         validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
-            'password' => ['required', 'alpha_num:ascii'],
             'name' => ['required', 'alpha_num:ascii'],
+            'password' => ['required', 'alpha_num:ascii'],
             'username' => ['required', 'alpha_num:ascii'],
         ])->validated();
 

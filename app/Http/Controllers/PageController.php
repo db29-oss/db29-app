@@ -8,16 +8,21 @@ use App\Jobs\PrepareTrafficRouter;
 use App\Jobs\TermInstance;
 use App\Jobs\TurnOffInstance;
 use App\Jobs\TurnOnInstance;
+use App\Jobs\UpdateUserOwnDomain;
 use App\Models\Instance;
 use App\Models\Machine;
 use App\Models\Setting;
 use App\Models\Source;
 use App\Models\TrafficRouter;
 use App\Models\User;
+use App\Rules\ARecordExactValue;
+use App\Rules\CnameRecordExactValue;
 use App\Rules\IANAPortNumber;
 use App\Rules\InsufficientCredit;
 use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\SSHConnectionWorks;
+use App\Rules\UserOwnServer;
+use App\Rules\ValidDomainFormat;
 use App\Rules\ValidPathFormat;
 use App\Services\InstanceInputFilter;
 use App\Services\InstanceInputSeeder;
@@ -25,6 +30,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Pdp\Domain;
+use Pdp\TopLevelDomains;
 use phpseclib3\Crypt\EC;
 
 class PageController extends Controller
@@ -385,24 +392,22 @@ class PageController extends Controller
 
         if (request('hostname')) {
             $machine = Machine::query()
-                ->whereUserId($user->id)
+                ->whereUserId(auth()->user()->id)
                 ->whereHostname(request('hostname'))
                 ->first('id');
 
-            if ($machine === null) {
-                return redirect()->route('source');
-            }
-
-            $reg_info['machine_id'] = $machine->id;
-
             validator(
                 [
+                    'hostname' => request('hostname'),
                     'ins_cred' => $user->credit,
                 ],
                 [
-                    'ins_cred' => new InsufficientCredit
+                    'hostname' => new UserOwnServer($machine),
+                    'ins_cred' => new InsufficientCredit($source->plans[0]->setup_price),
                 ]
             )->validated();
+
+            $reg_info['machine_id'] = $machine->id;
         }
 
         $now = now();
@@ -414,9 +419,9 @@ class PageController extends Controller
 
         if (request('hostname')) {
             $sql .=
-                'credit = credit - ?, '; # $source->plans[0]->id
+                'credit = credit - ?, '; # $source->plans[0]->setup_price
 
-            $sql_params[] = $source->plans[0]->id;
+            $sql_params[] = $source->plans[0]->setup_price;
         }
 
         $sql .=
@@ -472,6 +477,90 @@ class PageController extends Controller
         InitInstance::dispatch($db[0]->id, $reg_info);
 
         return redirect()->route('instance');
+    }
+
+    public function editInstance()
+    {
+        $instance = Instance::query()
+            ->whereId(request('instance_id'))
+            ->whereUserId(auth()->user()->id)
+            ->first();
+
+        if ($instance === null) {
+            return redirect()->back();
+        }
+
+        return view('instance.edit')->with('instance', $instance);
+    }
+
+    public function postEditInstance()
+    {
+        $instance = Instance::query()
+            ->whereId(request('instance_id'))
+            ->whereUserId(auth()->user()->id)
+            ->first();
+
+        if ($instance === null) {
+            return redirect()->back();
+        }
+
+        if (request('domain')) {
+            validator(request()->all(), [
+                'domain' => new ValidDomainFormat,
+            ])->validated();
+
+            $tlds_alpha_by_domain_path = storage_path('app/public/').'tlds-alpha-by-domain.txt';
+
+            $top_level_domains = TopLevelDomains::fromPath($tlds_alpha_by_domain_path);
+
+            $result = $top_level_domains->resolve(request('domain'));
+
+            if ($result->subDomain()->toString() === '') {
+                validator(request()->all(), [
+                    'domain' => new ARecordExactValue(
+                        $instance->subdomain.'.'.config('app.domain')
+                    ),
+                ])->validated();
+            } else {
+                validator(request()->all(), [
+                    'domain' => new CnameRecordExactValue(
+                        $instance->subdomain.'.'.config('app.domain')
+                    ),
+                ])->validated();
+            }
+        }
+
+        $reg_info = [];
+
+        if (request('domain')) {
+            $reg_info['domain'] = request('domain');
+        }
+
+
+        DB::transaction(function () use ($instance) {
+            $now = now();
+            $sql_params = [];
+            $sql = 'update instances set '.
+                'extra = jsonb_set(extra, \'{reg_info,domain}\', \'"'.request('domain').'"\', true), '.
+                'updated_at = ? '. # $now
+                'where id = ?'; # $instance->id
+
+            $sql_params[] = $now;
+            $sql_params[] = $instance->id;
+
+            DB::select($sql, $sql_params);
+
+            $chain = [];
+            $chain[] = new TurnOffInstance($instance->id);
+
+            if (request('domain')) {
+                $chain[] = new UpdateUserOwnDomain($instance->id);
+            }
+
+            $chain[] = new TurnOnInstance($instance->id);
+
+            Bus::chain($chain)->dispatch();
+        });
     }
 
     public function server()

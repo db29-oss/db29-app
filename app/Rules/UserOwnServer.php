@@ -2,13 +2,14 @@
 
 namespace App\Rules;
 
+use App\Models\Machine;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class InsufficientCredit implements ValidationRule
+class UserOwnServer implements ValidationRule
 {
     public function __construct(
-        private string $credit,
+        private Machine|null $machine,
     ) {}
 
     /**
@@ -18,8 +19,8 @@ class InsufficientCredit implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if ($value < $this->credit) {
-            $fail(__('trans.insufficient_credit', ['lack_credit' => formatNumberShort($this->credit - $value)]));
+        if ($this->machine === null) {
+            $fail(__('trans.server_not_found'));
         }
     }
 }

@@ -41,44 +41,36 @@ class TurnOffInstance implements ShouldQueue
 
         $rt = app('rt', [$traffic_router, $ssh]);
 
+        $job_class = "\\App\\Jobs\\Instance\\".str()->studly($instance->source->name);
+
         // rt_dw
-        if ($instance->subdomain !== null) {
-            $main_site = config('app.domain');
+        $main_site = config('app.domain');
 
-            $domain = config('app.domain');
+        $domain = $instance->subdomain.'.'.config('app.domain');
 
-            $subdomain = $instance->subdomain;
-
-            if ($instance->subdomain) {
-                $domain = $instance->subdomain.'.'.config('app.domain');
-            }
-
-            $tr_config = <<<CONFIG
+        $tr_config = <<<CONFIG
 {$domain} {
     respond "instance is currently off - turn instance on at $main_site" 200
 }
 CONFIG;
-            $ssh->exec([
-                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile',
-                'rm /etc/caddy/sites/'.$subdomain.'.caddyfile',
-                'touch /etc/caddy/sites/'.$subdomain.'.caddyfile',
-            ]);
+        $ssh->exec([
+            'touch /etc/caddy/sites/'.$domain.'.caddyfile',
+            'rm /etc/caddy/sites/'.$domain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$domain.'.caddyfile',
+        ]);
 
-            $tr_config_lines = explode(PHP_EOL, $tr_config);
+        $tr_config_lines = explode(PHP_EOL, $tr_config);
 
-            foreach ($tr_config_lines as $line) {
-                $ssh->exec(
-                    'echo '.escapeshellarg($line).' | '.
-                    'tee -a /etc/caddy/sites/'.$subdomain.'.caddyfile'
-                );
-            }
-
-            $rt->reload();
+        foreach ($tr_config_lines as $line) {
+            $ssh->exec(
+                'echo '.escapeshellarg($line).' | '.
+                'tee -a /etc/caddy/sites/'.$domain.'.caddyfile'
+            );
         }
 
-        // ct_dw
-        $job_class = "\\App\\Jobs\\Instance\\".str()->studly($instance->source->name);
+        $rt->reload();
 
+        // ct_dw
         (new $job_class(
             instance: $instance,
             machine: $machine,
