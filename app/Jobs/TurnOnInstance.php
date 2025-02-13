@@ -51,15 +51,39 @@ class TurnOnInstance implements ShouldQueue
         ))->turnOn();
 
         // rt_up
+        $ssh->exec([
+            'mkdir -p /etc/caddy/sites/',
+            'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+        ]);
+
+        $tr_config_lines = explode(PHP_EOL, $tr_config);
+
+        foreach ($tr_config_lines as $line) {
+            $ssh->exec(
+                'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+            );
+        }
+
+        app('rt', [$machine->trafficRouter, $ssh])->reload();
+
         $constraint = json_decode($instance->plan->constraint, true);
 
         $now = now();
         $sql_params = [];
         $sql = 'with '.
             'update_instance as ('.
-                'update instances set '.
-                'status = ?, '. # 'rt_up'
+                'update instances set ';
+
+        if (count($this->chained) === 0) {
+            $sql .=
                 'queue_active = ?, '. # false
+
+            $sql_params[] = false;
+        }
+
+        $sql .=
+                'status = ?, '. # 'rt_up'
                 'turned_on_at = ?, '. # $now
                 'updated_at = ? '. # $now
                 'where id = ? '. # $instance->id
@@ -67,7 +91,6 @@ class TurnOnInstance implements ShouldQueue
             ') ';
 
         $sql_params[] = 'rt_up';
-        $sql_params[] = false;
         $sql_params[] = $now;
         $sql_params[] = $now;
         $sql_params[] = $instance->id;
@@ -92,21 +115,5 @@ class TurnOnInstance implements ShouldQueue
         $sql .= 'select 1';
 
         DB::select($sql, $sql_params);
-
-        $ssh->exec([
-            'mkdir -p /etc/caddy/sites/',
-            'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
-            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-        ]);
-
-        $tr_config_lines = explode(PHP_EOL, $tr_config);
-
-        foreach ($tr_config_lines as $line) {
-            $ssh->exec(
-                'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-            );
-        }
-
-        app('rt', [$machine->trafficRouter, $ssh])->reload();
     }
 }

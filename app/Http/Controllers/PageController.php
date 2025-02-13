@@ -449,7 +449,7 @@ class PageController extends Controller
                 '?, '. # auth()->user()->id
                 '?, '. # $source->plans[0]->id
                 '?, '. # true
-                '?, '. # json_encode(['reg_info' => $this->reg_info])
+                '?, '. # json_encode(['reg_info' => $this->reg_info], JSON_FORCE_OBJECT)
                 '?, '. # $now
                 '?'. # $now
             ') returning id';
@@ -464,7 +464,7 @@ class PageController extends Controller
         $sql_params[] = $user->id;
         $sql_params[] = $source->plans[0]->id;
         $sql_params[] = true;
-        $sql_params[] = json_encode(['reg_info' => $reg_info]);
+        $sql_params[] = json_encode(['reg_info' => $reg_info], JSON_FORCE_OBJECT);
         $sql_params[] = $now;
         $sql_params[] = $now;
 
@@ -483,11 +483,12 @@ class PageController extends Controller
     {
         $instance = Instance::query()
             ->whereId(request('instance_id'))
+            ->where('queue_active', false)
             ->whereUserId(auth()->user()->id)
             ->first();
 
         if ($instance === null) {
-            return redirect()->back();
+            return redirect()->route('instance');
         }
 
         return view('instance.edit')->with('instance', $instance);
@@ -495,14 +496,29 @@ class PageController extends Controller
 
     public function postEditInstance()
     {
-        $instance = Instance::query()
-            ->whereId(request('instance_id'))
-            ->whereUserId(auth()->user()->id)
-            ->first();
+        $now = now();
+        $sql_params = [];
+        $sql = 'update instances set '.
+            'queue_active = ?, '. # true
+            'updated_at = ? '. # $now
+            'where id = ? '.# request('instance_id')
+            'and queue_active = ? '. # false
+            'and user_id = ? '. # auth()->user()->id
+            'returning *';
 
-        if ($instance === null) {
+        $sql_params[] = true;
+        $sql_params[] = $now;
+        $sql_params[] = request('instance_id');
+        $sql_params[] = false;
+        $sql_params[] = auth()->user()->id;
+
+        $db = app('db')->select($sql, $sql_params);
+
+        if (count($db) === 0) {
             return redirect()->back();
         }
+
+        $instance = Instance::hydrate($db)[0];
 
         if (request('domain')) {
             if (app('env') === 'production') {
@@ -542,8 +558,26 @@ class PageController extends Controller
         DB::transaction(function () use ($instance) {
             $now = now();
             $sql_params = [];
-            $sql = 'update instances set '.
-                'extra = jsonb_set(extra, \'{reg_info,domain}\', \'"'.request('domain').'"\', true), '.
+            $sql = 'update instances set ';
+
+            if (request('domain')) {
+                $sql .=
+                    'extra = jsonb_set('.
+                        'extra, '.
+                        '\'{reg_info,domain}\', '.
+                        '\'"'.request('domain').'"\'::jsonb, '.
+                        'true'.
+                    '), ';
+            } else {
+                $sql .=
+                    'extra = jsonb_set('.
+                        'extra, '.
+                        '\'{reg_info}\', '.
+                        '((extra #> \'{reg_info}\') - \'domain\')::jsonb'.
+                    '), ';
+            }
+
+            $sql .=
                 'updated_at = ? '. # $now
                 'where id = ?'; # $instance->id
 
@@ -563,6 +597,8 @@ class PageController extends Controller
 
             Bus::chain($chain)->dispatch();
         });
+
+        return redirect()->route('instance');
     }
 
     public function server()

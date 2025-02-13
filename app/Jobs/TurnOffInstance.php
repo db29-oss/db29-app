@@ -91,9 +91,17 @@ CONFIG;
         $sql_params = [];
         $sql = 'with '.
             'update_instance as ('.
-                'update instances set '.
+                'update instances set ';
+
+        if (count($this->chained) === 0) {
+            $sql .=
+                'queue_active = ?, '; # false
+
+            $sql_params[] = false;
+        }
+
+        $sql .=
                 'status = ?, '. # 'ct_dw'
-                'queue_active = ?, '. # false
                 'paid_at = ?, '. # $now
                 'turned_off_at = ?, '. # $now
                 'updated_at = ? '. # $now
@@ -102,7 +110,6 @@ CONFIG;
             ') ';
 
         $sql_params[] = 'ct_dw';
-        $sql_params[] = false;
         $sql_params[] = $now;
         $sql_params[] = $now;
         $sql_params[] = $now;

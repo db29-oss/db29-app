@@ -228,16 +228,21 @@ class InitInstance implements ShouldQueue
             }
         }
 
+        $update = [
+            'status' => 'rt_up', // router up
+            'turned_on_at' => now(),
+            'version_template' => [
+                'docker_compose' => $docker_compose,
+                'tag' => $latest_version_template,
+            ],
+        ];
+
+        if (count($this->chained) === 0) {
+            $update['queue_active'] = false;
+        }
+
         Instance::query()
             ->whereId($instance->id)
-            ->update([
-                'status' => 'rt_up', // router up
-                'queue_active' => false,
-                'turned_on_at' => now(),
-                'version_template' => [
-                    'docker_compose' => $docker_compose,
-                    'tag' => $latest_version_template,
-                ]
-            ]);
+            ->update($update);
     }
 }
