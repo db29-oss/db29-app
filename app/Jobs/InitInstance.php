@@ -55,14 +55,14 @@ class InitInstance implements ShouldQueue
                         'select * from machines '.
                         'where id = ? '. # $this->reg_info['machine_id']
                         'limit 1'.
-                    '), ';
+                    ')';
 
                 $sql_params[] = $this->reg_info['machine_id'];
 
             }
 
             if (! array_key_exists('machine_id', $this->reg_info)) {
-                $sql .=
+                $sql .= ', '.
                     'select_machine as ('.
                         'select * from machines '.
                         'where enabled = ? '. # true
@@ -81,7 +81,7 @@ class InitInstance implements ShouldQueue
                         'updated_at = ? '. # $now
                         'where id = (select id from select_machine) '.
                         'returning id'.
-                    ') ';
+                    ')';
 
                 $sql_params[] = true;
                 $sql_params[] = $constraint['max_cpu'];
@@ -94,7 +94,7 @@ class InitInstance implements ShouldQueue
                 $sql_params[] = $now;
             }
 
-            $sql .=
+            $sql .= ' '.
                 'update instances set '.
                 'status = ?, '. # 'init'
                 'machine_id = (select id from select_machine), '.
