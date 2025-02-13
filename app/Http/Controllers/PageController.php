@@ -710,11 +710,14 @@ class PageController extends Controller
             $machine->storage_path = request('storage_path') ?? '/opt/';
             $machine->save();
 
-            User::whereId(auth()->user()->id)->increment('machine_count', 1);
-
             $traffic_router = new TrafficRouter;
             $traffic_router->machine_id = $machine->id;
             $traffic_router->save();
+
+            $machine->traffic_router_id = $traffic_router->id;
+            $machine->save();
+
+            User::whereId(auth()->user()->id)->increment('machine_count', 1);
 
             Bus::chain([
                 new PrepareMachine($machine->id),

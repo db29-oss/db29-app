@@ -32,6 +32,10 @@ class UserOwnMachineTest extends TestCase
 
         $tr_count = TrafficRouter::count();
 
+        $this->assertEquals(0, $tr_count);
+
+        $this->assertEquals(0, Machine::count());
+
         $response = $this->post('server/add', [
             'ssh_username' => fake()->username(),
             'ssh_address' => 'example.com',
@@ -43,6 +47,8 @@ class UserOwnMachineTest extends TestCase
         $this->assertEquals(1, User::whereId($u->id)->first()->machine_count);
 
         $this->assertEquals(1, Machine::count());
+
+        $this->assertNotNull(Machine::first()->traffic_router_id);
 
         $this->assertEquals(1, DB::table('jobs')->count());
 
