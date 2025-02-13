@@ -125,12 +125,6 @@
     </div>
   </form>
 
-  @if ($i_s_count > 0)
-  <div class="pt-5 text-gray-400 pointer-events-none select-none">
-    ({{ __('trans.current_instance_have', ['count' => $i_s_count]) }})
-  </div>
-  @endif
-
  <script>
    function updateTXTDomain(self) {
      if (! self.value) {
