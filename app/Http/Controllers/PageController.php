@@ -15,12 +15,11 @@ use App\Models\Setting;
 use App\Models\Source;
 use App\Models\TrafficRouter;
 use App\Models\User;
-use App\Rules\ARecordExactValue;
-use App\Rules\CnameRecordExactValue;
 use App\Rules\IANAPortNumber;
 use App\Rules\InsufficientCredit;
 use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\SSHConnectionWorks;
+use App\Rules\UserOwnDomain;
 use App\Rules\UserOwnServer;
 use App\Rules\ValidDomainFormat;
 use App\Rules\ValidPathFormat;
@@ -30,8 +29,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Pdp\Domain;
-use Pdp\TopLevelDomains;
 use phpseclib3\Crypt\EC;
 
 class PageController extends Controller
@@ -355,12 +352,19 @@ class PageController extends Controller
             $input_seeder = InstanceInputSeeder::$source_name();
         }
 
-        $hostnames = Machine::whereUserId(auth()->user()->id)->pluck('hostname');
+        $machine_all = Machine::whereUserId(auth()->user()->id)->with('trafficRouter')->get();
+        $machines = [];
+
+        foreach ($machine_all as $machine) {
+            if ($machine->prepared && $machine->trafficRouter->prepared) {
+                $machines[] = $machine;
+            }
+        }
 
         return view('instance.register')
-            ->with('hostnames', $hostnames)
             ->with('i_s_count', $i_s_count)
             ->with('input_seeder', $input_seeder)
+            ->with('machines', $machines)
             ->with('source_name', $source_name);
     }
 
@@ -394,7 +398,8 @@ class PageController extends Controller
             $machine = Machine::query()
                 ->whereUserId(auth()->user()->id)
                 ->whereHostname(request('hostname'))
-                ->first('id');
+                ->with('trafficRouter')
+                ->first();
 
             validator(
                 [
@@ -523,28 +528,11 @@ class PageController extends Controller
         if (request('domain')) {
             if (app('env') === 'production') {
                 validator(request()->all(), [
-                    'domain' => new ValidDomainFormat,
+                    'domain' => [
+                        new ValidDomainFormat,
+                        new UserOwnDomain($instance->subdomain),
+                    ],
                 ])->validated();
-
-                $tlds_alpha_by_domain_path = storage_path('app/public/').'tlds-alpha-by-domain.txt';
-
-                $top_level_domains = TopLevelDomains::fromPath($tlds_alpha_by_domain_path);
-
-                $result = $top_level_domains->resolve(request('domain'));
-
-                if ($result->subDomain()->toString() === '') {
-                    validator(request()->all(), [
-                        'domain' => new ARecordExactValue(
-                            $instance->subdomain.'.'.config('app.domain')
-                        ),
-                    ])->validated();
-                } else {
-                    validator(request()->all(), [
-                        'domain' => new CnameRecordExactValue(
-                            $instance->subdomain.'.'.config('app.domain')
-                        ),
-                    ])->validated();
-                }
             }
         }
 
@@ -602,7 +590,11 @@ class PageController extends Controller
 
     public function server()
     {
-        $machines = Machine::where('user_id', auth()->user()->id)->withCount('instances')->get();
+        $machines = Machine::query()
+            ->where('user_id', auth()->user()->id)
+            ->with('trafficRouter')
+            ->withCount('instances')
+            ->get();
 
         return view('server.server')->with('machines', $machines);
     }

@@ -21,6 +21,18 @@ class UserOwnServer implements ValidationRule
     {
         if ($this->machine === null) {
             $fail(__('trans.server_not_found'));
+            return;
+        }
+
+        if (
+            ! $this->machine->prepared ||
+            (
+                ! $this->machine->trafficRouter ||
+                ! $this->machine->trafficRouter->prepared
+            )
+        ) {
+            $fail(__('trans.server_not_prepared'));
+            return;
         }
     }
 }

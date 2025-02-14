@@ -7,7 +7,6 @@
     "require": {
         "php": "^8.2",
         "aws/aws-sdk-php": "^3.339",
-        "jeremykendall/php-domain-parser": "^6.3",
         "k92/ssh-exec": "^2.0",
         "laravel/framework": "^11.9",
         "laravel/octane": "^2.5",

@@ -17,13 +17,12 @@ class ValidDomainFormat implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $tlds_alpha_by_domain_path = storage_path('app/public/').'tlds-alpha-by-domain.txt';
+        $regex =
+            '/^(?=.{1,253}$)'.
+            '(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)'.
+            '+[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])$/';
 
-        $top_level_domains = TopLevelDomains::fromPath($tlds_alpha_by_domain_path);
-
-        try {
-            $top_level_domains->resolve(request('domain'));
-        } catch (SyntaxError) {
+        if (! preg_match($regex, $value)) {
             $fail(__('trans.invalid_domain_name'));
         }
     }

@@ -3,7 +3,8 @@
 <div>
   <h3>{{ str(__('trans.server'))->upper() }}</h3>
   @foreach ($machines as $machine)
-  <div class="inline-block mb-2">
+  <div class="@if (! $machine->prepared || ! $machine->trafficRouter->prepared) text-gray-400 @endif
+    inline-block mb-2">
   {{ $machine->hostname }}
   @if ($machine->instances_count > 0)
   <span class="text-gray-400 pointer-events-none select-none">

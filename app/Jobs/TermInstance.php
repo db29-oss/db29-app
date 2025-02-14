@@ -66,12 +66,12 @@ class TermInstance implements ShouldQueue
                 'delete from instances '.
                 'where id = ? '. # $instance->id
                 'returning id'.
-            ') ';
+            ')';
 
         $sql_params[] = $instance->id;
 
         if (! array_key_exists('machine_id', $extra['reg_info'])) {
-            $sql .=
+            $sql .= ', '.
                 'update_user as ('.
                     'update users set '.
                     'bonus_credit = case '.
@@ -95,7 +95,7 @@ class TermInstance implements ShouldQueue
                     'updated_at = ? '. # $now
                     'where id = ? '. # $machine->id
                     'returning id'.
-                ') ';
+                ')';
 
             $sql_params[] = $pay_amount;
             $sql_params[] = $pay_amount;
@@ -108,20 +108,20 @@ class TermInstance implements ShouldQueue
             $sql_params[] = $now;
             $sql_params[] = $machine->id;
         } else {
-            $sql .=
+            $sql .= ', '.
                 'update_user as ('.
                     'update users set '.
                     'instance_count = instance_count - 1, '.
                     'updated_at = ? '. # $now
                     'where id = ? '. # $instance->user->id
                     'returning id'.
-                ') ';
+                ')';
 
             $sql_params[] = $now;
             $sql_params[] = $instance->user->id;
         }
 
-        $sql .= 'select 1';
+        $sql .= ' select 1';
 
         DB::select($sql, $sql_params);
     }
