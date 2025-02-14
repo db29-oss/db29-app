@@ -598,13 +598,18 @@ class PageController extends Controller
             DB::select($sql, $sql_params);
 
             $chain = [];
-            $chain[] = new TurnOffInstance($instance->id);
+
+            if ($instance->status === 'ct_dw') {
+                $chain[] = new TurnOnInstance($instance->id);
+            }
 
             if (request('domain')) {
                 $chain[] = new UpdateUserOwnDomain($instance->id);
             }
 
-            $chain[] = new TurnOnInstance($instance->id);
+            if ($instance->status === 'ct_dw') {
+                $chain[] = new TurnOffInstance($instance->id);
+            }
 
             Bus::chain($chain)->dispatch();
         });
