@@ -83,7 +83,7 @@ class PageController extends Controller
             'recharge_number = (select recharge_number from recharge_number_holes limit 1) '.
             'returning recharge_number';
 
-        $db = app('db')->select($sql);
+        $db = DB::select($sql);
 
         $now = now();
         $sql_params = [];
@@ -122,7 +122,7 @@ class PageController extends Controller
         $sql_params[] = $now;
         $sql_params[] = $now;
 
-        $user = User::hydrate(app('db')->select($sql, $sql_params))[0];
+        $user = User::hydrate(DB::select($sql, $sql_params))[0];
 
         return view('register')->with('user', $user);
     }
@@ -173,7 +173,7 @@ class PageController extends Controller
         $sql_params[] = false;
         $sql_params[] = auth()->user()->id;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (! count($db)) {
             return redirect()->route('instance');
@@ -204,7 +204,7 @@ class PageController extends Controller
         $sql_params[] = false;
         $sql_params[] = auth()->user()->id;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (! count($db)) {
             return redirect()->route('instance');
@@ -235,7 +235,7 @@ class PageController extends Controller
         $sql_params[] = false;
         $sql_params[] = auth()->user()->id;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (! count($db)) {
             return redirect()->route('instance');
@@ -473,7 +473,7 @@ class PageController extends Controller
         $sql_params[] = $now;
         $sql_params[] = $now;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (count($db) === 0) {
             return redirect()->route('source');
@@ -517,7 +517,7 @@ class PageController extends Controller
         $sql_params[] = false;
         $sql_params[] = auth()->user()->id;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (count($db) === 0) {
             return redirect()->back();
@@ -527,12 +527,36 @@ class PageController extends Controller
 
         if (request('domain')) {
             if (app('env') === 'production') {
-                validator(request()->all(), [
+                $validator = validator(request()->all(), [
                     'domain' => [
                         new ValidDomainFormat,
                         new UserOwnDomain($instance->subdomain),
                     ],
-                ])->validated();
+                ]);
+
+                if ($validator->fails()) {
+                    $sql_params = [];
+                    $sql = 'update instances set '.
+                        'queue_active = ?, '. # false
+                        'updated_at = ? '. # $now
+                        'where id = ? '.# request('instance_id')
+                        'and queue_active = ? '. # true
+                        'and user_id = ? '. # auth()->user()->id
+                        'returning *';
+
+                    $sql_params[] = false;
+                    $sql_params[] = $now;
+                    $sql_params[] = request('instance_id');
+                    $sql_params[] = true;
+                    $sql_params[] = auth()->user()->id;
+
+                    DB::select($sql, $sql_params);
+
+                    return redirect()
+                        ->to(url()->full())
+                        ->withErrors($validator)
+                        ->withInput();
+                }
             }
         }
 
@@ -627,7 +651,7 @@ class PageController extends Controller
 
         $sql_params[] = $now;
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         $privatekey = EC::load(json_decode($db[0]->v, true)['ssh_privatekey']);
 
@@ -653,7 +677,7 @@ class PageController extends Controller
         $sql_params[] = auth()->user()->id;
         $sql_params[] = 'server';
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         if (count($db) === 0) {
             return redirect()->route('add-server');
@@ -787,7 +811,7 @@ class PageController extends Controller
 
         $sql_params[] = request('machine_id');
 
-        $db = app('db')->select($sql, $sql_params);
+        $db = DB::select($sql, $sql_params);
 
         return redirect()->route('server');
     }

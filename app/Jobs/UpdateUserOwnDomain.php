@@ -20,7 +20,7 @@ class UpdateUserOwnDomain implements ShouldQueue
         $instance = Instance::query()
             ->whereId($this->instance_id)
             ->with([
-                'machine',
+                'machine.trafficRouter',
                 'source',
             ])
             ->first();
@@ -28,6 +28,8 @@ class UpdateUserOwnDomain implements ShouldQueue
         $source = $instance->source;
 
         $machine = $instance->machine;
+
+        $traffic_router = $machine->trafficRouter;
 
         $ssh = app('ssh')->toMachine($machine)->compute();
 
@@ -39,23 +41,23 @@ class UpdateUserOwnDomain implements ShouldQueue
             ssh: $ssh,
         ))->changeDomain();
 
+        $ssh->exec([
+            'mkdir -p /etc/caddy/sites/',
+            'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+        ]);
+
+        $tr_config_lines = explode(PHP_EOL, $tr_config);
+
+        foreach ($tr_config_lines as $line) {
+            $ssh->exec(
+                'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+            );
+        }
+
+        app('rt', [$traffic_router, $ssh])->reload();
+
         if (count($this->chained) === 0) {
-            $ssh->exec([
-                'mkdir -p /etc/caddy/sites/',
-                'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
-                'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-            ]);
-
-            $tr_config_lines = explode(PHP_EOL, $tr_config);
-
-            foreach ($tr_config_lines as $line) {
-                $ssh->exec(
-                    'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-                );
-            }
-
-            app('rt', [$machine->trafficRouter, $ssh])->reload();
-
             $now = now();
             $sql_params = [];
             $sql = 'update instances set '.
