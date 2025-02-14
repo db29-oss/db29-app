@@ -23,16 +23,18 @@ abstract class _0Instance_ implements ShouldQueue
         protected $ssh = null,
     ) {}
 
-    public function setUp(): string { return 'unimplemented'; }
+    const U_IMP = 'unimplemented';
+
+    public function setUp(): string { return self::U_IMP; }
     public function runContainer() {}
-    public function buildTrafficRule(): string { return 'unimplemented'; }
+    public function buildTrafficRule(): string { return self::U_IMP; }
     public function tearDown() {}
     public function turnOff() {}
-    public function turnOn(): string { return 'unimplemented'; }
+    public function turnOn(): string { return self::U_IMP; }
     public function backUp() {}
     public function restore() {}
     public function downgrade() {}
-    public function changeDomain(): string { return 'unimplemented'; }
+    public function changeDomain(): string { return self::U_IMP; }
     public function upgrade() {}
     public function movePath(string $path) {}
     public function buildLimitCommands(): array { return []; }

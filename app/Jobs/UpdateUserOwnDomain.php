@@ -41,28 +41,30 @@ class UpdateUserOwnDomain implements ShouldQueue
             ssh: $ssh,
         ))->changeDomain();
 
-        $ssh->exec([
-            'mkdir -p /etc/caddy/sites/',
-            'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
-            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-        ]);
+        if ($tr_config !== $job_class::U_IMP) {
+            $ssh->exec([
+                'mkdir -p /etc/caddy/sites/',
+                'rm -f /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+                'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+            ]);
 
-        $tr_config_lines = explode(PHP_EOL, $tr_config);
+            $tr_config_lines = explode(PHP_EOL, $tr_config);
 
-        foreach ($tr_config_lines as $line) {
-            $ssh->exec(
-                'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
-            );
+            foreach ($tr_config_lines as $line) {
+                $ssh->exec(
+                    'echo '.escapeshellarg($line).' | tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
+                );
+            }
+
+            app('rt', [$traffic_router, $ssh])->reload();
         }
-
-        app('rt', [$traffic_router, $ssh])->reload();
 
         if (count($this->chained) === 0) {
             $now = now();
             $sql_params = [];
             $sql = 'update instances set '.
                 'queue_active = ?, '. # false
-                'updated_at = ?, '. # $now
+                'updated_at = ? '. # $now
                 'where id = ?'; # $instance->id
 
             $sql_params[] = false;
