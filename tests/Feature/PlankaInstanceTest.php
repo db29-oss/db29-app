@@ -24,8 +24,6 @@ class PlankaInstanceTest extends TestCase
 
     public function test_generic(): void
     {
-        config()->set('app.domain', '127.0.0.1');
-
         test_util_migrate_fresh();
 
         $u = User::factory()->create();

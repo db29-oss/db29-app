@@ -13,7 +13,12 @@ class Planka extends _0Instance_
         ) {
             if (str_starts_with($environment, 'BASE_URL=')) {
                 $this->docker_compose['services']['planka']['environment'][$env_idx] =
-                    'BASE_URL=https://'.$this->instance->subdomain.'.'.config('app.domain');
+                    '127.0.0.1';
+
+                if (app('env') === 'production') {
+                    $this->docker_compose['services']['planka']['environment'][$env_idx] =
+                        'BASE_URL=https://'.$this->instance->subdomain.'.'.config('app.domain');
+                }
 
                 break;
             }

@@ -88,7 +88,7 @@ class TurnOnInstance implements ShouldQueue
                 'updated_at = ? '. # $now
                 'where id = ? '. # $instance->id
                 'returning id'.
-            ') ';
+            ')';
 
         $sql_params[] = 'rt_up';
         $sql_params[] = $now;
@@ -96,7 +96,7 @@ class TurnOnInstance implements ShouldQueue
         $sql_params[] = $instance->id;
 
         if (! array_key_exists('machine_id', $extra['reg_info'])) {
-            $sql .=
+            $sql .= ', '.
                 'update_machine as ('.
                     'update machines set '.
                     'remain_cpu = remain_cpu - ?, '. # $constraint['max_cpu']
@@ -104,7 +104,7 @@ class TurnOnInstance implements ShouldQueue
                     'updated_at = ? '. # $now
                     'where id = ? '. # $machine->id
                     'returning id'.
-                ') ';
+                ')';
 
             $sql_params[] = $constraint['max_cpu'];
             $sql_params[] = $constraint['max_memory'];
@@ -112,7 +112,7 @@ class TurnOnInstance implements ShouldQueue
             $sql_params[] = $machine->id;
         }
 
-        $sql .= 'select 1';
+        $sql .= ' select 1';
 
         DB::select($sql, $sql_params);
     }

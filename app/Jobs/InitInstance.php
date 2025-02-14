@@ -62,7 +62,11 @@ class InitInstance implements ShouldQueue
             }
 
             if (! array_key_exists('machine_id', $this->reg_info)) {
-                $sql .= ', '.
+                if ($sql !== 'with ') {
+                    $sql .= ', ';
+                }
+
+                $sql .=
                     'select_machine as ('.
                         'select * from machines '.
                         'where enabled = ? '. # true
@@ -136,9 +140,7 @@ class InitInstance implements ShouldQueue
         $subdomain = $instance->subdomain; // reuse subdomain from previous failed InitInstance
 
         if ($subdomain === null) {
-            if (app('env') === 'production') {
-                $subdomain = str(str()->random(8))->lower()->toString();
-            }
+            $subdomain = str(str()->random(8))->lower()->toString();
         }
 
         $dns_id = $instance->dns_id;

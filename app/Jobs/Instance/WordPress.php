@@ -161,7 +161,8 @@ class WordPress extends _0Instance_
         $this->ssh->exec(
             'podman exec '.$this->instance->id.' '.
             'sh -c \''.
-            'echo "php -f /var/www/html/wp-cron.php >/dev/null 2>&1" > /etc/periodic/15min/wpcron'.
+            'echo "#!/bin/sh" >> /etc/periodic/15min/wpcron && '.
+            'echo "php -f /var/www/html/wp-cron.php >/dev/null 2>&1" >> /etc/periodic/15min/wpcron'.
             '\''
         );
 
@@ -193,6 +194,9 @@ class WordPress extends _0Instance_
             'podman stop '.$this->instance->id.' && '.
             'podman start '.$this->instance->id
         );
+
+        // crond
+        $this->ssh->exec('podman exec '.$this->instance->id.' crond');
     }
 
     public function buildTrafficRule(): string
@@ -303,7 +307,8 @@ CONFIG;
 
         $this->ssh->exec(array_merge(
             [
-                'podman start '.$this->instance->id
+                'podman start '.$this->instance->id,
+                'podman exec '.$this->instance->id.' crond'
             ],
             $apply_limit_commands
         ));

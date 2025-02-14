@@ -54,9 +54,9 @@ class TurnOffInstance implements ShouldQueue
 }
 CONFIG;
         $ssh->exec([
-            'touch /etc/caddy/sites/'.$domain.'.caddyfile',
-            'rm /etc/caddy/sites/'.$domain.'.caddyfile',
-            'touch /etc/caddy/sites/'.$domain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+            'rm /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
+            'touch /etc/caddy/sites/'.$instance->subdomain.'.caddyfile',
         ]);
 
         $tr_config_lines = explode(PHP_EOL, $tr_config);
@@ -64,7 +64,7 @@ CONFIG;
         foreach ($tr_config_lines as $line) {
             $ssh->exec(
                 'echo '.escapeshellarg($line).' | '.
-                'tee -a /etc/caddy/sites/'.$domain.'.caddyfile'
+                'tee -a /etc/caddy/sites/'.$instance->subdomain.'.caddyfile'
             );
         }
 
@@ -107,7 +107,7 @@ CONFIG;
                 'updated_at = ? '. # $now
                 'where id = ? '. # $instance->id
                 'returning id'.
-            ') ';
+            ')';
 
         $sql_params[] = 'ct_dw';
         $sql_params[] = $now;
@@ -116,7 +116,7 @@ CONFIG;
         $sql_params[] = $instance->id;
 
         if (! array_key_exists('machine_id', $extra['reg_info'])) {
-            $sql .=
+            $sql .= ', '.
                 'update_user as ('.
                     'update users set '.
                     'bonus_credit = case '.
@@ -140,7 +140,7 @@ CONFIG;
                     'updated_at = ? '. # $now
                     'where id = ? '. # $machine->id
                     'returning id'.
-                ') ';
+                ')';
 
             $sql_params[] = $pay_amount;
             $sql_params[] = $pay_amount;
@@ -155,7 +155,7 @@ CONFIG;
             $sql_params[] = $machine->id;
         }
 
-        $sql .= 'select 1';
+        $sql .= ' select 1';
 
         DB::select($sql, $sql_params);
     }
