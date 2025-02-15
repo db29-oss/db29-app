@@ -84,7 +84,7 @@ return [
     "txt_record_not_found" => "bản ghi TXT không tồn tại",
     "unable_get_a_record" => "truy vấn dns bản ghi A thất bại",
     "unable_get_cname_record" => "truy vấn dns bản ghi CNAME thất bại",
-    "unsupported_user_own_server" => "mã nguồn chưa hỗ trợ dùng server riêng",
+    "unsupported_user_own_server" => "mã nguồn này chưa hỗ trợ dùng server riêng",
     "update" => "cập nhật",
     "use_your_own_domain" => "sử dụng domain cá nhân",
     "use_your_own_server" => "sử dụng server cá nhân",

@@ -23,8 +23,8 @@ use App\Rules\UserOwnDomain;
 use App\Rules\UserOwnServer;
 use App\Rules\ValidDomainFormat;
 use App\Rules\ValidPathFormat;
-use App\Services\InstanceInputFilter;
 use App\Services\InstanceInputSeeder;
+use App\Services\SourceInputFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -390,8 +390,8 @@ class PageController extends Controller
 
         $reg_info = [];
 
-        if (method_exists(InstanceInputFilter::class, $source_name)) {
-            $reg_info = InstanceInputFilter::$source_name();
+        if (method_exists(SourceInputFilter::class, $source_name)) {
+            $reg_info = (new SourceInputFilter($source_name))->__filter();
         }
 
         if (request('hostname')) {

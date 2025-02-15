@@ -1,4 +1,10 @@
-@if (count($machines) > 0)
+@if (array_key_exists($source_name, Source::UUOS))
+<div class="pb-4 rounded-md text-gray-400">
+  {{ __('trans.unsupported_user_own_server') }}
+</div>
+@endif
+
+@if (count($machines) > 0 && ! array_key_exists($source_name, Source::UUOS))
 <div class="border-dashed p-2 py-4 rounded-md">
   <label class="select-none" for="hostnames">{{ __('trans.use_your_own_server') }}</label><br>
   <input list="hostnames" name="hostname"

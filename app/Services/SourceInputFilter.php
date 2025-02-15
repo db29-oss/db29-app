@@ -2,20 +2,40 @@
 
 namespace App\Services;
 
+use App\Models\Source;
 use App\Rules\Ipv4OrDomainARecordExists;
 use App\Rules\MxRecordExactValue;
 use App\Rules\TxtRecordExactValue;
 use App\Rules\TxtRecordExists;
 use App\Rules\UnsupportedUserOwnServer;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
-class InstanceInputFilter
+class SourceInputFilter
 {
-    public static function discourse()
+    public function __construct(
+        private string $source_name
+    ) {
+        if (! method_exists(static::class, $source_name)) {
+            throw new Exception('DB292028: unimplemented source');
+        }
+
+        if (array_key_exists($this->source_name, Source::UUOS)) {
+            validator(request()->all(), [
+                'hostname' => new UnsupportedUserOwnServer,
+            ]);
+        }
+    }
+
+    public function __filter()
+    {
+        return $this->{$this->source_name}();
+    }
+
+    public function discourse()
     {
         validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
-            'hostname' => new UnsupportedUserOwnServer, // not yet support this
         ])->validated();
 
         $reg_info = [];
@@ -77,7 +97,7 @@ class InstanceInputFilter
         return $reg_info;
     }
 
-    public static function planka()
+    public function planka()
     {
         validator(request()->all(), [
             'email' => ['required', 'email:rfc'],
