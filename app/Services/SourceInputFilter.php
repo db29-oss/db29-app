@@ -8,8 +8,11 @@ use App\Rules\MxRecordExactValue;
 use App\Rules\TxtRecordExactValue;
 use App\Rules\TxtRecordExists;
 use App\Rules\UnsupportedUserOwnServer;
+use Aws\Exception\AwsException;
+use Aws\SesV2\SesV2Client;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SourceInputFilter
 {
@@ -20,7 +23,7 @@ class SourceInputFilter
             throw new Exception('DB292028: unimplemented source');
         }
 
-        if (array_key_exists($this->source_name, Source::UUOS)) {
+        if (array_key_exists($this->source_name, Source::UUOS)) { // @phpstan-ignore-line
             validator(request()->all(), [
                 'hostname' => new UnsupportedUserOwnServer,
             ]);
@@ -34,13 +37,53 @@ class SourceInputFilter
 
     public function discourse()
     {
-        validator(request()->all(), [
+        $validation = [
             'email' => ['required', 'email:rfc'],
-        ])->validated();
+        ];
+
+        if (request('hostname')) {
+            $validation['aws_key'] = ['required'];
+            $validation['aws_secret'] = ['required'];
+            $validation['aws_ses_region'] = ['required'];
+        }
+
+        validator(request()->all(), $validation)->validated();
 
         $reg_info = [];
 
         $reg_info['email'] = request('email');
+
+        if (request('hostname')) {
+            $client = new SesV2Client([
+                'region' => request('aws_ses_region'),
+                'version' => 'latest',
+                'credentials' => [
+                    'key'    => request('aws_key'),
+                    'secret' => request('aws_secret'),
+                ],
+            ]);
+
+            try {
+                $result = $client->getAccount();
+            } catch (AwsException) {
+                throw ValidationException::withMessages([
+                    'aws_key' => [__('trans.invalid_aws_key_secret_or_region')]
+                ]);
+            }
+
+            if (
+                $result->get('SendingEnabled') !== true ||
+                $result->get('ProductionAccessEnabled') !== true
+            ) {
+                throw ValidationException::withMessages([
+                    'aws_key' => [__('trans.invalid_aws_ses_secret_or_sandbox')]
+                ]);
+            }
+
+            $reg_info['aws_key'] = request('aws_key');
+            $reg_info['aws_secret'] = request('aws_secret');
+            $reg_info['aws_ses_region'] = request('aws_ses_region');
+        }
 
         if (request('system_email')) {
             validator(request()->all(), [

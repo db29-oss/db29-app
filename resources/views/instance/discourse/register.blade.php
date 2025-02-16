@@ -108,7 +108,7 @@
         </div>
       </div><br>
       <div class="p-1 inline-block bg-gray-100 text-gray-500 select-none">
-        <div class="select-all">
+        <div class="select-all" id="mail_aws_mx">
           feedback-smtp.ap-northeast-2.amazonses.com
         </div>
       </div><br>

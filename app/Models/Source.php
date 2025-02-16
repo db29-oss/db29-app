@@ -10,7 +10,6 @@ class Source extends Model
     use HasFactory;
 
     const UUOS = [ // unsupported user own server
-        'discourse' => true, // need mail server
     ];
 
     public function instances()

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Instance;
 
+use App\Services\AWS_SES;
 use Aws\Exception\AwsException;
 use Aws\SesV2\SesV2Client;
 use Exception;
@@ -120,6 +121,16 @@ class Discourse extends _0Instance_
             $yml['env']['DISCOURSE_SMTP_ADDRESS'] = 'email-smtp.'.config('services.ses.smtp').'.amazonaws.com';
             $yml['env']['DISCOURSE_SMTP_USER_NAME'] = config('services.ses.username');
             $yml['env']['DISCOURSE_SMTP_PASSWORD'] = config('services.ses.password');
+
+            if (array_key_exists('machine_id', $this->reg_info)) {
+                $yml['env']['DISCOURSE_SMTP_ADDRESS'] =
+                    'email-smtp.'.$this->reg_info['aws_ses_region'].'.amazonaws.com';
+                $yml['env']['DISCOURSE_SMTP_USER_NAME'] = $this->reg_info['aws_key'];
+                $yml['env']['DISCOURSE_SMTP_PASSWORD'] = AWS_SES::generateSmtpPassword(
+                    $this->reg_info['aws_secret'],
+                    $this->reg_info['aws_ses_region']
+                );
+            }
         }
 
         $yml['run'][] =[
