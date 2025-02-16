@@ -12,6 +12,10 @@ class Source extends Model
     const UUOS = [ // unsupported user own server
     ];
 
+    const M_R = [ // mail required
+        'discourse' => true,
+    ];
+
     public function instances()
     {
         return $this->hasMany(Instance::class);

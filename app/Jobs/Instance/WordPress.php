@@ -127,7 +127,7 @@ class WordPress extends _0Instance_
             'sed -i \'/^'.
             'upload_max_filesize'.
             '/s/.*/'.
-            'upload_max_filesize = 20M/'.
+            'upload_max_filesize = 8M/'.
             '\' '.
             '/usr/local/etc/php/php.ini'
         );

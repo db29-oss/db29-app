@@ -25,7 +25,8 @@
   @enderror
   <br>
 
-  <div id="mail_uos" class="hidden">
+  @if (array_key_exists($source_name, Source::M_R))
+  <div id="mail_uos" class="">
     <label class="select-none" for="aws_key">
       {{ __('trans.aws_key') }}
     </label><br>
@@ -44,35 +45,13 @@
     <label class="select-none" for="aws_ses_region">{{ __('trans.aws_ses_region') }}</label><br>
     <input type="text" name="aws_ses_region" placeholder="us-east-1" id="aws_ses_region"
            value="{{ old('aws_ses_region') }}">
+    <br>
+
+    @error('aws_key')
+    <div style="display: inline; color: red">{{ $message }}</div>
+    @enderror
   </div>
-
-  <script>
-    var input = document.getElementById("hostname");
-
-    input.addEventListener('input', function (event) {
-      if (event.target.value === '') {
-        document.querySelector('#mail_uos').classList.add('hidden')
-        return;
-      }
-    });
-
-    input.addEventListener('awesomplete-selectcomplete', function (event) {
-      document.querySelector('#mail_uos').classList.remove('hidden')
-    });
-
-    var input_aws_ses_region = document.getElementById('aws_ses_region');
-
-    input_aws_ses_region.addEventListener('input', function (event) {
-      if (event.target.value !== '') {
-        document.querySelector('#mail_aws_mx').textContent =
-            "feedback-smtp." + input_aws_ses_region.value + ".amazonses.com"
-
-        return;
-      }
-
-      document.querySelector('#mail_aws_mx').textContent = "feedback-smtp.ap-northeast-2.amazonses.com"
-    });
-  </script>
+  @endif
 
 </div><br>
 @endif
