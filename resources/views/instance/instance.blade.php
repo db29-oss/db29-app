@@ -66,11 +66,19 @@
         </svg>
         <a class="inline-block"
           @if ($instance->status === 'rt_up')
+          @if (array_key_exists('domain', json_decode($instance->extra, true)['reg_info']))
+          href="https://{{ json_decode($instance->extra, true)['reg_info']['domain'] }}"
+          @else
           href="https://{{ $instance->subdomain.'.'.config('app.domain') }}"
           target="_blank"
           @endif
+          @endif
         >
+          @if (array_key_exists('domain', json_decode($instance->extra, true)['reg_info']))
+          {{ json_decode($instance->extra, true)['reg_info']['domain'] }}
+          @else
           {{ $instance->subdomain.'.'.config('app.domain') }}
+          @endif
         </a>
         @if ($instance->queue_active)
         <span class="text-gray-400 pointer-events-none select-none">({{ __('trans.wait_a_sec') }})</span>

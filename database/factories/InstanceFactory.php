@@ -31,6 +31,7 @@ class InstanceFactory extends Factory
                 'queue', 'init', 'dns_up', 'ct_up', 'rt_up', 'ct_dw', 'rt_dw', 'dns_dw'
             ]),
             'version_template' => '[]',
+            'extra' => json_encode(['reg_info' => []]),
         ];
     }
 }
