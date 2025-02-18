@@ -40,6 +40,25 @@ class RechargePageTest extends TestCase
         $s->v = json_encode($banking_details);
         $s->save();
 
+        $s = new Setting;
+        $s->k = 'crypto_details';
+        $crypto_details = [
+            [
+                'coin_name' => strtoupper(fake()->word),
+                'address' => str()->random(64),
+            ],
+            [
+                'coin_name' => strtoupper(fake()->word),
+                'address' => str()->random(64),
+            ],
+            [
+                'coin_name' => strtoupper(fake()->word),
+                'address' => str()->random(64),
+            ],
+        ];
+        $s->v = json_encode($banking_details);
+        $s->save();
+
         $response = $this->get('recharge');
 
         $response->assertStatus(200);

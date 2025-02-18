@@ -294,13 +294,13 @@ class PageController extends Controller
 
     public function recharge()
     {
-        $banking_details = json_decode(Setting::where('k', 'banking_details')->first()?->v, true);
+        $banking_details = json_decode(Setting::where('k', 'banking_details')->first()->v ?? '', true);
 
         if ($banking_details === null) {
             $banking_details = [];
         }
 
-        $crypto_details = json_decode(Setting::where('k', 'crypto_details')->first()?->v, true);
+        $crypto_details = json_decode(Setting::where('k', 'crypto_details')->first()->v ?? '', true);
 
         if ($crypto_details === null) {
             $crypto_details = [];
