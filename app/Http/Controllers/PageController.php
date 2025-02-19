@@ -35,7 +35,11 @@ class PageController extends Controller
 {
     public function homepage()
     {
-        return view('homepage');
+        if (auth()->guest()) {
+            return view('homepage');
+        }
+
+        return redirect()->route('dashboard');
     }
 
     public function login()

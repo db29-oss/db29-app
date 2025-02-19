@@ -67,7 +67,7 @@ class SourceInputFilter
                 $result = $client->getAccount();
             } catch (AwsException) {
                 throw ValidationException::withMessages([
-                    'aws_key' => [__('trans.invalid_aws_key_secret_or_region')]
+                    'aws_key' => [__('trans.incorrect_aws_key_secret_or_region')]
                 ]);
             }
 
@@ -76,7 +76,7 @@ class SourceInputFilter
                 $result->get('ProductionAccessEnabled') !== true
             ) {
                 throw ValidationException::withMessages([
-                    'aws_key' => [__('trans.invalid_aws_ses_secret_or_sandbox')]
+                    'aws_key' => [__('trans.incorrect_aws_ses_cred_or_sandbox')]
                 ]);
             }
 

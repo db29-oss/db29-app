@@ -2,7 +2,11 @@
 <body>
   <div>
     <pre><a href="{{ route('login') }}">{{ mb_ucfirst(__('trans.login')) }}</a></pre>
-    <pre><a href="https://blog.db29.ovh">{{ mb_ucfirst(__('trans.blog')) }}</a></pre>
-    <pre><a href="{{ route('faq') }}">{{ mb_ucfirst(__('trans.question')) }}</a></pre>
+  </div>
+  <div class="mt-8">
+    {!! __('trans.explain_db29_app') !!}
+  </div>
+  <div class="mt-4">
+    {!! __('trans.checkout_our_social_link') !!}
   </div>
 </body>
