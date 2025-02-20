@@ -189,6 +189,15 @@ class WordPress extends _0Instance_
             '"'.$instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf"'
         );
 
+        $this->ssh->exec(
+            'sed -i \'s/pm = dynamic/pm = ondemand/g\' '.
+            $instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf && '.
+            'sed -i \'s/pm\.max_children = [0-9]\+/pm.max_children = 100/g\' '.
+            $instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf && '.
+            'sed -i \'/^;pm\.max_requests = [0-9]\+/a pm.max_requests = 200\' '.
+            $instance_mount_dir.'/usr/local/etc/php-fpm.d/www.conf'
+        );
+
         // restart container
         $this->ssh->exec(
             'podman stop '.$this->instance->id.' && '.
