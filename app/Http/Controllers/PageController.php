@@ -435,6 +435,7 @@ class PageController extends Controller
 
         $sql .=
                 'instance_count = instance_count + 1, '.
+                'is_new = ?, '. # false
                 'updated_at = ? '. # $now
                 'where id = ? '. # auth()->user()->id
                 'returning id'.
@@ -463,6 +464,7 @@ class PageController extends Controller
                 '?'. # $now
             ') returning id';
 
+        $sql_params[] = false;
         $sql_params[] = $now;
         $sql_params[] = $user->id;
 

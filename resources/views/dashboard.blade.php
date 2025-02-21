@@ -2,7 +2,7 @@
 <div>
   <div class="mb-2">
     <div class="text-base mb-2">{{ auth()->user()->login_id }}</div>
-    @if (auth()->user()->instance_count !== 0)
+    @if (! auth()->user()->is_new)
     <div class="@if (auth()->user()->credit < 0) text-red-600 @endif">
       <div class="inline-block">
       {{ __('trans.credit') }}: {{ formatNumberShort(auth()->user()->credit) }}
@@ -28,13 +28,13 @@
 
   <div class="pb-4">
     <a class="" href="{{ route('source') }}">{{ mb_ucfirst(__('trans.source')) }}</a>
-    @if (auth()->user()->instance_count === 0)
+    @if (auth()->user()->is_new)
     <span class="text-gray-400 pointer-events-none select-none">
       <-- {{ __('trans.click_here') }}
     </span>
     @endif
   </div>
-  @if (auth()->user()->instance_count !== 0)
+  @if (! auth()->user()->is_new)
   <div class="pb-4">
     <a href="{{ route('instance') }}">{{ mb_ucfirst(__('trans.instance')) }}</a>
     <span class="text-gray-400 pointer-events-none select-none">
