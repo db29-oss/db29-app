@@ -102,6 +102,7 @@ class InstancePageTest extends TestCase
             ->create();
 
         $u->instance_count = 2;
+        $u->is_new = false;
         $u->save();
 
         $response = $this->get('/instance');

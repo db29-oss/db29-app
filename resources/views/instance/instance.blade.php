@@ -117,7 +117,7 @@
 
         @if (
           $instance->status === 'rt_up' &&
-          auth()->user()->instance_count === 1 &&
+          auth()->user()->is_new &&
           ! $instance->queue_active
         )
         <!--tutorial for new user-->

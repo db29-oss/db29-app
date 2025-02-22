@@ -7,6 +7,6 @@
     {!! __('trans.explain_db29_app') !!}
   </div>
   <div class="mt-4">
-    {!! __('trans.checkout_our_social_link') !!}
+    {!! __('trans.checkout_social_link') !!}
   </div>
 </body>

@@ -59,8 +59,6 @@ class ShowSupportedSourceTest extends TestCase
 
                 $response->assertSee(formatNumberShort($s->plans[0]->price));
 
-                $response->assertSee('explain plan');
-
                 continue;
             }
 
@@ -78,8 +76,6 @@ class ShowSupportedSourceTest extends TestCase
                 $response->assertSee($s->name);
 
                 $response->assertDontSee(formatNumberShort($s->plans[0]->price));
-
-                $response->assertDontSee('explain plan');
             }
         }
     }

@@ -15,7 +15,7 @@ return [
     "bank_transfer" => "bank transfer",
     "blog" => "blog",
     "bonus_credit" => "bonus credit",
-    "checkout_our_social_link" => "Checkout our <a href='https://blog.db29.ovh'>blog</a>, <a href='https://forum.db29.ovh'>forum</a>, <a href='https://discord.gg/5HFNzrzXMf'>discord</a> and <a href='https://www.youtube.com/@db29-oss'>youtube</a>.",
+    "checkout_social_link" => "Checkout <a href='https://blog.db29.ovh'>blog</a>, <a href='https://forum.db29.ovh'>forum</a>, <a href='https://discord.gg/5HFNzrzXMf'>discord</a> and <a href='https://www.youtube.com/@db29-oss'>youtube</a>.",
     "click_here" => "click_here",
     "click_link_above" => "click link above",
     "cname_or_alias_record_to" => "point CNAME (subdomain) or ALIAS (domain) to ",

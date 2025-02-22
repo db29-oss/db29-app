@@ -94,7 +94,7 @@ class WordPress extends _0Instance_
             'cd '.$instance_path.' && '.
             'podman run -d --name='.$this->instance->id.' '.
             '-p 9000 -v '.$instance_path.'wordpress:/var/www/html/ '.
-            'php:fpm-alpine'
+            'public.ecr.aws/docker/library/php:fpm-alpine'
         );
 
         $this->ssh->exec(
